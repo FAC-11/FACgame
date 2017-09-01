@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset=utf-8>
+		<title>My first three.js app</title>
+		<style>
+			body { margin: 0; }
+			canvas { width: 100%; height: 100% }
+		</style>
+	</head>
+	<body>
+		<script src="js/three.js"></script>
+		<script src="node_modules/three/examples/js/loaders/OBJLoader2.js"></script>
+		<script>
+			// Our Javascript will go here.
+      var scene = new THREE.Scene();
+      var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+      var renderer = new THREE.WebGLRenderer();
+      // Make scene renderer the size of the screen
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild( renderer.domElement );
+
+			var geometry = new THREE.BoxGeometry( 1, 1, 1 );
+			var material = new THREE.MeshBasicMaterial( { color: 0x00ff00, wireframe: true } );
+			var cube = new THREE.Mesh( geometry, material );
+			scene.add( cube );
+
+			var geometry = new THREE.BoxGeometry( 1, 1, 1 );
+			var material = new THREE.MeshStandardMaterial();
+			var cube1 = new THREE.Mesh( geometry, material );
+			cube1.position.set(1, 2, 0);
+			scene.add( cube1 );
+
+			var light = new THREE.PointLight( 0xff0000, 1, 100 );
+			light.position.set( 5, 5, 5 );
+			scene.add( light );
+
+			var light1 = new THREE.PointLight( 0x0E82EE, 1, 100 );
+			light1.position.set( -5, 5, 5 );
+			scene.add( light1 );
+			camera.position.z = 5;
+
+
+//prepare loader and load the model
+var oLoader = new THREE.OBJLoader2();
+oLoader.load('Meshes/MountainTerrain.obj', function(object, materials) {
+// var material = new THREE.MeshFaceMaterial(materials);
+var material2 = new THREE.MeshStandardMaterial();
+object.traverse( function(child) {
+if (child instanceof THREE.Mesh) {
+// apply custom material
+child.material = material2;
+// enable casting shadows
+child.castShadow = true;
+child.receiveShadow = true;
+}
+});
+object.position.x = 0;
+object.position.y = -10;
+object.position.z = -30;
+object.scale.set(0.1, 0.1, 0.1);
+scene.add(object);
+});
+			function animate() {
+				requestAnimationFrame( animate );
+				cube.rotation.x += 0.1;
+				cube.rotation.y += 0.1;
+				cube1.rotation.x += 0.01;
+				cube1.rotation.y += 0.01;
+				renderer.render( scene, camera );
+			}
+			animate();
+
+		</script>
+	</body>
+</html>
