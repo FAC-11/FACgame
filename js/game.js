@@ -10,6 +10,7 @@ var player = {
   turnSpeed: Math.PI * 0.02
 };
 var USE_WIREFRAME = false;
+
 // create the scene
 
 function init() {
@@ -106,6 +107,30 @@ function init() {
   // torch.shadow.camera.near = 0.1;
   // torch.shadow.camera.far = 25;
   // scene.add(torch);
+
+//JAMES BIT STARTS HERE
+  //prepare loader and load the model
+   var oLoader = new THREE.OBJLoader2();
+  oLoader.load('../meshes/MountainTerrain.obj', function(object, materials) {
+  // var material = new THREE.MeshFaceMaterial(materials);
+   var material2 = new THREE.MeshStandardMaterial();
+  object.traverse( function(child) {
+  if (child instanceof THREE.Mesh) {
+  // apply custom material
+  child.material = material2;
+  // enable casting shadows
+  child.castShadow = true;
+  child.receiveShadow = true;
+  }
+  });
+  object.position.x = 0;
+  object.position.y = 10;
+  object.position.z = -30;
+  object.scale.set(0.1, 0.1, 0.1);
+  scene.add(object);
+  });
+
+  //JAMES BIT ENDS HERE 
 
   camera.position.set(0, player.height, -5);
   camera.lookAt(new THREE.Vector3(0, player.height, 0)); // direction camera is looking
