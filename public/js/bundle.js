@@ -1,1 +1,1 @@
-console.error("SyntaxError: /Users/rebecacalvoquintero/Desktop/fac/game/FACgame/src/init/getFloor.js: Unexpected token, expected { (3:28) while parsing file: /Users/rebecacalvoquintero/Desktop/fac/game/FACgame/src/init/getFloor.js");
+console.error("SyntaxError: /Users/rebecacalvoquintero/Desktop/fac/game/FACgame/src/animate/animate.js: Unexpected token (27:0) while parsing file: /Users/rebecacalvoquintero/Desktop/fac/game/FACgame/src/animate/animate.js");
