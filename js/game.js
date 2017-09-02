@@ -14,8 +14,8 @@ var USE_WIREFRAME = false;
 // create the scene
 
 function init() {
-  scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 1000);
+  // scene = new THREE.Scene();
+  // camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 1000);
 
 
   // create cubes
@@ -130,7 +130,7 @@ function init() {
   scene.add(object);
   });
 
-  //JAMES BIT ENDS HERE 
+  //JAMES BIT ENDS HERE
 
   camera.position.set(0, player.height, -5);
   camera.lookAt(new THREE.Vector3(0, player.height, 0)); // direction camera is looking
