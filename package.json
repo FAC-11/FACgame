@@ -5,9 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "http-server",
+    "start": "nodemon server/index.js",
     "startDev": "bla bla",
-    "watch-js": "watchify src/entry.js -o public/js/bundle.js -t [ babelify --presets [ es2015 ] ]"
+    "watch-js": "watchify src/start.js -o public/js/bundle.js -t [ babelify --presets [ es2015 ] ]"
   },
   "repository": {
     "type": "git",
