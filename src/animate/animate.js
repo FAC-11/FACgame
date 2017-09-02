@@ -16,8 +16,9 @@ const start = (options) => {
     meshOne.rotation.x += 0.1;
     meshOne.rotation.y += 0.1;
     renderer.render(scene, camera);
-  animate();
-};
+    animate();
+  };
+}
 
 
 
