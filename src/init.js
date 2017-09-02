@@ -1,9 +1,9 @@
 const THREE = require('three');
-const objects = require('./objects.js')
+const getMeshes = require('./meshes.js')
 const controls = require('../controls');
 const getFloor = require('./getFloor');
-const getLight = require('./getFloor');
-const getRenderer = require('./renderer');
+const getLight = require('./getLight');
+const getRenderer = require('./getRenderer');
 
 module.exports = () => {
   const scene = new THREE.Scene();
@@ -70,10 +70,10 @@ module.exports = () => {
 
   scene.add(mesh, mesh1, mesh2, mesh3, mesh4);
 
-//now let's get the floor
+  //now let's get the floor
   const floor = getFloor();
   scene.add(getFloor());
-  const objects = [ floor ];
+  const objects = [floor];
 
   //and the lights
 
@@ -83,10 +83,11 @@ module.exports = () => {
   const light = getLight();
   scene.add(light);
 
-//now the renderer
+  //now the renderer
   const renderer = getRenderer();
   document.body.appendChild(renderer.domElement);
   //
+
   window.addEventListener('resize', onWindowResize, false);
 
 

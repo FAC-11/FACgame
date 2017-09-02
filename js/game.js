@@ -19,86 +19,86 @@ function init() {
 
 
   // create cubes
-  mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshPhongMaterial({
-      color: 0x00ff00,
-      wireframe: USE_WIREFRAME
-    })
-  );
-  mesh.receiveShadow = true;
-  mesh.castShadow = true;
+  // mesh = new THREE.Mesh(
+  //   new THREE.BoxGeometry(1, 1, 1),
+  //   new THREE.MeshPhongMaterial({
+  //     color: 0x00ff00,
+  //     wireframe: USE_WIREFRAME
+  //   })
+  // );
+  // mesh.receiveShadow = true;
+  // mesh.castShadow = true;
+  //
+  // mesh1 = new THREE.Mesh(
+  //   new THREE.BoxGeometry(1, 1, 1),
+  //   new THREE.MeshPhongMaterial({
+  //     color: 0x00ff00,
+  //     wireframe: USE_WIREFRAME
+  //   })
+  // );
+  // mesh1.position.set(-2, 0, 0);
+  // mesh1.receiveShadow = true;
+  // mesh1.castShadow = true;
+  //
+  // mesh2 = new THREE.Mesh(
+  //   new THREE.BoxGeometry(1, 1, 1),
+  //   new THREE.MeshPhongMaterial({
+  //     color: 0x00ff00,
+  //     wireframe: USE_WIREFRAME
+  //   })
+  // );
+  // mesh2.position.set(2, 0, 0);
+  // mesh2.receiveShadow = true;
+  // mesh2.castShadow = true;
+  //
+  // mesh3 = new THREE.Mesh(
+  //   new THREE.BoxGeometry(1, 1, 1),
+  //   new THREE.MeshPhongMaterial({
+  //     color: 0x00ff00,
+  //     wireframe: USE_WIREFRAME
+  //   })
+  // );
+  // mesh3.position.set(0, 2, 0);
+  // mesh3.receiveShadow = true;
+  // mesh3.castShadow = true;
+  //
+  // mesh4 = new THREE.Mesh(
+  //   new THREE.BoxGeometry(1, 1, 1),
+  //   new THREE.MeshPhongMaterial({
+  //     color: 0x00ff00,
+  //     wireframe: USE_WIREFRAME
+  //   })
+  // );
+  // mesh4.position.set(0, -2, 0);
+  // mesh4.receiveShadow = true;
+  // mesh4.castShadow = true;
 
-  mesh1 = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshPhongMaterial({
-      color: 0x00ff00,
-      wireframe: USE_WIREFRAME
-    })
-  );
-  mesh1.position.set(-2, 0, 0);
-  mesh1.receiveShadow = true;
-  mesh1.castShadow = true;
-
-  mesh2 = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshPhongMaterial({
-      color: 0x00ff00,
-      wireframe: USE_WIREFRAME
-    })
-  );
-  mesh2.position.set(2, 0, 0);
-  mesh2.receiveShadow = true;
-  mesh2.castShadow = true;
-
-  mesh3 = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshPhongMaterial({
-      color: 0x00ff00,
-      wireframe: USE_WIREFRAME
-    })
-  );
-  mesh3.position.set(0, 2, 0);
-  mesh3.receiveShadow = true;
-  mesh3.castShadow = true;
-
-  mesh4 = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshPhongMaterial({
-      color: 0x00ff00,
-      wireframe: USE_WIREFRAME
-    })
-  );
-  mesh4.position.set(0, -2, 0);
-  mesh4.receiveShadow = true;
-  mesh4.castShadow = true;
-
-  scene.add(mesh, mesh1, mesh2, mesh3, mesh4);
+  // scene.add(mesh, mesh1, mesh2, mesh3, mesh4);
 
   //camera positions here
 
-  meshFloor = new THREE.Mesh(
-    new THREE.PlaneGeometry(100, 100, 20, 20),
-    new THREE.MeshPhongMaterial({
-      color: 0xffffff,
-      wireframe: USE_WIREFRAME
-    })
-  );
-  meshFloor.rotation.x -= Math.PI / 2;
-  meshFloor.receiveShadow = true;
-  scene.add(meshFloor);
+  // meshFloor = new THREE.Mesh(
+  //   new THREE.PlaneGeometry(100, 100, 20, 20),
+  //   new THREE.MeshPhongMaterial({
+  //     color: 0xffffff,
+  //     wireframe: USE_WIREFRAME
+  //   })
+  // );
+  // meshFloor.rotation.x -= Math.PI / 2;
+  // meshFloor.receiveShadow = true;
+  // scene.add(meshFloor);
 
 
   //lighting
-  ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-  scene.add(ambientLight);
-
-  light = new THREE.PointLight(0xffffff, 0.2);
-  light.position.set(-3, 6, -3);
-  light.castShadow = true;
-  light.shadow.camera.near = 0.1;
-  light.shadow.camera.far = 25;
-  scene.add(light);
+  // ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+  // scene.add(ambientLight);
+  //
+  // light = new THREE.PointLight(0xffffff, 0.2);
+  // light.position.set(-3, 6, -3);
+  // light.castShadow = true;
+  // light.shadow.camera.near = 0.1;
+  // light.shadow.camera.far = 25;
+  // scene.add(light);
 
   //trying to greate a torch here.
   // torch = new THREE.SpotLight(0xffffff,0.5,100);
@@ -110,36 +110,18 @@ function init() {
 
 //JAMES BIT STARTS HERE
   //prepare loader and load the model
-   var oLoader = new THREE.OBJLoader2();
-  oLoader.load('../meshes/MountainTerrain.obj', function(object, materials) {
-  // var material = new THREE.MeshFaceMaterial(materials);
-   var material2 = new THREE.MeshStandardMaterial();
-  object.traverse( function(child) {
-  if (child instanceof THREE.Mesh) {
-  // apply custom material
-  child.material = material2;
-  // enable casting shadows
-  child.castShadow = true;
-  child.receiveShadow = true;
-  }
-  });
-  object.position.x = 0;
-  object.position.y = 10;
-  object.position.z = -30;
-  object.scale.set(0.1, 0.1, 0.1);
-  scene.add(object);
-  });
+
 
   //JAMES BIT ENDS HERE
 
-  camera.position.set(0, player.height, -5);
-  camera.lookAt(new THREE.Vector3(0, player.height, 0)); // direction camera is looking
+  // camera.position.set(0, player.height, -5);
+  // camera.lookAt(new THREE.Vector3(0, player.height, 0)); // direction camera is looking
 
-  renderer = new THREE.WebGLRenderer(0, 0, 0);
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.BasicShadowMap;
-  document.body.appendChild(renderer.domElement);
+  // renderer = new THREE.WebGLRenderer(0, 0, 0);
+  // renderer.setSize(window.innerWidth, window.innerHeight);
+  // renderer.shadowMap.enabled = true;
+  // renderer.shadowMap.type = THREE.BasicShadowMap;
+  // document.body.appendChild(renderer.domElement);
 
 
   animate();
