@@ -1,6 +1,7 @@
 const THREE = require('three');
 
-module.exports = function() => {
+
+const getFloor = () => {
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(100, 100, 20, 20),
     new THREE.MeshPhongMaterial({
@@ -12,5 +13,7 @@ module.exports = function() => {
   floor.receiveShadow = true;
   floor.castShadow = false;
   floor.position.y = -25;
-  return floor
+  return floor;
 }
+
+module.exports = getFloor;
