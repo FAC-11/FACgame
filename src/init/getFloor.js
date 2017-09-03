@@ -1,5 +1,7 @@
 const THREE = require('three');
 const OBJLoader = require('three-obj-loader');
+const MTLLoader = require('three-mtl-loader');
+
 
 const getFloor = () => {
   const floor = new THREE.Mesh(

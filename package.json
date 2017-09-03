@@ -26,6 +26,7 @@
     "socket.io": "^2.0.3",
     "socket.io-client": "^2.0.3",
     "three": "^0.87.1",
+    "three-mtl-loader": "^1.0.1",
     "three-obj-loader": "^1.1.2",
     "three-pointerlock": "0.0.2"
   },

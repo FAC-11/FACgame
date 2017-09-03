@@ -4,6 +4,9 @@ const getRenderer = require('./getRenderer');
 const getLight = require('./getLight');
 const getFloor = require('./getFloor');
 const cubes = require('../cubes');
+const OBJLoader = require('three-obj-loader');
+OBJLoader(THREE);
+const MTLLoader = require('three-mtl-loader');
 
 var player = {
   height: 1.8,
@@ -37,6 +40,19 @@ const init = () => {
   scene.add(floor);
   const objects = [floor];
 
+//objects
+    // const loader = new MTLLoader();
+    // loader.load('images/Oak_Green_01.mtl', function(materials) {
+    //   materials.preload();
+    //   const objLoader = new THREE.OBJLoader();
+    //   objLoader.setMaterials(materials);
+    //
+    //   objLoader.load('images/Oak_Green_01.obj', function(tree) {
+    //     scene.add(tree)
+    //   })
+    //
+    // })
+
   //lighting
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
   scene.add(ambientLight);
@@ -46,6 +62,7 @@ const init = () => {
 
   const renderer = getRenderer();
   document.body.appendChild(renderer.domElement);
+
 
   window.addEventListener('resize', onWindowResize, false);
 
