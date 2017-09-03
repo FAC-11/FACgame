@@ -1,191 +1,4 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-/**
- * @author mrdoob / http://mrdoob.com/
- * Source: https://github.com/mrdoob/three.js/blob/master/examples/js/controls/PointerLockControls.js
- *
- * Adopted to common js by Javier Zapata
- */
-
-module.exports = function ( camera ) {
-
-  var THREE = window.THREE || require('three');
-
-  var scope = this;
-
-  camera.rotation.set( 0, 0, 0 );
-
-  var pitchObject = new THREE.Object3D();
-  pitchObject.add( camera );
-
-  var yawObject = new THREE.Object3D();
-  yawObject.position.y = 10;
-  yawObject.add( pitchObject );
-
-  var moveForward = false;
-  var moveBackward = false;
-  var moveLeft = false;
-  var moveRight = false;
-
-  var isOnObject = false;
-  var canJump = false;
-
-  var prevTime = performance.now();
-
-  var velocity = new THREE.Vector3();
-
-  var PI_2 = Math.PI / 2;
-
-  var onMouseMove = function ( event ) {
-
-    if ( scope.enabled === false ) return;
-
-    var movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
-    var movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
-
-    yawObject.rotation.y -= movementX * 0.002;
-    pitchObject.rotation.x -= movementY * 0.002;
-
-    pitchObject.rotation.x = Math.max( - PI_2, Math.min( PI_2, pitchObject.rotation.x ) );
-
-  };
-
-  var onKeyDown = function ( event ) {
-
-    switch ( event.keyCode ) {
-
-      case 38: // up
-      case 87: // w
-        moveForward = true;
-        break;
-
-      case 37: // left
-      case 65: // a
-        moveLeft = true; break;
-
-      case 40: // down
-      case 83: // s
-        moveBackward = true;
-        break;
-
-      case 39: // right
-      case 68: // d
-        moveRight = true;
-        break;
-
-      case 32: // space
-        if ( canJump === true ) velocity.y += 350;
-        canJump = false;
-        break;
-
-    }
-
-  };
-
-  var onKeyUp = function ( event ) {
-
-    switch( event.keyCode ) {
-
-      case 38: // up
-      case 87: // w
-        moveForward = false;
-        break;
-
-      case 37: // left
-      case 65: // a
-        moveLeft = false;
-        break;
-
-      case 40: // down
-      case 83: // s
-        moveBackward = false;
-        break;
-
-      case 39: // right
-      case 68: // d
-        moveRight = false;
-        break;
-
-    }
-
-  };
-
-  document.addEventListener( 'mousemove', onMouseMove, false );
-  document.addEventListener( 'keydown', onKeyDown, false );
-  document.addEventListener( 'keyup', onKeyUp, false );
-
-  this.enabled = false;
-
-  this.getObject = function () {
-
-    return yawObject;
-
-  };
-
-  this.isOnObject = function ( boolean ) {
-
-    isOnObject = boolean;
-    canJump = boolean;
-
-  };
-
-  this.getDirection = function() {
-
-    // assumes the camera itself is not rotated
-
-    var direction = new THREE.Vector3( 0, 0, -1 );
-    var rotation = new THREE.Euler( 0, 0, 0, "YXZ" );
-
-    return function( v ) {
-
-      rotation.set( pitchObject.rotation.x, yawObject.rotation.y, 0 );
-
-      v.copy( direction ).applyEuler( rotation );
-
-      return v;
-
-    };
-
-  }();
-
-  this.update = function () {
-
-    if ( scope.enabled === false ) return;
-
-    var time = performance.now();
-    var delta = ( time - prevTime ) / 1000;
-
-    velocity.x -= velocity.x * 10.0 * delta;
-    velocity.z -= velocity.z * 10.0 * delta;
-
-    velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
-
-    if ( moveForward ) velocity.z -= 400.0 * delta;
-    if ( moveBackward ) velocity.z += 400.0 * delta;
-
-    if ( moveLeft ) velocity.x -= 400.0 * delta;
-    if ( moveRight ) velocity.x += 400.0 * delta;
-
-    if ( isOnObject === true ) {
-      velocity.y = Math.max( 0, velocity.y );
-    }
-
-    yawObject.translateX( velocity.x * delta );
-    yawObject.translateY( velocity.y * delta );
-    yawObject.translateZ( velocity.z * delta );
-
-    if ( yawObject.position.y < 10 ) {
-
-      velocity.y = 0;
-      yawObject.position.y = 10;
-
-      canJump = true;
-    }
-
-    prevTime = time;
-  };
-};
-
-},{"three":2}],2:[function(require,module,exports){
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
 	typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -44426,301 +44239,191 @@ module.exports = function ( camera ) {
 
 })));
 
-},{}],3:[function(require,module,exports){
-'use strict';
-
-var getMeshes = require('../init/meshes.js');
-
-var start = function start(options) {
-  var camera = options.camera,
-      scene = options.scene,
-      renderer = options.renderer,
-      raycaster = options.raycaster,
-      objects = options.objects;
-
-
-  var animate = function animate() {
-    requestAnimationFrame(animate);
-    var meshOne = getMeshes.getMeshOne();
-    meshOne.rotation.x += 0.1;
-    meshOne.rotation.y += 0.1;
-    renderer.render(scene, camera);
-    animate();
-  };
-};
-
-module.exports = {
-  start: start
-};
-
-},{"../init/meshes.js":9}],4:[function(require,module,exports){
-'use strict';
-
-var init = function init() {
-
-  var onKeyDown = function onKeyDown(event) {
-    switch (event.keyCode) {
-      case 38: // up
-      case 87:
-        // w
-        movements.forward = true;
-        break;
-      case 37: // left
-      case 65:
-        // a
-        movements.left = true;
-        break;
-      case 40: // down
-      case 83:
-        // s
-        movements.backward = true;
-        break;
-      case 39: // right
-      case 68:
-        // d
-        movements.right = true;
-        break;
-      case 32:
-        // space
-        if (movements.canJump) {
-          movements.jumping = true;
-          movements.canJump = false;
-        }
-        break;
-    }
-  };
-
-  var onKeyUp = function onKeyUp(event) {
-    switch (event.keyCode) {
-      case 38: // up
-      case 87:
-        // w
-        movements.forward = false;
-        break;
-      case 37: // left
-      case 65:
-        // a
-        movements.left = false;
-        break;
-      case 40: // down
-      case 83:
-        // s
-        movements.backward = false;
-        break;
-      case 39: // right
-      case 68:
-        // d
-        movements.right = false;
-        break;
-    }
-  };
-
-  document.addEventListener('keydown', onKeyDown, false);
-  document.addEventListener('keyup', onKeyUp, false);
-};
-
-var movements = {
-  forward: false,
-  backward: false,
-  left: false,
-  right: false,
-  jumping: false,
-  canJump: true
-};
-
-module.exports = {
-  init: init,
-  movements: movements
-};
-
-},{}],5:[function(require,module,exports){
+},{}],2:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
 
-var getFloor = function getFloor() {
-  var floor = new THREE.Mesh(new THREE.PlaneGeometry(100, 100, 20, 20), new THREE.MeshPhongMaterial({
-    color: 0xffffff,
-    wireframe: false
-  }));
-  floor.rotation.x -= Math.PI / 2;
-  floor.receiveShadow = true;
-  floor.castShadow = false;
-  floor.position.y = -25;
-  return floor;
-};
+var movePlayer = function movePlayer(keyboard, camera, player) {
 
-module.exports = getFloor;
-
-},{"three":2}],6:[function(require,module,exports){
-'use strict';
-
-var THREE = require('three');
-
-var getLight = function getLight() {
-  var light = new THREE.SpotLight(0xffffff, 0.85, 0, Math.PI / 2, 1);
-  light.position.set(0, 1500, 1000);
-  light.target.position.set(0, 0, 0);
-  light.castShadow = true;
-  light.shadow.camera.near = 0.1;
-  light.shadow.camera.far = 25;
-  return light;
-};
-module.exports = getLight;
-
-},{"three":2}],7:[function(require,module,exports){
-'use strict';
-
-var THREE = require('three');
-
-var getRenderer = function getRenderer() {
-  var renderer = new THREE.WebGLRenderer(0, 0, 0);
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.BasicShadowMap;
-  return renderer;
-};
-
-module.exports = getRenderer;
-
-},{"three":2}],8:[function(require,module,exports){
-'use strict';
-
-var THREE = require('three');
-var PointerLockControls = require('three-pointerlock');
-var getFloor = require('./getFloor');
-var getLight = require('./getLight');
-var getMeshes = require('./meshes.js');
-var controls = require('../controls');
-var getRenderer = require('./getRenderer');
-
-var initialise = function initialise() {
-
-  var scene = new THREE.Scene();
-  //our camera
-  var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
-  var pointerLockControls = new PointerLockControls(camera); // direction camera is looking
-
-  scene.add(pointerLockControls.getObject());
-  controls.init(scene, pointerLockControls);
-  // our meshesObjects
-
-  var meshOne = getMeshes[0]();
-  var meshTwo = getMeshes.getMeshTwo();
-  var meshThree = getMeshes.getMesh3();
-  var meshFour = getMeshes.getMeshFour();
-  var meshFive = getMeshes.getMeshFive();
-
-  scene.add(meshOne, meshTwo, meshThree, meshFour, meshFive);
-
-  //now let's get the floor
-  var floor = getFloor();
-  scene.add(floor);
-  var objects = [floor];
-
-  //and the lights
-
-  var ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-  scene.add(ambientLight);
-
-  var light = getLight();
-  scene.add(light);
-
-  //now the renderer
-  var renderer = getRenderer();
-  document.body.appendChild(renderer.domElement);
-  //
-
-  window.addEventListener('resize', onWindowResize, false);
-
-  function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+  if (keyboard[87]) {
+    //W key
+    camera.position.x -= Math.sin(camera.rotation.y) * player.speed;
+    camera.position.z -= -Math.cos(camera.rotation.y) * player.speed;
   }
 
-  return {
-    camera: camera,
-    scene: scene,
-    renderer: renderer,
-    objects: objects
-  };
+  if (keyboard[83]) {
+    //S key
+    camera.position.x += Math.sin(camera.rotation.y) * player.speed;
+    camera.position.z += -Math.cos(camera.rotation.y) * player.speed;
+  }
+
+  if (keyboard[65]) {
+    //A key
+    camera.position.x -= -Math.sin(camera.rotation.y + Math.PI / 2) * player.speed; //changing the angle of the camera rotation with math.pi 90 degrees
+    camera.position.z -= Math.cos(camera.rotation.y + Math.PI / 2) * player.speed;
+  }
+
+  if (keyboard[68]) {
+    //D key
+    camera.position.x += Math.sin(camera.rotation.y - Math.PI / 2) * player.speed;
+    camera.position.z += -Math.cos(camera.rotation.y - Math.PI / 2) * player.speed;
+  }
+
+  if (keyboard[37]) {
+    //left arrow key
+    camera.rotation.y -= player.turnSpeed;
+  }
+
+  if (keyboard[39]) {
+    //right arrow key
+    camera.rotation.y += player.turnSpeed;
+  }
 };
 
-module.exports = initialise;
+module.exports = movePlayer;
 
-},{"../controls":4,"./getFloor":5,"./getLight":6,"./getRenderer":7,"./meshes.js":9,"three":2,"three-pointerlock":1}],9:[function(require,module,exports){
+},{"three":1}],3:[function(require,module,exports){
 'use strict';
 
+console.log('hello');
 var THREE = require('three');
+var movePlayer = require('./movePlayer');
 
-var getMeshOne = function getMeshOne() {
-  var meshOne = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({
-    color: 0x00ff00,
-    wireframe: false
-  }));
-  meshOne.receiveShadow = true;
-  meshOne.castShadow = true;
-  return meshOne;
-};
+var scene, camera, renderer, mesh;
+var meshFloor;
+var torch;
 
-var getMeshTwo = function getMeshTwo() {
-  var meshTwo = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({
-    color: 0x00ff00,
-    wireframe: false
-  }));
-  meshTwo.position.set(-2, 0, 0);
-  meshTwo.receiveShadow = true;
-  meshTwo.castShadow = true;
-  return meshTwo;
+var keyboard = {};
+var player = {
+  height: 1.8,
+  speed: 0.2,
+  turnSpeed: Math.PI * 0.02
 };
-var getMesh3 = function getMesh3() {
+var USE_WIREFRAME = false;
+
+// create the scene
+
+function init() {
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+  // create cubes
+  mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({
+    color: 0x00ff00,
+    wireframe: USE_WIREFRAME
+  }));
+  mesh.receiveShadow = true;
+  mesh.castShadow = true;
+
+  var mesh1 = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({
+    color: 0x00ff00,
+    wireframe: USE_WIREFRAME
+  }));
+  mesh1.position.set(-2, 0, 0);
+  mesh1.receiveShadow = true;
+  mesh1.castShadow = true;
+
+  var mesh2 = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({
+    color: 0x00ff00,
+    wireframe: USE_WIREFRAME
+  }));
+  mesh2.position.set(2, 0, 0);
+  mesh2.receiveShadow = true;
+  mesh2.castShadow = true;
+
   var mesh3 = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({
     color: 0x00ff00,
-    wireframe: false
+    wireframe: USE_WIREFRAME
   }));
-  mesh3.position.set(2, 0, 0);
+  mesh3.position.set(0, 2, 0);
   mesh3.receiveShadow = true;
   mesh3.castShadow = true;
-  return mesh3;
-};
-var getMeshFour = function getMeshFour() {
+
   var mesh4 = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({
     color: 0x00ff00,
-    wireframe: false
+    wireframe: USE_WIREFRAME
   }));
   mesh4.position.set(0, -2, 0);
   mesh4.receiveShadow = true;
   mesh4.castShadow = true;
-  return mesh4;
-};
-var getMeshFive = function getMeshFive() {
 
-  var mesh5 = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({
-    color: 0x00ff00,
-    wireframe: false
+  scene.add(mesh, mesh1, mesh2, mesh3, mesh4);
+
+  //camera positions here
+
+  var meshFloor = new THREE.Mesh(new THREE.PlaneGeometry(100, 100, 20, 20), new THREE.MeshPhongMaterial({
+    color: 0xffffff,
+    wireframe: USE_WIREFRAME
   }));
-  mesh5.position.set(0, 2, 0);
-  mesh5.receiveShadow = true;
-  mesh5.castShadow = true;
-  return mesh5;
-};
+  meshFloor.rotation.x -= Math.PI / 2;
+  meshFloor.receiveShadow = true;
+  scene.add(meshFloor);
 
-module.exports = {
-  getMeshOne: getMeshOne,
-  getMeshTwo: getMeshTwo,
-  getMesh3: getMesh3,
-  getMeshFour: getMeshFour,
-  getMeshFive: getMeshFive
-};
+  //lighting
+  var ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+  scene.add(ambientLight);
 
-},{"three":2}],10:[function(require,module,exports){
-'use strict';
+  var light = new THREE.PointLight(0xffffff, 0.2);
+  light.position.set(-3, 6, -3);
+  light.castShadow = true;
+  light.shadow.camera.near = 0.1;
+  light.shadow.camera.far = 25;
+  scene.add(light);
 
-var init = require('./init/init');
-var animate = require('./animate/animate');
+  //trying to greate a torch here.
+  // torch = new THREE.SpotLight(0xffffff,0.5,100);
+  // torch.position.set(0, 0, 0);
+  // torch.castShadow = true;
+  // torch.shadow.camera.near = 0.1;
+  // torch.shadow.camera.far = 25;
+  // scene.add(torch);
 
-animate.start(init());
+  //JAMES BIT STARTS HERE
+  //prepare loader and load the model
 
-},{"./animate/animate":3,"./init/init":8}]},{},[10]);
+
+  //JAMES BIT ENDS HERE
+
+  camera.position.set(0, player.height, -5);
+  camera.lookAt(new THREE.Vector3(0, player.height, 0)); // direction camera is looking
+
+  renderer = new THREE.WebGLRenderer(0, 0, 0);
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.BasicShadowMap;
+  document.body.appendChild(renderer.domElement);
+
+  animate();
+}
+
+//render loop at 60fps
+function animate() {
+  requestAnimationFrame(animate);
+
+  mesh.rotation.x += 0.1;
+  mesh.rotation.y += 0.1;
+  movePlayer(keyboard, camera, player);
+
+  //trying to create a torch
+  // torch.position.set(camera.position.x,camera.position.y,camera.position.z);
+  // torch.rotation.set(camera.rotation.x,camera.rotation.y,camera.rotation.z);
+
+
+  renderer.render(scene, camera);
+}
+
+function keyDown(event) {
+  keyboard[event.keyCode] = true;
+}
+
+function keyUp(event) {
+  keyboard[event.keyCode] = false;
+}
+
+window.addEventListener('keydown', keyDown);
+window.addEventListener('keyup', keyUp);
+
+window.onload = init;
+
+},{"./movePlayer":2,"three":1}]},{},[3]);
