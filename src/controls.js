@@ -1,6 +1,7 @@
 const THREE = require('three');
+const init = require('./init');
 
-const movePlayer = (keyboard, camera, player) => {
+const controls = (keyboard, camera, player) => {
 
   if (keyboard[87]) { //W key
     camera.position.x -= Math.sin(camera.rotation.y) * player.speed;
@@ -30,6 +31,18 @@ const movePlayer = (keyboard, camera, player) => {
     camera.rotation.y += player.turnSpeed;
   }
 
+  const keyDown = (event) => {
+    keyboard[event.keyCode] = true;
+  }
+
+  const keyUp = (event) => {
+    keyboard[event.keyCode] = false;
+  }
+
+  document.addEventListener('keydown', keyDown, false);
+  document.addEventListener('keyup', keyUp, false);
+
 }
 
-module.exports = movePlayer;
+
+module.exports = controls;

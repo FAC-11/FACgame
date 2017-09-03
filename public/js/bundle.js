@@ -44242,9 +44242,45 @@
 },{}],2:[function(require,module,exports){
 'use strict';
 
-var THREE = require('three');
+var controls = require('./controls');
+var init = require('./init');
+var getRenderer = require('./getRenderer');
 
-var movePlayer = function movePlayer(keyboard, camera, player) {
+var start = function start(options) {
+  var camera = options.camera,
+      scene = options.scene,
+      renderer = options.renderer;
+
+
+  var keyboard = {};
+  var player = {
+    height: 1.8,
+    speed: 0.2,
+    turnSpeed: Math.PI * 0.02
+  };
+
+  var animate = function animate() {
+    requestAnimationFrame(animate);
+
+    // mesh.rotation.x += 0.1;
+    // mesh.rotation.y += 0.1;
+    controls(keyboard, camera, player);
+    renderer.render(scene, camera);
+  };
+  animate();
+};
+
+module.exports = {
+  start: start
+};
+
+},{"./controls":3,"./getRenderer":6,"./init":7}],3:[function(require,module,exports){
+'use strict';
+
+var THREE = require('three');
+var init = require('./init');
+
+var controls = function controls(keyboard, camera, player) {
 
   if (keyboard[87]) {
     //W key
@@ -44279,46 +44315,98 @@ var movePlayer = function movePlayer(keyboard, camera, player) {
     //right arrow key
     camera.rotation.y += player.turnSpeed;
   }
+
+  var keyDown = function keyDown(event) {
+    keyboard[event.keyCode] = true;
+  };
+
+  var keyUp = function keyUp(event) {
+    keyboard[event.keyCode] = false;
+  };
+
+  document.addEventListener('keydown', keyDown, false);
+  document.addEventListener('keyup', keyUp, false);
 };
 
-module.exports = movePlayer;
+module.exports = controls;
 
-},{"three":1}],3:[function(require,module,exports){
+},{"./init":7,"three":1}],4:[function(require,module,exports){
 'use strict';
 
-console.log('hello');
+var init = require('./init');
+var animate = require('./animate');
+
+animate.start(init());
+
+},{"./animate":2,"./init":7}],5:[function(require,module,exports){
+'use strict';
+
 var THREE = require('three');
-var movePlayer = require('./movePlayer');
 
-var scene, camera, renderer, mesh;
-var meshFloor;
-var torch;
+var getLight = function getLight() {
+  var light = new THREE.PointLight(0xffffff, 0.2);
+  light.position.set(-3, 6, -3);
+  light.castShadow = true;
+  light.shadow.camera.near = 0.1;
+  light.shadow.camera.far = 25;
+  // light.target.position.set(0, 0, 0);
+  return light;
+};
 
+module.exports = getLight;
+
+},{"three":1}],6:[function(require,module,exports){
+'use strict';
+
+var THREE = require('three');
+
+var getRenderer = function getRenderer() {
+  var renderer = new THREE.WebGLRenderer();
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.BasicShadowMap;
+  return renderer;
+};
+
+module.exports = getRenderer;
+
+},{"three":1}],7:[function(require,module,exports){
+'use strict';
+
+var THREE = require('three');
+var controls = require('./controls');
+var getRenderer = require('./getRenderer');
+var getLight = require('./getLight');
+
+var meshFloor, mesh;
 var keyboard = {};
 var player = {
   height: 1.8,
   speed: 0.2,
   turnSpeed: Math.PI * 0.02
 };
-var USE_WIREFRAME = false;
 
 // create the scene
 
-function init() {
-  scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 1000);
+var init = function init() {
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 1000);
+  camera.position.set(0, player.height, -5);
+  camera.lookAt(new THREE.Vector3(0, player.height, 0)); // direction camera is looking
+
 
   // create cubes
   mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({
     color: 0x00ff00,
-    wireframe: USE_WIREFRAME
+    wireframe: false
   }));
   mesh.receiveShadow = true;
   mesh.castShadow = true;
 
   var mesh1 = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({
     color: 0x00ff00,
-    wireframe: USE_WIREFRAME
+    wireframe: false
   }));
   mesh1.position.set(-2, 0, 0);
   mesh1.receiveShadow = true;
@@ -44326,7 +44414,7 @@ function init() {
 
   var mesh2 = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({
     color: 0x00ff00,
-    wireframe: USE_WIREFRAME
+    wireframe: false
   }));
   mesh2.position.set(2, 0, 0);
   mesh2.receiveShadow = true;
@@ -44334,7 +44422,7 @@ function init() {
 
   var mesh3 = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({
     color: 0x00ff00,
-    wireframe: USE_WIREFRAME
+    wireframe: false
   }));
   mesh3.position.set(0, 2, 0);
   mesh3.receiveShadow = true;
@@ -44342,7 +44430,7 @@ function init() {
 
   var mesh4 = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({
     color: 0x00ff00,
-    wireframe: USE_WIREFRAME
+    wireframe: false
   }));
   mesh4.position.set(0, -2, 0);
   mesh4.receiveShadow = true;
@@ -44352,9 +44440,9 @@ function init() {
 
   //camera positions here
 
-  var meshFloor = new THREE.Mesh(new THREE.PlaneGeometry(100, 100, 20, 20), new THREE.MeshPhongMaterial({
+  meshFloor = new THREE.Mesh(new THREE.PlaneGeometry(100, 100, 20, 20), new THREE.MeshPhongMaterial({
     color: 0xffffff,
-    wireframe: USE_WIREFRAME
+    wireframe: false
   }));
   meshFloor.rotation.x -= Math.PI / 2;
   meshFloor.receiveShadow = true;
@@ -44364,66 +44452,19 @@ function init() {
   var ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
   scene.add(ambientLight);
 
-  var light = new THREE.PointLight(0xffffff, 0.2);
-  light.position.set(-3, 6, -3);
-  light.castShadow = true;
-  light.shadow.camera.near = 0.1;
-  light.shadow.camera.far = 25;
+  var light = getLight();
   scene.add(light);
 
-  //trying to greate a torch here.
-  // torch = new THREE.SpotLight(0xffffff,0.5,100);
-  // torch.position.set(0, 0, 0);
-  // torch.castShadow = true;
-  // torch.shadow.camera.near = 0.1;
-  // torch.shadow.camera.far = 25;
-  // scene.add(torch);
-
-  //JAMES BIT STARTS HERE
-  //prepare loader and load the model
-
-
-  //JAMES BIT ENDS HERE
-
-  camera.position.set(0, player.height, -5);
-  camera.lookAt(new THREE.Vector3(0, player.height, 0)); // direction camera is looking
-
-  renderer = new THREE.WebGLRenderer(0, 0, 0);
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.BasicShadowMap;
+  var renderer = getRenderer();
   document.body.appendChild(renderer.domElement);
 
-  animate();
-}
+  return {
+    camera: camera,
+    scene: scene,
+    renderer: renderer
+  };
+};
 
-//render loop at 60fps
-function animate() {
-  requestAnimationFrame(animate);
+module.exports = init;
 
-  mesh.rotation.x += 0.1;
-  mesh.rotation.y += 0.1;
-  movePlayer(keyboard, camera, player);
-
-  //trying to create a torch
-  // torch.position.set(camera.position.x,camera.position.y,camera.position.z);
-  // torch.rotation.set(camera.rotation.x,camera.rotation.y,camera.rotation.z);
-
-
-  renderer.render(scene, camera);
-}
-
-function keyDown(event) {
-  keyboard[event.keyCode] = true;
-}
-
-function keyUp(event) {
-  keyboard[event.keyCode] = false;
-}
-
-window.addEventListener('keydown', keyDown);
-window.addEventListener('keyup', keyUp);
-
-window.onload = init;
-
-},{"./movePlayer":2,"three":1}]},{},[3]);
+},{"./controls":3,"./getLight":5,"./getRenderer":6,"three":1}]},{},[4]);
