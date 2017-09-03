@@ -44457,12 +44457,11 @@ var init = function init() {
 
   scene.add(mesh, mesh1, mesh2, mesh3, mesh4);
 
-  //camera positions here
-
   //let's get the floor
 
   var floor = getFloor();
   scene.add(floor);
+  var objects = [floor];
 
   //lighting
   var ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -44474,10 +44473,19 @@ var init = function init() {
   var renderer = getRenderer();
   document.body.appendChild(renderer.domElement);
 
+  window.addEventListener('resize', onWindowResize, false);
+
+  function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
   return {
     camera: camera,
     scene: scene,
-    renderer: renderer
+    renderer: renderer,
+    objects: objects
   };
 };
 

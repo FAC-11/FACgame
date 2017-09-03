@@ -80,13 +80,11 @@ const init = () => {
 
   scene.add(mesh, mesh1, mesh2, mesh3, mesh4);
 
-  //camera positions here
-
   //let's get the floor
 
   const floor = getFloor();
   scene.add(floor);
-
+  const objects = [floor];
 
   //lighting
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -95,14 +93,22 @@ const init = () => {
   const light = getLight();
   scene.add(light);
 
-
   const renderer = getRenderer();
   document.body.appendChild(renderer.domElement);
+
+  window.addEventListener('resize', onWindowResize, false);
+
+  function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
 
   return {
     camera,
     scene,
-    renderer
+    renderer,
+    objects
   };
 }
 
