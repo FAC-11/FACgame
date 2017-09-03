@@ -15,14 +15,20 @@ const getObj1 = () => {
 };
 
 const getObj2 = () => {
+  const textureLoader = new THREE.TextureLoader();
+  const crateTexture = textureLoader.load("images/crate/crate0_diffuse.png");
+  const crateBumpMap = textureLoader.load("images/crate/crate0_bump.png");
+  const crateNormalMap = textureLoader.load("images/crate/crate0_normal.png");
   const obj2 = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
+    new THREE.BoxGeometry(2, 2, 2),
     new THREE.MeshPhongMaterial({
-      color: 0x00ff00,
-      wireframe: false
+      color: 0xffffff,
+      map: crateTexture,
+      bumpMap: crateBumpMap,
+      normalMap: crateNormalMap
     })
   );
-  obj2.position.set(2, 0, 0);
+  obj2.position.set(5, 1, 0);
   obj2.receiveShadow = true;
   obj2.castShadow = true;
   return obj2;
