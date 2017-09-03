@@ -3,9 +3,8 @@ const controls = require('../controls');
 const getRenderer = require('./getRenderer');
 const getLight = require('./getLight');
 const getFloor = require('./getFloor');
+const cubes = require('../cubes');
 
-
-var mesh
 var player = {
   height: 1.8,
   speed: 0.2,
@@ -24,61 +23,13 @@ const init = () => {
 
 
   // create cubes
-  mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshPhongMaterial({
-      color: 0x00ff00,
-      wireframe: false
-    })
-  );
-  mesh.receiveShadow = true;
-  mesh.castShadow = true;
+  const obj1 = cubes.getObj1();
+  const obj2 = cubes.getObj2();
+  const obj3 = cubes.getObj3();;
+  const obj4 = cubes.getObj4();
+  const obj5 = cubes.getObj5();
 
-  const mesh1 = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshPhongMaterial({
-      color: 0x00ff00,
-      wireframe: false
-    })
-  );
-  mesh1.position.set(-2, 0, 0);
-  mesh1.receiveShadow = true;
-  mesh1.castShadow = true;
-
-  const mesh2 = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshPhongMaterial({
-      color: 0x00ff00,
-      wireframe: false
-    })
-  );
-  mesh2.position.set(2, 0, 0);
-  mesh2.receiveShadow = true;
-  mesh2.castShadow = true;
-
-  const mesh3 = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshPhongMaterial({
-      color: 0x00ff00,
-      wireframe: false
-    })
-  );
-  mesh3.position.set(0, 2, 0);
-  mesh3.receiveShadow = true;
-  mesh3.castShadow = true;
-
-  const mesh4 = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshPhongMaterial({
-      color: 0x00ff00,
-      wireframe: false
-    })
-  );
-  mesh4.position.set(0, -2, 0);
-  mesh4.receiveShadow = true;
-  mesh4.castShadow = true;
-
-  scene.add(mesh, mesh1, mesh2, mesh3, mesh4);
+  scene.add(obj1, obj2, obj3, obj4, obj5);
 
   //let's get the floor
 

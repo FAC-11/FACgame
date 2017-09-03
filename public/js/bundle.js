@@ -44274,7 +44274,7 @@ module.exports = {
   start: start
 };
 
-},{"./controls":3,"./init/getRenderer":7,"./init/init":8}],3:[function(require,module,exports){
+},{"./controls":3,"./init/getRenderer":8,"./init/init":9}],3:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -44330,7 +44330,73 @@ var controls = function controls(keyboard, camera, player) {
 
 module.exports = controls;
 
-},{"./init/init":8,"three":1}],4:[function(require,module,exports){
+},{"./init/init":9,"three":1}],4:[function(require,module,exports){
+'use strict';
+
+var THREE = require('three');
+
+var getObj1 = function getObj1() {
+  var obj1 = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({
+    color: 0x00ff00,
+    wireframe: false
+  }));
+  obj1.position.set(-2, 0, 0);
+  obj1.receiveShadow = true;
+  obj1.castShadow = true;
+  return obj1;
+};
+
+var getObj2 = function getObj2() {
+  var obj2 = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({
+    color: 0x00ff00,
+    wireframe: false
+  }));
+  obj2.position.set(2, 0, 0);
+  obj2.receiveShadow = true;
+  obj2.castShadow = true;
+  return obj2;
+};
+
+var getObj3 = function getObj3() {
+  var obj3 = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({
+    color: 0x00ff00,
+    wireframe: false
+  }));
+  obj3.position.set(0, 2, 0);
+  obj3.receiveShadow = true;
+  obj3.castShadow = true;
+  return obj3;
+};
+
+var getObj4 = function getObj4() {
+  var obj4 = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({
+    color: 0x00ff00,
+    wireframe: false
+  }));
+  obj4.position.set(0, -2, 0);
+  obj4.receiveShadow = true;
+  obj4.castShadow = true;
+  return obj4;
+};
+var getObj5 = function getObj5() {
+  var obj5 = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({
+    color: 0x00ff00,
+    wireframe: false
+  }));
+  obj5.receiveShadow = true;
+  obj5.castShadow = true;
+  return obj5;
+};
+
+module.exports = {
+  getObj1: getObj1,
+  getObj2: getObj2,
+  getObj3: getObj3,
+  getObj4: getObj4,
+  getObj5: getObj5
+};
+
+},{"three":1}],5:[function(require,module,exports){
 'use strict';
 
 var init = require('./init/init');
@@ -44338,7 +44404,7 @@ var animate = require('./animate');
 
 animate.start(init());
 
-},{"./animate":2,"./init/init":8}],5:[function(require,module,exports){
+},{"./animate":2,"./init/init":9}],6:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -44355,7 +44421,7 @@ var getFloor = function getFloor() {
 
 module.exports = getFloor;
 
-},{"three":1}],6:[function(require,module,exports){
+},{"three":1}],7:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -44372,7 +44438,7 @@ var getLight = function getLight() {
 
 module.exports = getLight;
 
-},{"three":1}],7:[function(require,module,exports){
+},{"three":1}],8:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -44388,7 +44454,7 @@ var getRenderer = function getRenderer() {
 
 module.exports = getRenderer;
 
-},{"three":1}],8:[function(require,module,exports){
+},{"three":1}],9:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -44396,8 +44462,8 @@ var controls = require('../controls');
 var getRenderer = require('./getRenderer');
 var getLight = require('./getLight');
 var getFloor = require('./getFloor');
+var cubes = require('../cubes');
 
-var mesh;
 var player = {
   height: 1.8,
   speed: 0.2,
@@ -44416,46 +44482,13 @@ var init = function init() {
 
 
   // create cubes
-  mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({
-    color: 0x00ff00,
-    wireframe: false
-  }));
-  mesh.receiveShadow = true;
-  mesh.castShadow = true;
+  var obj1 = cubes.getObj1();
+  var obj2 = cubes.getObj2();
+  var obj3 = cubes.getObj3();;
+  var obj4 = cubes.getObj4();
+  var obj5 = cubes.getObj5();
 
-  var mesh1 = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({
-    color: 0x00ff00,
-    wireframe: false
-  }));
-  mesh1.position.set(-2, 0, 0);
-  mesh1.receiveShadow = true;
-  mesh1.castShadow = true;
-
-  var mesh2 = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({
-    color: 0x00ff00,
-    wireframe: false
-  }));
-  mesh2.position.set(2, 0, 0);
-  mesh2.receiveShadow = true;
-  mesh2.castShadow = true;
-
-  var mesh3 = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({
-    color: 0x00ff00,
-    wireframe: false
-  }));
-  mesh3.position.set(0, 2, 0);
-  mesh3.receiveShadow = true;
-  mesh3.castShadow = true;
-
-  var mesh4 = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({
-    color: 0x00ff00,
-    wireframe: false
-  }));
-  mesh4.position.set(0, -2, 0);
-  mesh4.receiveShadow = true;
-  mesh4.castShadow = true;
-
-  scene.add(mesh, mesh1, mesh2, mesh3, mesh4);
+  scene.add(obj1, obj2, obj3, obj4, obj5);
 
   //let's get the floor
 
@@ -44491,4 +44524,4 @@ var init = function init() {
 
 module.exports = init;
 
-},{"../controls":3,"./getFloor":5,"./getLight":6,"./getRenderer":7,"three":1}]},{},[4]);
+},{"../controls":3,"../cubes":4,"./getFloor":6,"./getLight":7,"./getRenderer":8,"three":1}]},{},[5]);
