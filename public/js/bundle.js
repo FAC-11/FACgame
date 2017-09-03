@@ -44589,13 +44589,13 @@ module.exports = getRenderer;
 
 var THREE = require('three');
 var PointerLockControls = require('three-pointerlock');
-var getMeshes = require('./meshes.js');
-var controls = require('../controls');
 var getFloor = require('./getFloor');
 var getLight = require('./getLight');
+var getMeshes = require('./meshes.js');
+var controls = require('../controls');
 var getRenderer = require('./getRenderer');
 
-module.exports = function () {
+var initialise = function initialise() {
 
   var scene = new THREE.Scene();
   //our camera
@@ -44606,7 +44606,7 @@ module.exports = function () {
   controls.init(scene, pointerLockControls);
   // our meshesObjects
 
-  var meshOne = getMeshes.getMeshOne();
+  var meshOne = getMeshes[0]();
   var meshTwo = getMeshes.getMeshTwo();
   var meshThree = getMeshes.getMesh3();
   var meshFour = getMeshes.getMeshFour();
@@ -44616,7 +44616,7 @@ module.exports = function () {
 
   //now let's get the floor
   var floor = getFloor();
-  scene.add(getFloor());
+  scene.add(floor);
   var objects = [floor];
 
   //and the lights
@@ -44647,6 +44647,8 @@ module.exports = function () {
     objects: objects
   };
 };
+
+module.exports = initialise;
 
 },{"../controls":4,"./getFloor":5,"./getLight":6,"./getRenderer":7,"./meshes.js":9,"three":2,"three-pointerlock":1}],9:[function(require,module,exports){
 'use strict';
