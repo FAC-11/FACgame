@@ -1,5 +1,5 @@
 const THREE = require('three');
-const init = require('./init');
+const init = require('./init/init');
 
 const controls = (keyboard, camera, player) => {
 

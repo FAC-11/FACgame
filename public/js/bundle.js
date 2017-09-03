@@ -44243,8 +44243,8 @@
 'use strict';
 
 var controls = require('./controls');
-var init = require('./init');
-var getRenderer = require('./getRenderer');
+var init = require('./init/init');
+var getRenderer = require('./init/getRenderer');
 
 var start = function start(options) {
   var camera = options.camera,
@@ -44274,11 +44274,11 @@ module.exports = {
   start: start
 };
 
-},{"./controls":3,"./getRenderer":6,"./init":7}],3:[function(require,module,exports){
+},{"./controls":3,"./init/getRenderer":7,"./init/init":8}],3:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
-var init = require('./init');
+var init = require('./init/init');
 
 var controls = function controls(keyboard, camera, player) {
 
@@ -44330,15 +44330,32 @@ var controls = function controls(keyboard, camera, player) {
 
 module.exports = controls;
 
-},{"./init":7,"three":1}],4:[function(require,module,exports){
+},{"./init/init":8,"three":1}],4:[function(require,module,exports){
 'use strict';
 
-var init = require('./init');
+var init = require('./init/init');
 var animate = require('./animate');
 
 animate.start(init());
 
-},{"./animate":2,"./init":7}],5:[function(require,module,exports){
+},{"./animate":2,"./init/init":8}],5:[function(require,module,exports){
+'use strict';
+
+var THREE = require('three');
+
+var getFloor = function getFloor() {
+  var floor = new THREE.Mesh(new THREE.PlaneGeometry(100, 100, 20, 20), new THREE.MeshPhongMaterial({
+    color: 0xffffff,
+    wireframe: false
+  }));
+  floor.rotation.x -= Math.PI / 2;
+  floor.receiveShadow = true;
+  return floor;
+};
+
+module.exports = getFloor;
+
+},{"three":1}],6:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -44355,7 +44372,7 @@ var getLight = function getLight() {
 
 module.exports = getLight;
 
-},{"three":1}],6:[function(require,module,exports){
+},{"three":1}],7:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -44371,16 +44388,16 @@ var getRenderer = function getRenderer() {
 
 module.exports = getRenderer;
 
-},{"three":1}],7:[function(require,module,exports){
+},{"three":1}],8:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
-var controls = require('./controls');
+var controls = require('../controls');
 var getRenderer = require('./getRenderer');
 var getLight = require('./getLight');
+var getFloor = require('./getFloor');
 
-var meshFloor, mesh;
-var keyboard = {};
+var mesh;
 var player = {
   height: 1.8,
   speed: 0.2,
@@ -44390,7 +44407,9 @@ var player = {
 // create the scene
 
 var init = function init() {
+  //let's create the scene
   var scene = new THREE.Scene();
+  //and our camera
   var camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 1000);
   camera.position.set(0, player.height, -5);
   camera.lookAt(new THREE.Vector3(0, player.height, 0)); // direction camera is looking
@@ -44440,13 +44459,10 @@ var init = function init() {
 
   //camera positions here
 
-  meshFloor = new THREE.Mesh(new THREE.PlaneGeometry(100, 100, 20, 20), new THREE.MeshPhongMaterial({
-    color: 0xffffff,
-    wireframe: false
-  }));
-  meshFloor.rotation.x -= Math.PI / 2;
-  meshFloor.receiveShadow = true;
-  scene.add(meshFloor);
+  //let's get the floor
+
+  var floor = getFloor();
+  scene.add(floor);
 
   //lighting
   var ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -44467,4 +44483,4 @@ var init = function init() {
 
 module.exports = init;
 
-},{"./controls":3,"./getLight":5,"./getRenderer":6,"three":1}]},{},[4]);
+},{"../controls":3,"./getFloor":5,"./getLight":6,"./getRenderer":7,"three":1}]},{},[4]);

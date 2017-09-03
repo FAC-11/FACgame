@@ -1,6 +1,6 @@
 const controls = require('./controls');
-const init = require('./init');
-const getRenderer = require('./getRenderer');
+const init = require('./init/init');
+const getRenderer = require('./init/getRenderer');
 
 const start = (options) => {
   const {

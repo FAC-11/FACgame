@@ -1,11 +1,11 @@
 const THREE = require('three');
-const controls = require('./controls');
+const controls = require('../controls');
 const getRenderer = require('./getRenderer');
 const getLight = require('./getLight');
+const getFloor = require('./getFloor');
 
 
-var meshFloor, mesh
-var keyboard = {};
+var mesh
 var player = {
   height: 1.8,
   speed: 0.2,
@@ -15,7 +15,9 @@ var player = {
 // create the scene
 
 const init = () => {
+  //let's create the scene
   const scene = new THREE.Scene();
+  //and our camera
   const camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 1000);
   camera.position.set(0, player.height, -5);
   camera.lookAt(new THREE.Vector3(0, player.height, 0)); // direction camera is looking
@@ -80,16 +82,10 @@ const init = () => {
 
   //camera positions here
 
-  meshFloor = new THREE.Mesh(
-    new THREE.PlaneGeometry(100, 100, 20, 20),
-    new THREE.MeshPhongMaterial({
-      color: 0xffffff,
-      wireframe: false
-    })
-  );
-  meshFloor.rotation.x -= Math.PI / 2;
-  meshFloor.receiveShadow = true;
-  scene.add(meshFloor);
+  //let's get the floor
+
+  const floor = getFloor();
+  scene.add(floor);
 
 
   //lighting
