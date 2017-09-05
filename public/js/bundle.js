@@ -42953,6 +42953,193 @@ module.exports = function (THREE) {
   };
 };
 },{}],4:[function(require,module,exports){
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * Source: https://github.com/mrdoob/three.js/blob/master/examples/js/controls/PointerLockControls.js
+ *
+ * Adopted to common js by Javier Zapata
+ */
+
+module.exports = function ( camera ) {
+
+  var THREE = window.THREE || require('three');
+
+  var scope = this;
+
+  camera.rotation.set( 0, 0, 0 );
+
+  var pitchObject = new THREE.Object3D();
+  pitchObject.add( camera );
+
+  var yawObject = new THREE.Object3D();
+  yawObject.position.y = 10;
+  yawObject.add( pitchObject );
+
+  var moveForward = false;
+  var moveBackward = false;
+  var moveLeft = false;
+  var moveRight = false;
+
+  var isOnObject = false;
+  var canJump = false;
+
+  var prevTime = performance.now();
+
+  var velocity = new THREE.Vector3();
+
+  var PI_2 = Math.PI / 2;
+
+  var onMouseMove = function ( event ) {
+
+    if ( scope.enabled === false ) return;
+
+    var movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
+    var movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
+
+    yawObject.rotation.y -= movementX * 0.002;
+    pitchObject.rotation.x -= movementY * 0.002;
+
+    pitchObject.rotation.x = Math.max( - PI_2, Math.min( PI_2, pitchObject.rotation.x ) );
+
+  };
+
+  var onKeyDown = function ( event ) {
+
+    switch ( event.keyCode ) {
+
+      case 38: // up
+      case 87: // w
+        moveForward = true;
+        break;
+
+      case 37: // left
+      case 65: // a
+        moveLeft = true; break;
+
+      case 40: // down
+      case 83: // s
+        moveBackward = true;
+        break;
+
+      case 39: // right
+      case 68: // d
+        moveRight = true;
+        break;
+
+      case 32: // space
+        if ( canJump === true ) velocity.y += 350;
+        canJump = false;
+        break;
+
+    }
+
+  };
+
+  var onKeyUp = function ( event ) {
+
+    switch( event.keyCode ) {
+
+      case 38: // up
+      case 87: // w
+        moveForward = false;
+        break;
+
+      case 37: // left
+      case 65: // a
+        moveLeft = false;
+        break;
+
+      case 40: // down
+      case 83: // s
+        moveBackward = false;
+        break;
+
+      case 39: // right
+      case 68: // d
+        moveRight = false;
+        break;
+
+    }
+
+  };
+
+  document.addEventListener( 'mousemove', onMouseMove, false );
+  document.addEventListener( 'keydown', onKeyDown, false );
+  document.addEventListener( 'keyup', onKeyUp, false );
+
+  this.enabled = false;
+
+  this.getObject = function () {
+
+    return yawObject;
+
+  };
+
+  this.isOnObject = function ( boolean ) {
+
+    isOnObject = boolean;
+    canJump = boolean;
+
+  };
+
+  this.getDirection = function() {
+
+    // assumes the camera itself is not rotated
+
+    var direction = new THREE.Vector3( 0, 0, -1 );
+    var rotation = new THREE.Euler( 0, 0, 0, "YXZ" );
+
+    return function( v ) {
+
+      rotation.set( pitchObject.rotation.x, yawObject.rotation.y, 0 );
+
+      v.copy( direction ).applyEuler( rotation );
+
+      return v;
+
+    };
+
+  }();
+
+  this.update = function () {
+
+    if ( scope.enabled === false ) return;
+
+    var time = performance.now();
+    var delta = ( time - prevTime ) / 1000;
+
+    velocity.x -= velocity.x * 10.0 * delta;
+    velocity.z -= velocity.z * 10.0 * delta;
+
+    velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
+
+    if ( moveForward ) velocity.z -= 400.0 * delta;
+    if ( moveBackward ) velocity.z += 400.0 * delta;
+
+    if ( moveLeft ) velocity.x -= 400.0 * delta;
+    if ( moveRight ) velocity.x += 400.0 * delta;
+
+    if ( isOnObject === true ) {
+      velocity.y = Math.max( 0, velocity.y );
+    }
+
+    yawObject.translateX( velocity.x * delta );
+    yawObject.translateY( velocity.y * delta );
+    yawObject.translateZ( velocity.z * delta );
+
+    if ( yawObject.position.y < 10 ) {
+
+      velocity.y = 0;
+      yawObject.position.y = 10;
+
+      canJump = true;
+    }
+
+    prevTime = time;
+  };
+};
+
+},{"three":5}],5:[function(require,module,exports){
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
 	typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -87193,7 +87380,7 @@ module.exports = function (THREE) {
 
 })));
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 'use strict';
 
 var controls = require('./controls');
@@ -87228,13 +87415,20 @@ module.exports = {
   start: start
 };
 
-},{"./controls":6,"./init/getRenderer":11,"./init/init":12}],6:[function(require,module,exports){
+},{"./controls":7,"./init/getRenderer":13,"./init/init":14}],7:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
 var init = require('./init/init');
+var velocity = new THREE.Vector3();
 
 var controls = function controls(keyboard, camera, player) {
+  var canJump = false;
+
+  // if (keyboard[32]) { //space
+  //   if ( canJump === true ) velocity.y += 10;
+  //       canJump = false;
+  // }
 
   if (keyboard[87]) {
     //W key
@@ -87270,6 +87464,19 @@ var controls = function controls(keyboard, camera, player) {
     camera.rotation.y += player.turnSpeed;
   }
 
+  if (keyboard[32]) {
+    //space bar
+    console.log("You pressed space!");
+    var bullet = new THREE.Mesh(new THREE.SphereGeometry(2, 8, 8), new THREE.MeshBasicMaterial());
+
+    bullet.alive = true;
+    setTimeout(function () {
+      bullet.alive = false;
+      scene.remove(bullet);
+    }, 1000);
+    scene.add(bullet);
+  }
+
   var keyDown = function keyDown(event) {
     keyboard[event.keyCode] = true;
   };
@@ -87284,7 +87491,7 @@ var controls = function controls(keyboard, camera, player) {
 
 module.exports = controls;
 
-},{"./init/init":12,"three":4}],7:[function(require,module,exports){
+},{"./init/init":14,"three":5}],8:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -87387,7 +87594,7 @@ module.exports = {
 //
 // })
 
-},{"three":4,"three-mtl-loader":1,"three-obj-loader":3}],8:[function(require,module,exports){
+},{"three":5,"three-mtl-loader":1,"three-obj-loader":3}],9:[function(require,module,exports){
 'use strict';
 
 var init = require('./init/init');
@@ -87395,7 +87602,20 @@ var animate = require('./animate');
 
 animate.start(init());
 
-},{"./animate":5,"./init/init":12}],9:[function(require,module,exports){
+},{"./animate":6,"./init/init":14}],10:[function(require,module,exports){
+"use strict";
+
+var _scene = void 0;
+
+module.exports = function () {
+  return _scene;
+};
+
+module.exports.init = function (scene) {
+  _scene = scene;
+};
+
+},{}],11:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -87437,7 +87657,7 @@ var getFloor = function getFloor() {
 
 module.exports = getFloor;
 
-},{"three":4,"three-mtl-loader":1,"three-obj-loader":3}],10:[function(require,module,exports){
+},{"three":5,"three-mtl-loader":1,"three-obj-loader":3}],12:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -87454,7 +87674,7 @@ var getLight = function getLight() {
 
 module.exports = getLight;
 
-},{"three":4}],11:[function(require,module,exports){
+},{"three":5}],13:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -87470,7 +87690,7 @@ var getRenderer = function getRenderer() {
 
 module.exports = getRenderer;
 
-},{"three":4}],12:[function(require,module,exports){
+},{"three":5}],14:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -87482,6 +87702,9 @@ var cubes = require('../cubes');
 var OBJLoader = require('three-obj-loader');
 OBJLoader(THREE);
 var MTLLoader = require('three-mtl-loader');
+var getScene = require('../getScene');
+var pointerLocks = require('../pointerLockers');
+var PointerLockControls = require('three-pointerlock');
 
 var player = {
   height: 1.8,
@@ -87498,7 +87721,10 @@ var init = function init() {
   var camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 1000);
   camera.position.set(0, player.height, -5);
   camera.lookAt(new THREE.Vector3(0, player.height, 0)); // direction camera is looking
+  getScene.init(scene);
+  var pointerLockControls = new PointerLockControls(camera);
 
+  scene.add(pointerLockControls.getObject());
 
   // create cubes
   var obj1 = cubes.getObj1();
@@ -87556,4 +87782,17 @@ var init = function init() {
 
 module.exports = init;
 
-},{"../controls":6,"../cubes":7,"./getFloor":9,"./getLight":10,"./getRenderer":11,"three":4,"three-mtl-loader":1,"three-obj-loader":3}]},{},[8]);
+},{"../controls":7,"../cubes":8,"../getScene":10,"../pointerLockers":15,"./getFloor":11,"./getLight":12,"./getRenderer":13,"three":5,"three-mtl-loader":1,"three-obj-loader":3,"three-pointerlock":4}],15:[function(require,module,exports){
+"use strict";
+
+var _pointerLockControls = void 0;
+
+module.exports = function () {
+  return _pointerLockControls.getObject();
+};
+
+module.exports.init = function (pointerLockControls) {
+  _pointerLockControls = pointerLockControls;
+};
+
+},{}]},{},[9]);

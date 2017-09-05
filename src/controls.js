@@ -5,10 +5,10 @@ var velocity = new THREE.Vector3();
 const controls = (keyboard, camera, player) => {
   const canJump = false;
 
-  if (keyboard[32]) { //space
-    if ( canJump === true ) velocity.y += 10;
-        canJump = false;
-  }
+  // if (keyboard[32]) { //space
+  //   if ( canJump === true ) velocity.y += 10;
+  //       canJump = false;
+  // }
 
   if (keyboard[87]) { //W key
     camera.position.x -= Math.sin(camera.rotation.y) * player.speed;
@@ -36,6 +36,20 @@ const controls = (keyboard, camera, player) => {
 
   if (keyboard[39]) { //right arrow key
     camera.rotation.y += player.turnSpeed;
+  }
+
+  if (keyboard[32]) { //space bar
+    console.log("You pressed space!");
+    var bullet = new THREE.Mesh(
+      new THREE.SphereGeometry(2, 8, 8),
+      new THREE.MeshBasicMaterial());
+
+      bullet.alive = true;
+      setTimeout(function() {
+        bullet.alive = false;
+        scene.remove(bullet);
+      }, 1000);
+      scene.add(bullet);
   }
 
   const keyDown = (event) => {
