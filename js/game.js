@@ -1,7 +1,11 @@
+
+
 var scene, camera, renderer, mesh;
 var meshFloor;
 var torch;
 
+var crate, crateTexture, crateNormalMap, crateBumpMap;
+var oLoader, material2 ;
 
 var keyboard = {};
 var player = {
@@ -100,6 +104,14 @@ function init() {
   light.shadow.camera.far = 25;
   scene.add(light);
 
+crate = new THREE.Mesh(
+        new THREE.BoxGeometry(3,3,3),
+        new THREE.MeshPhongMaterial({color:0xffffff})
+);
+scene.add(crate);
+crate.position.set(4,3/2,4);
+crate.receiveShadow = true;
+crate.castShadow = true;
   //trying to greate a torch here.
   // torch = new THREE.SpotLight(0xffffff,0.5,100);
   // torch.position.set(0, 0, 0);
@@ -108,30 +120,36 @@ function init() {
   // torch.shadow.camera.far = 25;
   // scene.add(torch);
 
-//JAMES BIT STARTS HERE
-  //prepare loader and load the model
-   var oLoader = new THREE.OBJLoader2();
-  oLoader.load('../meshes/MountainTerrain.obj', function(object, materials) {
-  // var material = new THREE.MeshFaceMaterial(materials);
-   var material2 = new THREE.MeshStandardMaterial();
-  object.traverse( function(child) {
-  if (child instanceof THREE.Mesh) {
-  // apply custom material
-  child.material = material2;
-  // enable casting shadows
-  child.castShadow = true;
-  child.receiveShadow = true;
-  }
-  });
-  object.position.x = 0;
-  object.position.y = 10;
-  object.position.z = -30;
-  object.scale.set(0.1, 0.1, 0.1);
-  scene.add(object);
-  });
 
-  //JAMES BIT ENDS HERE 
 
+// //JAMES BIT STARTS HERE
+//   // prepare loader and load the model
+//     oLoader = new THREE.OBJLoader2();
+//   oLoader.load('meshes/MountainTerrain.obj', function(object, materials) {
+//   // var material = new THREE.MeshFaceMaterial(materials);
+//     material2 = new THREE.MeshStandardMaterial();
+//     //Go through all children of the loaded object and search for a Mesh
+//   object.traverse(function(child) {
+//     //This allow us to check if the children is an instance of the Mesh constructor
+//   if (child instanceof THREE.Mesh) {
+//   // apply custom material
+//   child.material = material2;
+//   // enable casting shadows
+//   child.castShadow = true;
+//   child.receiveShadow = true;
+//   }
+//   });
+//   object.position.x = 0;
+//   object.position.y = 10;
+//   object.position.z = -30;
+//   object.scale.set(0.1, 0.1, 0.1);
+//   scene.add(object);
+//   });
+
+
+  //JAMES BIT ENDS HERE
+
+//camera definition then render
   camera.position.set(0, player.height, -5);
   camera.lookAt(new THREE.Vector3(0, player.height, 0)); // direction camera is looking
 
