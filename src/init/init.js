@@ -7,6 +7,9 @@ const cubes = require('../cubes');
 const OBJLoader = require('three-obj-loader');
 OBJLoader(THREE);
 const MTLLoader = require('three-mtl-loader');
+const getScene = require('../getScene');
+const pointerLocks = require('../pointerLockers');
+const PointerLockControls = require('three-pointerlock');
 
 var player = {
   height: 1.8,
@@ -23,7 +26,10 @@ const init = () => {
   const camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 1000);
   camera.position.set(0, player.height, -5);
   camera.lookAt(new THREE.Vector3(0, player.height, 0)); // direction camera is looking
+  getScene.init(scene);
+  const pointerLockControls = new PointerLockControls(camera);
 
+  scene.add(pointerLockControls.getObject());
 
   // create cubes
   const obj1 = cubes.getObj1();

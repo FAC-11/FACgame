@@ -1,7 +1,14 @@
 const THREE = require('three');
 const init = require('./init/init');
+var velocity = new THREE.Vector3();
 
 const controls = (keyboard, camera, player) => {
+  const canJump = false;
+
+  if (keyboard[32]) { //space
+    if ( canJump === true ) velocity.y += 10;
+        canJump = false;
+  }
 
   if (keyboard[87]) { //W key
     camera.position.x -= Math.sin(camera.rotation.y) * player.speed;
