@@ -8,33 +8,39 @@ const OBJLoader = require('three-obj-loader');
 OBJLoader(THREE);
 const MTLLoader = require('three-mtl-loader');
 const getScene = require('../getScene');
-const pointerLocks = require('../pointerLockers');
+const pointerLocks = require('../pointLockers');
 const PointerLockControls = require('three-pointerlock');
+const letsMove = require('../letsMove');
 
-var player = {
-  height: 1.8,
-  speed: 0.2,
-  turnSpeed: Math.PI * 0.02
-};
+// var player = {
+//   height: 1.8,
+//   speed: 0.2,
+//   turnSpeed: Math.PI * 0.02
+// };
 
 // create the scene
 
 const init = () => {
+    // const camera = new THREE.PerspectiveCamera(75, -50, 1, 1000);
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
   //let's create the scene
   const scene = new THREE.Scene();
   //and our camera
-  const camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 1000);
-  camera.position.set(0, player.height, -5);
-  camera.lookAt(new THREE.Vector3(0, player.height, 0)); // direction camera is looking
+
+  //camera.position.set(0, 0, -5);
+  // camera.lookAt(0, 500, 0); // direction camera is looking
   getScene.init(scene);
   const pointerLockControls = new PointerLockControls(camera);
 
   scene.add(pointerLockControls.getObject());
+  controls.init(scene, pointerLockControls);
+  pointerLocks.init(pointerLockControls);
 
+  const raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, - 1, 0), 0, 10);
   // create cubes
   const obj1 = cubes.getObj1();
   const obj2 = cubes.getObj2();
-  const obj3 = cubes.getObj3();;
+  const obj3 = cubes.getObj3();
   const obj4 = cubes.getObj4();
   const obj5 = cubes.getObj5();
 
@@ -82,6 +88,7 @@ const init = () => {
     camera,
     scene,
     renderer,
+    raycaster,
     objects
   };
 }

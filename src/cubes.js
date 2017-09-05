@@ -22,7 +22,7 @@ const getObj1 = () => {
   obj1.position.set(3, 1, 0);
   obj1.receiveShadow = true;
   obj1.castShadow = true;
-  return obj1
+  return obj1;
 };
 
 const getObj2 = () => {

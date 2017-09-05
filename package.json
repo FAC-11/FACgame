@@ -23,6 +23,7 @@
     "http-server": "^0.10.0",
     "install": "^0.10.1",
     "npm": "^5.4.0",
+    "raf-js": "^1.0.1",
     "socket.io": "^2.0.3",
     "socket.io-client": "^2.0.3",
     "three": "^0.87.1",
