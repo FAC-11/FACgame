@@ -87388,6 +87388,7 @@ var init = require('./init/init');
 var getRenderer = require('./init/getRenderer');
 var letsMove = require('./letsMove');
 var pointLockers = require('./pointLockers');
+var blocker = require('./blocker');
 
 var start = function start(options) {
   var camera = options.camera,
@@ -87407,13 +87408,15 @@ var start = function start(options) {
 
   var animate = function animate() {
     requestAnimationFrame(animate);
+    if (!blocker.enabled) {
 
-    var time = performance.now();
-    letsMove(objects, raycaster, prevTime, time);
+      var time = performance.now();
+      letsMove(objects, raycaster, prevTime, time);
+      //
+      // const player = pointLockers();
 
-    var player = pointLockers();
-
-    prevTime = time;
+      prevTime = time;
+    }
 
     // mesh.rotation.x += 0.1;
     // mesh.rotation.y += 0.1;
@@ -87427,7 +87430,56 @@ module.exports = {
   start: start
 };
 
-},{"./init/getRenderer":13,"./init/init":14,"./letsMove":15,"./pointLockers":16}],7:[function(require,module,exports){
+},{"./blocker":7,"./init/getRenderer":14,"./init/init":15,"./letsMove":16,"./pointLockers":17}],7:[function(require,module,exports){
+'use strict';
+
+// sets up screen blocker (the darkened screen with instructions you see when you press esc)
+module.exports = function (controls) {
+  var blocker = document.getElementById('blocker');
+  var instructions = document.getElementById('instructions');
+  // http://www.html5rocks.com/en/tutorials/pointerlock/intro/
+  var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
+
+  if (havePointerLock) {
+    var element = document.body;
+    var pointerlockchange = function pointerlockchange() {
+      if (document.pointerLockElement === element || document.mozPointerLockElement === element || document.webkitPointerLockElement === element) {
+        module.exports.enabled = false;
+        controls.enabled = true;
+        blocker.style.display = 'none';
+      } else {
+        controls.enabled = false;
+        blocker.style.display = '-webkit-box';
+        blocker.style.display = '-moz-box';
+        blocker.style.display = 'box';
+        instructions.style.display = '';
+      }
+    };
+    var pointerlockerror = function pointerlockerror() {
+      instructions.style.display = '';
+    };
+    // Hook pointer lock state change events
+    document.addEventListener('pointerlockchange', pointerlockchange, false);
+    document.addEventListener('mozpointerlockchange', pointerlockchange, false);
+    document.addEventListener('webkitpointerlockchange', pointerlockchange, false);
+    document.addEventListener('pointerlockerror', pointerlockerror, false);
+    document.addEventListener('mozpointerlockerror', pointerlockerror, false);
+    document.addEventListener('webkitpointerlockerror', pointerlockerror, false);
+
+    instructions.addEventListener('click', function () {
+      instructions.style.display = 'none';
+      // Ask the browser to lock the pointer
+      element.requestPointerLock = element.requestPointerLock || element.mozRequestPointerLock || element.webkitRequestPointerLock;
+      element.requestPointerLock();
+    }, false);
+  } else {
+    instructions.innerHTML = 'Your browser doesn\'t seem to support Pointer Lock API';
+  }
+};
+
+module.exports.enabled = true;
+
+},{}],8:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -87493,6 +87545,7 @@ var init = function init() {
   //document.addEventListener( 'mousemove', onMouseMove, false );
   document.addEventListener('keydown', onKeyDown, false);
   document.addEventListener('keyup', onKeyUp, false);
+  // document.addEventListener('click', shoot, false);
 };
 var movements = {
   forward: false,
@@ -87564,10 +87617,11 @@ module.exports = {
 //
 // module.exports = controls;
 
-},{"three":5}],8:[function(require,module,exports){
+},{"three":5}],9:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
+var PointerLockControls = require('three-pointerlock');
 var OBJLoader = require('three-obj-loader');
 OBJLoader(THREE);
 var MTLLoader = require('three-mtl-loader');
@@ -87577,14 +87631,14 @@ var getObj1 = function getObj1() {
   var crateTexture = textureLoader.load("images/crate/crate0_diffuse.png");
   var crateBumpMap = textureLoader.load("images/crate/crate0_bump.png");
   var crateNormalMap = textureLoader.load("images/crate/crate0_normal.png");
-  var obj1 = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), new THREE.MeshPhongMaterial({
+  var obj1 = new THREE.Mesh(new THREE.BoxGeometry(40, 40, 40), new THREE.MeshPhongMaterial({
     color: 0xffffff,
     map: crateTexture,
     bumpMap: crateBumpMap,
     normalMap: crateNormalMap,
     wireframe: false
   }));
-  obj1.position.set(3, 1, 0);
+  obj1.position.set(180, 35, 25);
   obj1.receiveShadow = true;
   obj1.castShadow = true;
   return obj1;
@@ -87595,14 +87649,14 @@ var getObj2 = function getObj2() {
   var crateTexture = textureLoader.load("images/crate/crate0_diffuse.png");
   var crateBumpMap = textureLoader.load("images/crate/crate0_bump.png");
   var crateNormalMap = textureLoader.load("images/crate/crate0_normal.png");
-  var obj2 = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), new THREE.MeshPhongMaterial({
+  var obj2 = new THREE.Mesh(new THREE.BoxGeometry(40, 40, 40), new THREE.MeshPhongMaterial({
     color: 0xffffff,
     map: crateTexture,
     bumpMap: crateBumpMap,
     normalMap: crateNormalMap,
     wireframe: false
   }));
-  obj2.position.set(5, 1, 0);
+  obj2.position.set(200, -5, 25);
   obj2.receiveShadow = true;
   obj2.castShadow = true;
   return obj2;
@@ -87613,34 +87667,50 @@ var getObj3 = function getObj3() {
   var crateTexture = textureLoader.load("images/crate/crate0_diffuse.png");
   var crateBumpMap = textureLoader.load("images/crate/crate0_bump.png");
   var crateNormalMap = textureLoader.load("images/crate/crate0_normal.png");
-  var obj3 = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), new THREE.MeshPhongMaterial({
+  var obj3 = new THREE.Mesh(new THREE.BoxGeometry(40, 40, 40), new THREE.MeshPhongMaterial({
     color: 0xffffff,
     map: crateTexture,
     bumpMap: crateBumpMap,
     normalMap: crateNormalMap,
     wireframe: false
   }));
-  obj3.position.set(4, 3, 0);
+  obj3.position.set(160, -5, 25);
   obj3.receiveShadow = true;
   obj3.castShadow = true;
   return obj3;
 };
 
 var getObj4 = function getObj4() {
-  var obj4 = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({
-    color: 0x00ff00,
+  var textureLoader = new THREE.TextureLoader();
+  var crateTexture = textureLoader.load("images/crate/crate0_diffuse.png");
+  var crateBumpMap = textureLoader.load("images/crate/crate0_bump.png");
+  var crateNormalMap = textureLoader.load("images/crate/crate0_normal.png");
+  var obj4 = new THREE.Mesh(new THREE.BoxGeometry(40, 40, 40), new THREE.MeshPhongMaterial({
+    color: 0xffffff,
+    map: crateTexture,
+    bumpMap: crateBumpMap,
+    normalMap: crateNormalMap,
     wireframe: false
   }));
-  obj4.position.set(0, -2, 0);
+  obj4.position.set(50, -5, 25);
   obj4.receiveShadow = true;
   obj4.castShadow = true;
   return obj4;
 };
 var getObj5 = function getObj5() {
-  var obj5 = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({
-    color: 0x00ff00,
+  var textureLoader = new THREE.TextureLoader();
+  var crateTexture = textureLoader.load("images/crate/crate0_diffuse.png");
+  var crateBumpMap = textureLoader.load("images/crate/crate0_bump.png");
+  var crateNormalMap = textureLoader.load("images/crate/crate0_normal.png");
+  var obj5 = new THREE.Mesh(new THREE.BoxGeometry(40, 40, 40), new THREE.MeshPhongMaterial({
+    color: 0xffffff,
+    map: crateTexture,
+    bumpMap: crateBumpMap,
+    normalMap: crateNormalMap,
     wireframe: false
   }));
+
+  obj5.position.set(10, -5, 25);
   obj5.receiveShadow = true;
   obj5.castShadow = true;
   return obj5;
@@ -87667,7 +87737,7 @@ module.exports = {
 //
 // })
 
-},{"three":5,"three-mtl-loader":1,"three-obj-loader":3}],9:[function(require,module,exports){
+},{"three":5,"three-mtl-loader":1,"three-obj-loader":3,"three-pointerlock":4}],10:[function(require,module,exports){
 'use strict';
 
 var init = require('./init/init');
@@ -87675,7 +87745,7 @@ var animate = require('./animate');
 
 animate.start(init());
 
-},{"./animate":6,"./init/init":14}],10:[function(require,module,exports){
+},{"./animate":6,"./init/init":15}],11:[function(require,module,exports){
 "use strict";
 
 var _scene = void 0;
@@ -87688,51 +87758,43 @@ module.exports.init = function (scene) {
   _scene = scene;
 };
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
-var OBJLoader = require('three-obj-loader');
-var MTLLoader = require('three-mtl-loader');
+// const OBJLoader = require('three-obj-loader');
+// const MTLLoader = require('three-mtl-loader');
+
 
 var getFloor = function getFloor() {
-  var floor = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000, 10, 10), new THREE.MeshPhongMaterial({
-    color: 0xffffff,
-    wireframe: false
-  }));
-
+  var floorTexture = new THREE.ImageUtils.loadTexture('images/grid.png');
+  floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
+  floorTexture.repeat.set(50, 50);
+  var geometry = new THREE.PlaneBufferGeometry(2500, 2500, 5, 5);
+  geometry.applyMatrix(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
+  var material = new THREE.MeshLambertMaterial({ map: floorTexture });
+  var floor = new THREE.Mesh(geometry, material);
   floor.position.y = -25;
-  floor.rotation.x -= Math.PI / 2;
+
+  floor.castShadow = false;
   floor.receiveShadow = true;
   return floor;
+  // const floor = new THREE.Mesh(
+  //   new THREE.PlaneGeometry(2500, 2500, 10, 10),
+  //   new THREE.MeshPhongMaterial({
+  //     color: 0xffffff,
+  //     wireframe: false
+  //   })
+  // );
+  // // floor.position.y = -5;
+  // floor.rotation.x -= Math.PI / 2;
+  // floor.receiveShadow = true;
+  // return floor;
 };
-
-// const getFloor = () => {
-//   const floor = new THREE.OBJLoader2.WWOBJLoader2();
-//   floor.load('images/MountainTerrain.obj', function(object, materials) {
-//   // var material = new THREE.MeshFaceMaterial(materials);
-//   var material2 = new THREE.MeshStandardMaterial();
-//   object.traverse( function(child) {
-//   if (child instanceof THREE.Mesh) {
-//   // apply custom material
-//   child.material = material2;
-//   // enable casting shadows
-//   child.castShadow = true;
-//   child.receiveShadow = true;
-//   }
-//   });
-//   object.position.x = 0;
-//   object.position.y = -10;
-//   object.position.z = -30;
-//   object.scale.set(0.1, 0.1, 0.1);
-//   return object
-//   });
-// }
-
 
 module.exports = getFloor;
 
-},{"three":5,"three-mtl-loader":1,"three-obj-loader":3}],12:[function(require,module,exports){
+},{"three":5}],13:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -87749,7 +87811,7 @@ var getLight = function getLight() {
 
 module.exports = getLight;
 
-},{"three":5}],13:[function(require,module,exports){
+},{"three":5}],14:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -87765,22 +87827,24 @@ var getRenderer = function getRenderer() {
 
 module.exports = getRenderer;
 
-},{"three":5}],14:[function(require,module,exports){
+},{"three":5}],15:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
+var PointerLockControls = require('three-pointerlock');
+var getScene = require('../getScene');
+var pointerLocks = require('../pointLockers');
+var letsMove = require('../letsMove');
 var controls = require('../controls');
 var getRenderer = require('./getRenderer');
 var getLight = require('./getLight');
 var getFloor = require('./getFloor');
 var cubes = require('../cubes');
-var OBJLoader = require('three-obj-loader');
-OBJLoader(THREE);
-var MTLLoader = require('three-mtl-loader');
-var getScene = require('../getScene');
-var pointerLocks = require('../pointLockers');
-var PointerLockControls = require('three-pointerlock');
-var letsMove = require('../letsMove');
+var blocker = require('../blocker');
+// const OBJLoader = require('three-obj-loader');
+// OBJLoader(THREE);
+// const MTLLoader = require('three-mtl-loader');
+
 
 // var player = {
 //   height: 1.8,
@@ -87801,7 +87865,7 @@ var init = function init() {
   // camera.lookAt(0, 500, 0); // direction camera is looking
   getScene.init(scene);
   var pointerLockControls = new PointerLockControls(camera);
-
+  blocker(pointerLockControls);
   scene.add(pointerLockControls.getObject());
   controls.init(scene, pointerLockControls);
   pointerLocks.init(pointerLockControls);
@@ -87815,12 +87879,6 @@ var init = function init() {
   var obj5 = cubes.getObj5();
 
   scene.add(obj1, obj2, obj3, obj4, obj5);
-
-  //let's get the floor
-
-  var floor = getFloor();
-  scene.add(floor);
-  var objects = [floor];
 
   //objects
   // const loader = new MTLLoader();
@@ -87841,6 +87899,12 @@ var init = function init() {
 
   var light = getLight();
   scene.add(light);
+
+  //let's get the floor
+
+  var floor = getFloor();
+  scene.add(floor);
+  var objects = [floor];
 
   var renderer = getRenderer();
   document.body.appendChild(renderer.domElement);
@@ -87864,7 +87928,7 @@ var init = function init() {
 
 module.exports = init;
 
-},{"../controls":7,"../cubes":8,"../getScene":10,"../letsMove":15,"../pointLockers":16,"./getFloor":11,"./getLight":12,"./getRenderer":13,"three":5,"three-mtl-loader":1,"three-obj-loader":3,"three-pointerlock":4}],15:[function(require,module,exports){
+},{"../blocker":7,"../controls":8,"../cubes":9,"../getScene":11,"../letsMove":16,"../pointLockers":17,"./getFloor":12,"./getLight":13,"./getRenderer":14,"three":5,"three-pointerlock":4}],16:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -87930,7 +87994,7 @@ var stopIfSlow = function stopIfSlow(velocity) {
   return Math.abs(velocity) < 0.1 ? 0 : velocity;
 };
 
-},{"./controls":7,"./pointLockers":16,"three":5}],16:[function(require,module,exports){
+},{"./controls":8,"./pointLockers":17,"three":5}],17:[function(require,module,exports){
 "use strict";
 
 var _pointerLockControls = void 0;
@@ -87943,4 +88007,4 @@ module.exports.init = function (pointerLockControls) {
   _pointerLockControls = pointerLockControls;
 };
 
-},{}]},{},[9]);
+},{}]},{},[10]);
