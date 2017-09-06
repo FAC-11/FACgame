@@ -87420,6 +87420,8 @@ module.exports = {
 
 var THREE = require('three');
 var init = require('./init/init');
+var scene = require('./getScene');
+
 var velocity = new THREE.Vector3();
 
 var controls = function controls(keyboard, camera, player) {
@@ -87491,7 +87493,7 @@ var controls = function controls(keyboard, camera, player) {
 
 module.exports = controls;
 
-},{"./init/init":14,"three":5}],8:[function(require,module,exports){
+},{"./getScene":10,"./init/init":14,"three":5}],8:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');

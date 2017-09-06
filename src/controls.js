@@ -1,5 +1,7 @@
 const THREE = require('three');
 const init = require('./init/init');
+const scene = require('./getScene');
+
 var velocity = new THREE.Vector3();
 
 const controls = (keyboard, camera, player) => {
