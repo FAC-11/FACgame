@@ -1,5 +1,6 @@
 const THREE = require('three');
 //const init = require('./init/init');
+const bullet = require('./init/init');
 
 const init = () => {
   const onKeyDown = (event) => {
@@ -26,6 +27,9 @@ const init = () => {
           movements.canJump = false;
         }
         break;
+      case 17:
+        movements.shooting = true;
+        break;
     }
   };
   const onKeyUp = (event) => {
@@ -46,6 +50,10 @@ const init = () => {
       case 68: // d
         movements.right = false;
         break;
+      case 17:
+        console.log('ctrl working up');
+        movements.shooting = false;
+        break;
     }
   };
 
@@ -61,7 +69,8 @@ const movements = {
   left: false,
   right: false,
   jumping: false,
-  canJump: true
+  canJump: true,
+  shooting: false
 };
 module.exports = {
   init,

@@ -27,7 +27,7 @@ const start = (options) => {
     if (!blocker.enabled) {
 
       const time = performance.now();
-      letsMove(objects, raycaster, prevTime, time);
+      letsMove(camera,scene,objects, raycaster, prevTime, time);
       //
       // const player = pointLockers();
 
