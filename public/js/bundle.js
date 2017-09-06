@@ -87959,6 +87959,7 @@ var pointLockers = require('./pointLockers');
 var _require = require('./controls'),
     movements = _require.movements;
 
+var bullets = [];
 var velocity = new THREE.Vector3();
 
 module.exports = function (camera, scene, objects, raycaster, prevTime, time) {
@@ -87972,17 +87973,33 @@ module.exports = function (camera, scene, objects, raycaster, prevTime, time) {
   velocity.z -= velocity.z * 10.0 * delta;
   velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
 
+  for (var index = 0; index < bullets.length; index++) {
+    if (bullets[index] === undefined) {
+      continue;
+    }
+    if (bullets[index].alive == false) {
+      bullets.splice(index, 1);
+      continue;
+    }
+    bullets[index].position.add(bullets[index].velocity);
+  }
+
   if (movements.shooting) {
     // shoot.bullet(scene);
     var bullet = new THREE.Mesh(new THREE.SphereGeometry(0.5, 8, 8), new THREE.MeshBasicMaterial());
 
-    bullet.position.set(camera.position.x, camera.position.y, camera.position.z);
+    console.log(raycaster);
+    console.log('controls', pointerLockControls);
+    bullet.position.set(raycaster.ray.origin.x, raycaster.ray.origin.y, raycaster.ray.origin.z);
+    console.log('pointlockler', pointLockers());
+    bullet.velocity = new THREE.Vector3(camera.lookAt.x, 0, camera.lookAt.z);
 
     bullet.alive = true;
     setTimeout(function () {
       bullet.alive = false;
       scene.remove(bullet);
     }, 1000);
+    bullets.push(bullet);
     scene.add(bullet);
   }
 
