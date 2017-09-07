@@ -8,7 +8,14 @@ const {movements} = require('./controls');
 let bullets = [] ;
 const velocity = new THREE.Vector3();
 
-module.exports = function(camera,scene,objects, raycaster, prevTime, time, pointerLockControls){
+module.exports = function(camera,scene,objects, raycaster, prevTime, time, pointerLockControls, world, timeStep){
+
+console.log(typeof world);
+console.log(world);
+  world.step(timeStep);
+  objects.obj1.Mesh.position.copy(world.body.position);
+  objects.obj1.Mesh.quaternion.copy(world.body.quaternion);
+
 
   raycaster.ray.origin.copy(pointLockers().position);
   raycaster.ray.origin.y -= 10;

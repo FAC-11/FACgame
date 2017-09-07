@@ -17,10 +17,10 @@ const getObj1 = () => {
       map: crateTexture,
       bumpMap: crateBumpMap,
       normalMap: crateNormalMap,
-      wireframe: false
-    })
+      wireframe: false,
+    }),
   );
-  obj1.position.set(180, 35, 25);
+  obj1.position.set(180, 50, 25);
   obj1.receiveShadow = true;
   obj1.castShadow = true;
   return obj1;

@@ -1,4 +1,5 @@
 const THREE = require('three');
+const CANNON = require('cannon');
 const PointerLockControls = require('three-pointerlock');
 const getScene = require('../getScene');
 const pointerLocks = require('../pointLockers');
@@ -22,20 +23,39 @@ const blocker = require('../blocker');
 // };
 
 const bullet = () => {
-var bullet = new THREE.Mesh(
-  new THREE.SphereGeometry(5, 8, 8),
-  new THREE.MeshBasicMaterial());
+  const bullet = new THREE.Mesh(
+    new THREE.SphereGeometry(5, 8, 8),
+    new THREE.MeshBasicMaterial(),
+  );
   bullet.alive = true;
-  setTimeout(function() {
+  setTimeout(function () {
     bullet.alive = false;
     scene.remove(bullet);
   }, 1000);
   scene.add(bullet);
-}
+};
 
 // create the scene
 
 const init = () => {
+  const timeStep = 1 / 60;
+
+  // Cannon init
+const world = new CANNON.World();
+    world.gravity.set(0,-9.82,0);
+      world.broadphase = new CANNON.NaiveBroadphase();
+      world.solver.iterations = 10;
+    const shape = new CANNON.Box(new CANNON.Vec3(1,1,1));
+      const mass = 1;
+      const body = new CANNON.Body({
+        mass: 1
+      });
+      body.addShape(shape);
+      body.angularVelocity.set(0,10,0);
+      body.angularDamping = 0.5;
+      world.addBody(body);
+      console.log('this is my world', world);
+
   // const camera = new THREE.PerspectiveCamera(75, -50, 1, 1000);
   const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
   //let's create the scene
@@ -62,8 +82,7 @@ const init = () => {
   scene.add(obj1, obj2, obj3, obj4, obj5);
 
 
-
-  //objects
+  // objects
   // const loader = new MTLLoader();
   // loader.load('images/Oak_Green_01.mtl', function(materials) {
   //   materials.preload();
@@ -76,14 +95,14 @@ const init = () => {
   //
   // })
 
-  //lighting
+  // lighting
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
   scene.add(ambientLight);
 
   const light = getLight();
   scene.add(light);
 
-  //let's get the floor
+  // let's get the floor
 
   const floor = getFloor();
   scene.add(floor);
@@ -100,16 +119,17 @@ const init = () => {
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
   }
-
   return {
     camera,
     scene,
     renderer,
     raycaster,
     objects,
-    pointerLockControls
+    pointerLockControls,
+    world,
+    timeStep,
   };
-}
+};
 
 
 module.exports = init;
