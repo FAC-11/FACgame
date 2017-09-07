@@ -13,7 +13,8 @@ const start = (options) => {
     scene,
     renderer,
     objects,
-    raycaster
+    raycaster,
+    pointerLockControls
   } = options;
 
   let prevTime = performance.now();
@@ -23,7 +24,7 @@ const start = (options) => {
     if (!blocker.enabled) {
 
       const time = performance.now();
-      letsMove(objects, raycaster, prevTime, time);
+      letsMove(camera,scene,objects, raycaster, prevTime, time, pointerLockControls);
       //
       const player = pointLockers();
       //to send the players positions and the bullets

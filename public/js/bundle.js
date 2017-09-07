@@ -94001,7 +94001,8 @@ var start = function start(options) {
       scene = options.scene,
       renderer = options.renderer,
       objects = options.objects,
-      raycaster = options.raycaster;
+      raycaster = options.raycaster,
+      pointerLockControls = options.pointerLockControls;
 
 
   var prevTime = performance.now();
@@ -94011,7 +94012,7 @@ var start = function start(options) {
     if (!blocker.enabled) {
 
       var time = performance.now();
-      letsMove(objects, raycaster, prevTime, time);
+      letsMove(camera, scene, objects, raycaster, prevTime, time, pointerLockControls);
       //
       var player = pointLockers();
       //to send the players positions and the bullets
@@ -94280,6 +94281,7 @@ module.exports.enabled = true;
 
 var THREE = require('three');
 //const init = require('./init/init');
+var bullet = require('./init/init');
 
 var init = function init() {
   var onKeyDown = function onKeyDown(event) {
@@ -94311,6 +94313,9 @@ var init = function init() {
           movements.canJump = false;
         }
         break;
+      case 17:
+        movements.shooting = true;
+        break;
     }
   };
   var onKeyUp = function onKeyUp(event) {
@@ -94335,6 +94340,10 @@ var init = function init() {
         // d
         movements.right = false;
         break;
+      case 17:
+        console.log('ctrl working up');
+        movements.shooting = false;
+        break;
     }
   };
 
@@ -94349,7 +94358,8 @@ var movements = {
   left: false,
   right: false,
   jumping: false,
-  canJump: true
+  canJump: true,
+  shooting: false
 };
 module.exports = {
   init: init,
@@ -94413,7 +94423,11 @@ module.exports = {
 //
 // module.exports = controls;
 
+<<<<<<< HEAD
 },{"three":47}],55:[function(require,module,exports){
+=======
+},{"./init/init":15,"three":5}],9:[function(require,module,exports){
+>>>>>>> master
 'use strict';
 
 var THREE = require('three');
@@ -94649,6 +94663,7 @@ var getLight = require('./getLight');
 var getFloor = require('./getFloor');
 var cubes = require('../cubes');
 var blocker = require('../blocker');
+
 // const OBJLoader = require('three-obj-loader');
 // OBJLoader(THREE);
 // const MTLLoader = require('three-mtl-loader');
@@ -94659,6 +94674,16 @@ var blocker = require('../blocker');
 //   speed: 0.2,
 //   turnSpeed: Math.PI * 0.02
 // };
+
+var bullet = function bullet() {
+  var bullet = new THREE.Mesh(new THREE.SphereGeometry(5, 8, 8), new THREE.MeshBasicMaterial());
+  bullet.alive = true;
+  setTimeout(function () {
+    bullet.alive = false;
+    scene.remove(bullet);
+  }, 1000);
+  scene.add(bullet);
+};
 
 // create the scene
 
@@ -94731,7 +94756,8 @@ var init = function init() {
     scene: scene,
     renderer: renderer,
     raycaster: raycaster,
-    objects: objects
+    objects: objects,
+    pointerLockControls: pointerLockControls
   };
 };
 
@@ -94743,12 +94769,15 @@ module.exports = init;
 var THREE = require('three');
 var pointLockers = require('./pointLockers');
 
+// const shoot = require('./shoot.js');
+
 var _require = require('./controls'),
     movements = _require.movements;
 
+var bullets = [];
 var velocity = new THREE.Vector3();
 
-module.exports = function (objects, raycaster, prevTime, time) {
+module.exports = function (camera, scene, objects, raycaster, prevTime, time, pointerLockControls) {
 
   raycaster.ray.origin.copy(pointLockers().position);
   raycaster.ray.origin.y -= 10;
@@ -94758,6 +94787,34 @@ module.exports = function (objects, raycaster, prevTime, time) {
   velocity.x -= velocity.x * 10.0 * delta;
   velocity.z -= velocity.z * 10.0 * delta;
   velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
+
+  for (var index = 0; index < bullets.length; index++) {
+    if (bullets[index] === undefined) {
+      continue;
+    }
+    if (bullets[index].alive == false) {
+      bullets.splice(index, 1);
+      continue;
+    }
+    bullets[index].position.add(bullets[index].velocity);
+  }
+
+  if (movements.shooting) {
+    // shoot.bullet(scene);
+    var bullet = new THREE.Mesh(new THREE.SphereGeometry(0.5, 8, 8), new THREE.MeshBasicMaterial());
+
+    bullet.position.set(raycaster.ray.origin.x, raycaster.ray.origin.y, raycaster.ray.origin.z);
+    console.log('pointlocker', pointerLockControls.getObject());
+    bullet.velocity = new THREE.Vector3(-Math.sin(pointerLockControls.getObject().rotation._y), 0, -Math.cos(pointerLockControls.getObject().rotation._y));
+
+    bullet.alive = true;
+    setTimeout(function () {
+      bullet.alive = false;
+      scene.remove(bullet);
+    }, 1000);
+    bullets.push(bullet);
+    scene.add(bullet);
+  }
 
   if (movements.forward) velocity.z -= 2000.0 * delta;
 

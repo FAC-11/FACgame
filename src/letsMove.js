@@ -1,11 +1,14 @@
 const THREE = require('three');
 const pointLockers = require('./pointLockers');
 
+// const shoot = require('./shoot.js');
+
 const {movements} = require('./controls');
 
+let bullets = [] ;
 const velocity = new THREE.Vector3();
 
-module.exports = function(objects, raycaster, prevTime, time){
+module.exports = function(camera,scene,objects, raycaster, prevTime, time, pointerLockControls){
 
   raycaster.ray.origin.copy(pointLockers().position);
   raycaster.ray.origin.y -= 10;
@@ -15,6 +18,46 @@ module.exports = function(objects, raycaster, prevTime, time){
   velocity.x -= velocity.x * 10.0 * delta;
   velocity.z -= velocity.z * 10.0 * delta;
   velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
+
+for (var index= 0; index < bullets.length ; index++) {
+  if (bullets[index] === undefined) {
+    continue;
+  }
+  if (bullets[index].alive == false) {
+  bullets.splice(index,1);
+  continue;
+  }
+  bullets[index].position.add(bullets[index].velocity);
+}
+
+  if (movements.shooting){
+    // shoot.bullet(scene);
+    var bullet = new THREE.Mesh(
+      new THREE.SphereGeometry(0.5, 8, 8),
+      new THREE.MeshBasicMaterial());
+
+      bullet.position.set(
+        raycaster.ray.origin.x,
+        raycaster.ray.origin.y,
+        raycaster.ray.origin.z
+      );
+console.log('pointlocker', pointerLockControls.getObject());
+      bullet.velocity = new THREE.Vector3(
+        -Math.sin(pointerLockControls.getObject().rotation._y),
+        0,
+        -Math.cos(pointerLockControls.getObject().rotation._y),
+
+
+      );
+
+      bullet.alive = true;
+      setTimeout(function() {
+        bullet.alive = false;
+        scene.remove(bullet);
+      }, 1000);
+      bullets.push(bullet);
+      scene.add(bullet);
+  }
 
   if (movements.forward)
     velocity.z -= 2000.0 * delta;
