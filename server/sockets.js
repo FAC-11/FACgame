@@ -6,7 +6,7 @@ module.exports = (app) => {
 
   const server = http.Server(app);
   const io = socketIo(server, {
-    pingInterval: 10000,
+    pingInterval: 5000,
     pingTimeout: 10000
   });
 
