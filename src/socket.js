@@ -1,7 +1,7 @@
 // handles socket communication with server for updating your player location
 // and getting other player locations
 const io = require('socket.io-client');
-const Avatar = require('./Avatar');
+const Avatar = require('./avatar');
 const getScene = require('./getScene');
 const otherPlayers = require('./otherPlayers');
 

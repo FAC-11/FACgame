@@ -93798,195 +93798,6 @@ module.exports = yeast;
 },{}],50:[function(require,module,exports){
 'use strict';
 
-var THREE = require('three');
-
-var create = function create(options) {
-
-  options = options || {};
-  var avatar = {};
-
-  avatar.sizeRatio = options.sizeRatio || 1;
-  avatar.scale = options.scale || new THREE.Vector3(1, 1, 1);
-  avatar.fallbackImage = options.fallbackImage || 'avatar.png';
-  createCanvases(avatar);
-  avatar.mesh = createPlayerObject(avatar);
-  avatar.mesh.scale.set(avatar.sizeRatio, avatar.sizeRatio * 0.75, avatar.sizeRatio);
-
-  avatar.walkSpeed = 0.6;
-  avatar.startedWalking = 0.0;
-  avatar.stoppedWalking = 0.0;
-  avatar.walking = false;
-  avatar.acceleration = 0.5;
-
-  return avatar;
-};
-
-var createCanvases = function createCanvases(avatar) {
-  avatar.avatarBig = document.createElement('canvas');
-  avatar.avatarBigContext = avatar.avatarBig.getContext('2d');
-  avatar.avatarBig.width = 64 * avatar.sizeRatio;
-  avatar.avatarBig.height = 32 * avatar.sizeRatio;
-
-  avatar.avatar = document.createElement('canvas');
-  avatar.avatarContext = avatar.avatar.getContext('2d');
-  avatar.avatar.width = 64;
-  avatar.avatar.height = 32;
-};
-
-var createPlayerObject = function createPlayerObject(avatar) {
-  new THREE.Object3D();
-  var upperbody = avatar.upperbody = new THREE.Object3D();
-  new THREE.MeshBasicMaterial({ color: new THREE.Color('black') });
-
-  var armMaterial = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/arm.png') });
-  var bodyMaterial = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/suit.jpeg') });
-  var bottomMaterial = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/bottom.png') });
-  var handMaterial = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/hand.png') });
-  var legMaterial = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/leg.png') });
-  var shoeMaterial = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/shoe.png') });
-  var shoulderMaterial = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/shoulder.png') });
-  var sideMaterial = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/side.png') });
-
-  var armMatFull = new THREE.MeshFaceMaterial([armMaterial, armMaterial, shoulderMaterial, handMaterial, armMaterial, armMaterial]);
-  var bodyMatFull = new THREE.MeshFaceMaterial([bodyMaterial, bodyMaterial, bottomMaterial, bottomMaterial, sideMaterial, sideMaterial]);
-  var legMatFull = new THREE.MeshFaceMaterial([legMaterial, legMaterial, shoeMaterial, shoeMaterial, legMaterial, legMaterial]);
-  // Left leg
-  var leftleggeo = new THREE.BoxGeometry(4, 12, 4);
-  for (var i = 0; i < 8; i += 1) {
-    leftleggeo.vertices[i].y -= 6;
-  }
-
-  var leftleg = avatar.leftLeg = new THREE.Mesh(leftleggeo, legMatFull);
-  leftleg.position.z = -2;
-  leftleg.position.y = -6;
-
-  // Right leg
-  var rightleggeo = new THREE.BoxGeometry(4, 12, 4);
-  for (var _i = 0; _i < 8; _i += 1) {
-    rightleggeo.vertices[_i].y -= 6;
-  }
-  var rightleg = avatar.rightLeg = new THREE.Mesh(rightleggeo, legMatFull);
-  rightleg.position.z = 2;
-  rightleg.position.y = -6;
-
-  // Body
-  var bodygeo = new THREE.BoxGeometry(4, 12, 8);
-  var bodymesh = avatar.body = new THREE.Mesh(bodygeo, bodyMatFull);
-  upperbody.add(bodymesh);
-
-  // Left arm
-  var leftarmgeo = new THREE.BoxGeometry(4, 12, 4);
-  for (var _i2 = 0; _i2 < 8; _i2 += 1) {
-    leftarmgeo.vertices[_i2].y -= 4;
-  }
-  var leftarm = avatar.leftArm = new THREE.Mesh(leftarmgeo, armMatFull);
-  leftarm.position.z = -6;
-  leftarm.position.y = 4;
-  leftarm.rotation.x = Math.PI / 32;
-  upperbody.add(leftarm);
-
-  // Right arm
-  var rightarmgeo = new THREE.BoxGeometry(4, 12, 4);
-  for (var _i3 = 0; _i3 < 8; _i3 += 1) {
-    rightarmgeo.vertices[_i3].y -= 4;
-  }
-  var rightarm = avatar.rightArm = new THREE.Mesh(rightarmgeo, armMatFull);
-  rightarm.position.z = 6;
-  rightarm.position.y = 4;
-  rightarm.rotation.x = -Math.PI / 32;
-
-  upperbody.add(rightarm);
-
-  var head = createHead();
-  head.position.y += 10;
-
-  var playerModel = avatar.playerModel = new THREE.Object3D();
-
-  playerModel.add(leftleg);
-  playerModel.add(rightleg);
-  playerModel.add(upperbody);
-  playerModel.add(head);
-
-  var playerRotation = new THREE.Object3D();
-  playerRotation.rotation.y = Math.PI / 2;
-  playerRotation.position.y = 12;
-  playerRotation.add(playerModel);
-
-  playerModel.position.y = -12;
-
-  var playerGroup = new THREE.Object3D();
-
-  playerGroup.add(playerRotation);
-  playerGroup.scale.set(avatar.scale);
-
-  return playerGroup;
-};
-
-var createHead = function createHead() {
-  var geometry = new THREE.BoxGeometry(4, 7, 7);
-
-  var plainMaterial = new THREE.MeshBasicMaterial({ color: 'lightgrey' });
-
-  var materialArray = [new THREE.MeshBasicMaterial({ color: 'white', map: THREE.ImageUtils.loadTexture('images/trumpFace.png') }), plainMaterial, plainMaterial, plainMaterial, plainMaterial, plainMaterial];
-
-  var material = new THREE.MeshFaceMaterial(materialArray);
-
-  var head = new THREE.Mesh(geometry, material);
-
-  return head;
-};
-
-var render = function render(avatar) {
-  var time = Date.now() / 1000;
-  if (avatar.walking && time < avatar.startedWalking + avatar.acceleration) {
-    avatar.walkSpeed = (time - avatar.startedWalking) / avatar.acceleration;
-  }
-  if (!avatar.walking) {
-    if (time < avatar.stoppedWalking + avatar.acceleration) avatar.walkSpeed = -1 / avatar.acceleration * (time - avatar.stoppedWalking) + 1;else if (avatar.walkSpeed > 0.02) avatar.walkSpeed *= 0.95;else {
-      avatar.walkSpeed = 0;
-    }
-  }
-
-  avatar.rightArm.rotation.z = 2 * Math.cos(0.6662 * time * 10 + Math.PI) * avatar.walkSpeed;
-  avatar.rightArm.rotation.x = 1 * (Math.cos(0.2812 * time * 10) - 1) * avatar.walkSpeed;
-  avatar.leftArm.rotation.z = 2 * Math.cos(0.6662 * time * 10) * avatar.walkSpeed;
-  avatar.leftArm.rotation.x = 1 * (Math.cos(0.2312 * time * 10) + 1) * avatar.walkSpeed;
-
-  avatar.rightLeg.rotation.z = 1.4 * Math.cos(0.6662 * time * 10) * avatar.walkSpeed;
-  avatar.leftLeg.rotation.z = 1.4 * Math.cos(0.6662 * time * 10 + Math.PI) * avatar.walkSpeed;
-};
-
-var startWalking = function startWalking(avatar) {
-
-  var now = Date.now() / 1000;
-  avatar.walking = true;
-  if (avatar.stoppedWalking + avatar.acceleration > now) {
-    avatar.startedWalking = now - (avatar.stoppedWalking + avatar.acceleration - now);
-  } else {
-    avatar.startedWalking = Date.now() / 1000;
-  }
-};
-
-var stopWalking = function stopWalking(avatar) {
-  var now = Date.now() / 1000;
-  avatar.walking = false;
-  if (avatar.startedWalking + avatar.acceleration > now) {
-    avatar.stoppedWalking = now - (avatar.startedWalking + avatar.acceleration - now);
-  } else {
-    avatar.stoppedWalking = Date.now() / 1000;
-  }
-};
-
-module.exports = {
-  create: create,
-  startWalking: startWalking,
-  stopWalking: stopWalking,
-  render: render
-};
-
-},{"three":47}],51:[function(require,module,exports){
-'use strict';
-
 var socket = require('./socket');
 var init = require('./init/init');
 var getRenderer = require('./init/getRenderer');
@@ -94036,7 +93847,7 @@ module.exports = {
   start: start
 };
 
-},{"./blocker":53,"./init/getRenderer":60,"./init/init":61,"./letsMove":62,"./moveOtherPlayer":63,"./otherPlayers":64,"./pointLockers":65,"./socket":66}],52:[function(require,module,exports){
+},{"./blocker":52,"./init/getRenderer":59,"./init/init":60,"./letsMove":61,"./moveOtherPlayer":62,"./otherPlayers":63,"./pointLockers":64,"./socket":65}],51:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -94225,7 +94036,7 @@ module.exports = {
   render: render
 };
 
-},{"three":47}],53:[function(require,module,exports){
+},{"three":47}],52:[function(require,module,exports){
 'use strict';
 
 // sets up screen blocker (the darkened screen with instructions you see when you press esc)
@@ -94274,7 +94085,7 @@ module.exports = function (controls) {
 
 module.exports.enabled = true;
 
-},{}],54:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -94421,7 +94232,7 @@ module.exports = {
 //
 // module.exports = controls;
 
-},{"./init/init":61,"three":47}],55:[function(require,module,exports){
+},{"./init/init":60,"three":47}],54:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -94553,7 +94364,7 @@ module.exports = {
 //
 // })
 
-},{"three":47,"three-mtl-loader":43,"three-obj-loader":45,"three-pointerlock":46}],56:[function(require,module,exports){
+},{"three":47,"three-mtl-loader":43,"three-obj-loader":45,"three-pointerlock":46}],55:[function(require,module,exports){
 'use strict';
 
 var init = require('./init/init');
@@ -94561,7 +94372,7 @@ var animate = require('./animate');
 
 animate.start(init());
 
-},{"./animate":51,"./init/init":61}],57:[function(require,module,exports){
+},{"./animate":50,"./init/init":60}],56:[function(require,module,exports){
 "use strict";
 
 var _scene = void 0;
@@ -94574,7 +94385,7 @@ module.exports.init = function (scene) {
   _scene = scene;
 };
 
-},{}],58:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -94610,7 +94421,7 @@ var getFloor = function getFloor() {
 
 module.exports = getFloor;
 
-},{"three":47}],59:[function(require,module,exports){
+},{"three":47}],58:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -94627,7 +94438,7 @@ var getLight = function getLight() {
 
 module.exports = getLight;
 
-},{"three":47}],60:[function(require,module,exports){
+},{"three":47}],59:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -94643,7 +94454,7 @@ var getRenderer = function getRenderer() {
 
 module.exports = getRenderer;
 
-},{"three":47}],61:[function(require,module,exports){
+},{"three":47}],60:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -94757,7 +94568,7 @@ var init = function init() {
 
 module.exports = init;
 
-},{"../blocker":53,"../controls":54,"../cubes":55,"../getScene":57,"../letsMove":62,"../pointLockers":65,"./getFloor":58,"./getLight":59,"./getRenderer":60,"three":47,"three-pointerlock":46}],62:[function(require,module,exports){
+},{"../blocker":52,"../controls":53,"../cubes":54,"../getScene":56,"../letsMove":61,"../pointLockers":64,"./getFloor":57,"./getLight":58,"./getRenderer":59,"three":47,"three-pointerlock":46}],61:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -94854,7 +94665,7 @@ var stopIfSlow = function stopIfSlow(velocity) {
   return Math.abs(velocity) < 0.1 ? 0 : velocity;
 };
 
-},{"./controls":54,"./pointLockers":65,"three":47}],63:[function(require,module,exports){
+},{"./controls":53,"./pointLockers":64,"three":47}],62:[function(require,module,exports){
 'use strict';
 
 var Avatar = require('./avatar');
@@ -94890,7 +94701,7 @@ module.exports = function (id, _ref) {
   Avatar.render(avatar);
 };
 
-},{"./avatar":52,"./otherPlayers":64}],64:[function(require,module,exports){
+},{"./avatar":51,"./otherPlayers":63}],63:[function(require,module,exports){
 "use strict";
 
 // keys are socket ids and values are player data objects
@@ -94913,7 +94724,7 @@ module.exports = {
   addPlayer: addPlayer
 };
 
-},{}],65:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 "use strict";
 
 var _pointerLockControls = void 0;
@@ -94926,13 +94737,13 @@ module.exports.init = function (pointerLockControls) {
   _pointerLockControls = pointerLockControls;
 };
 
-},{}],66:[function(require,module,exports){
+},{}],65:[function(require,module,exports){
 'use strict';
 
 // handles socket communication with server for updating your player location
 // and getting other player locations
 var io = require('socket.io-client');
-var Avatar = require('./Avatar');
+var Avatar = require('./avatar');
 var getScene = require('./getScene');
 var otherPlayers = require('./otherPlayers');
 
@@ -95043,4 +94854,4 @@ module.exports = {
   emitBulletPosition: emitBulletPosition
 };
 
-},{"./Avatar":50,"./getScene":57,"./otherPlayers":64,"socket.io-client":34}]},{},[56]);
+},{"./avatar":51,"./getScene":56,"./otherPlayers":63,"socket.io-client":34}]},{},[55]);
