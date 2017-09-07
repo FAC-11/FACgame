@@ -20,7 +20,7 @@ const getObj1 = () => {
       wireframe: false
     })
   );
-  obj1.position.set(180, 35, 25);
+  obj1.position.set(180, 35, -100);
   obj1.receiveShadow = true;
   obj1.castShadow = true;
   return obj1;
@@ -41,7 +41,7 @@ const getObj2 = () => {
       wireframe: false
     })
   );
-  obj2.position.set(200, -5, 25);
+  obj2.position.set(200, -5, -100);
   obj2.receiveShadow = true;
   obj2.castShadow = true;
   return obj2;
@@ -63,7 +63,7 @@ const getObj3 = () => {
       wireframe: false
     })
   );
-  obj3.position.set(160, -5, 25);
+  obj3.position.set(160, -5, -100);
   obj3.receiveShadow = true;
   obj3.castShadow = true;
   return obj3;
@@ -84,7 +84,7 @@ const getObj4 = () => {
       wireframe: false
     })
   );
-  obj4.position.set(50, -5, 25);
+  obj4.position.set(50, -5, -100);
   obj4.receiveShadow = true;
   obj4.castShadow = true;
   return obj4;
@@ -106,10 +106,24 @@ const getObj5 = () => {
     })
   );
 
-  obj5.position.set(10, -5, 25);
+  obj5.position.set(10, -5, -100);
   obj5.receiveShadow = true;
   obj5.castShadow = true;
   return obj5;
+}
+
+const getObj6 = () => {
+
+  const obj6 = new THREE.Mesh(
+    new THREE.BoxBufferGeometry(10, 60, 10),
+    new THREE.MeshBasicMaterial({
+      color: 0xffff00,
+      wireframe: false
+    })
+  );
+
+  obj6.position.set(10, -5, -30);
+  return obj6;
 }
 
 module.exports = {
@@ -117,7 +131,8 @@ module.exports = {
   getObj2,
   getObj3,
   getObj4,
-  getObj5
+  getObj5,
+  getObj6
 };
 
 
