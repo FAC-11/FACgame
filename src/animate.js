@@ -1,9 +1,8 @@
-// const controls = require('./controls');
-// const init = require('./init/init');
-// const getRenderer = require('./init/getRenderer');
 const letsMove = require('./letsMove');
 // const pointLockers = require('./pointLockers');
 const blocker = require('./blocker');
+const otherPlayers = require('./otherPlayers');
+const moveOtherPlayer = require('./moveOtherPlayer');
 
 const start = (options) => {
   const {
@@ -17,12 +16,6 @@ const start = (options) => {
     timeStep,
   } = options;
 
-  // const keyboard = {};
-  // const player = {
-  //   height: 1.8,
-  //   speed: 0.2,
-  //   turnSpeed: Math.PI * 0.02
-  // };
   let prevTime = performance.now();
 
   const animate = () => {
@@ -40,8 +33,6 @@ const start = (options) => {
         world,
         timeStep,
       );
-      // const player = pointLockers();
-
       prevTime = time;
     }
 
