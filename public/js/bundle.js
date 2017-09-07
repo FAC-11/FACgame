@@ -93923,11 +93923,11 @@ var createPlayerObject = function createPlayerObject(avatar) {
 };
 
 var createHead = function createHead() {
-  var geometry = new THREE.BoxGeometry(4, 4, 7);
+  var geometry = new THREE.BoxGeometry(4, 7, 7);
 
   var plainMaterial = new THREE.MeshBasicMaterial({ color: 'lightgrey' });
 
-  var materialArray = [new THREE.MeshBasicMaterial({ color: 'white', map: THREE.ImageUtils.loadTexture('images/trumpFace.jpg') }), plainMaterial, plainMaterial, plainMaterial, plainMaterial, plainMaterial];
+  var materialArray = [new THREE.MeshBasicMaterial({ color: 'white', map: THREE.ImageUtils.loadTexture('images/trumpFace.png') }), plainMaterial, plainMaterial, plainMaterial, plainMaterial, plainMaterial];
 
   var material = new THREE.MeshFaceMaterial(materialArray);
 
@@ -94423,11 +94423,7 @@ module.exports = {
 //
 // module.exports = controls;
 
-<<<<<<< HEAD
-},{"three":47}],55:[function(require,module,exports){
-=======
-},{"./init/init":15,"three":5}],9:[function(require,module,exports){
->>>>>>> master
+},{"./init/init":61,"three":47}],55:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
