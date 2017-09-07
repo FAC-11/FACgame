@@ -41,7 +41,7 @@ socket.on('new player', ({id}) => {
   avatar.name = id;
   // high y value to hide bug where extra avatar appears in starting spot
   //add player with id, position and avatar
-  otherPlayers.addPlayer(id, {position:{x: 0, y: 100, z:0}, rotaion:{}, avatar});
+  otherPlayers.addPlayer(id, {position:{x: 0, y: 100, z:0}, rotation:{}, avatar});
 });
 
 //send the player position
@@ -76,15 +76,32 @@ const emitPlayerPosition = (position, rotation) => {
     lastRotation.z = rotation.z;
   }
 };
+
+const emitBulletPosition = (position, rotation) => {
+  rotation = {x: rotation.x, y:rotation.y, z:rotation.z}; // line looks strange but needed to deal with setters
+  if (positionsDifferent(position, lastPosition) || positionsDifferent(rotation, lastRotation)) {
+    socket.emit('shot fired', {position, rotation});
+    lastPosition.x = position.x;
+    lastPosition.y = position.y;
+    lastPosition.z = position.z;
+    lastRotation.x = rotation.x;
+    lastRotation.y = rotation.y;
+    lastRotation.z = rotation.z;
+  }
+};
+
+
+const emitBulletPosition = ({position, rotation}) => {
+  rotation = {x: rotation.x, y:rotation.y, z:rotation.z}; // line looks strange but needed to deal with setters
+  socket.emit('shot fired', {position, rotation});
+};
 //
-// const emitShotFired = ({position, rotation}) => {
-//   rotation = {x: rotation.x, y:rotation.y, z:rotation.z}; // line looks strange but needed to deal with setters
-//   socket.emit('shot fired', {position, rotation});
-// };
+
 
 const positionsDifferent = (p1, p2) =>
  !p1 || !p2 || p1.x !== p2.x || p1.y !== p2.y || p1.z !== p2.z;
 
 module.exports = {
-  emitPlayerPosition
+  emitPlayerPosition,
+  emitBulletPosition
 };
