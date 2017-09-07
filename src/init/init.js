@@ -45,8 +45,9 @@ const init = () => {
   const obj3 = cubes.getObj3();
   const obj4 = cubes.getObj4();
   const obj5 = cubes.getObj5();
+  const obj6 = cubes.getObj6();
 
-  scene.add(obj1, obj2, obj3, obj4, obj5);
+  scene.add(obj1, obj2, obj3, obj4, obj5, obj6);
 
 
 
