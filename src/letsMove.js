@@ -8,7 +8,7 @@ const {movements} = require('./controls');
 let bullets = [] ;
 const velocity = new THREE.Vector3();
 
-module.exports = function(camera,scene,objects, raycaster, prevTime, time){
+module.exports = function(camera,scene,objects, raycaster, prevTime, time, pointerLockControls){
 
   raycaster.ray.origin.copy(pointLockers().position);
   raycaster.ray.origin.y -= 10;
@@ -36,18 +36,16 @@ for (var index= 0; index < bullets.length ; index++) {
       new THREE.SphereGeometry(0.5, 8, 8),
       new THREE.MeshBasicMaterial());
 
-console.log(raycaster);
-console.log('controls',pointerLockControls);
       bullet.position.set(
         raycaster.ray.origin.x,
         raycaster.ray.origin.y,
         raycaster.ray.origin.z
       );
-console.log('pointlockler', pointLockers());
+console.log('pointlocker', pointerLockControls.getObject());
       bullet.velocity = new THREE.Vector3(
-        camera.lookAt.x,
+        -Math.sin(pointerLockControls.getObject().rotation._y),
         0,
-        camera.lookAt.z,
+        -Math.cos(pointerLockControls.getObject().rotation._y),
 
 
       );

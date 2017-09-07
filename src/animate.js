@@ -11,7 +11,8 @@ const start = (options) => {
     scene,
     renderer,
     objects,
-    raycaster
+    raycaster,
+    pointerLockControls
   } = options;
 
   // const keyboard = {};
@@ -27,7 +28,7 @@ const start = (options) => {
     if (!blocker.enabled) {
 
       const time = performance.now();
-      letsMove(camera,scene,objects, raycaster, prevTime, time);
+      letsMove(camera,scene,objects, raycaster, prevTime, time, pointerLockControls);
       //
       // const player = pointLockers();
 

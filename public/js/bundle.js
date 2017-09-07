@@ -87395,7 +87395,8 @@ var start = function start(options) {
       scene = options.scene,
       renderer = options.renderer,
       objects = options.objects,
-      raycaster = options.raycaster;
+      raycaster = options.raycaster,
+      pointerLockControls = options.pointerLockControls;
 
   // const keyboard = {};
   // const player = {
@@ -87411,7 +87412,7 @@ var start = function start(options) {
     if (!blocker.enabled) {
 
       var time = performance.now();
-      letsMove(camera, scene, objects, raycaster, prevTime, time);
+      letsMove(camera, scene, objects, raycaster, prevTime, time, pointerLockControls);
       //
       // const player = pointLockers();
 
@@ -87942,7 +87943,8 @@ var init = function init() {
     scene: scene,
     renderer: renderer,
     raycaster: raycaster,
-    objects: objects
+    objects: objects,
+    pointerLockControls: pointerLockControls
   };
 };
 
@@ -87962,7 +87964,7 @@ var _require = require('./controls'),
 var bullets = [];
 var velocity = new THREE.Vector3();
 
-module.exports = function (camera, scene, objects, raycaster, prevTime, time) {
+module.exports = function (camera, scene, objects, raycaster, prevTime, time, pointerLockControls) {
 
   raycaster.ray.origin.copy(pointLockers().position);
   raycaster.ray.origin.y -= 10;
@@ -87988,11 +87990,9 @@ module.exports = function (camera, scene, objects, raycaster, prevTime, time) {
     // shoot.bullet(scene);
     var bullet = new THREE.Mesh(new THREE.SphereGeometry(0.5, 8, 8), new THREE.MeshBasicMaterial());
 
-    console.log(raycaster);
-    console.log('controls', pointerLockControls);
     bullet.position.set(raycaster.ray.origin.x, raycaster.ray.origin.y, raycaster.ray.origin.z);
-    console.log('pointlockler', pointLockers());
-    bullet.velocity = new THREE.Vector3(camera.lookAt.x, 0, camera.lookAt.z);
+    console.log('pointlocker', pointerLockControls.getObject());
+    bullet.velocity = new THREE.Vector3(-Math.sin(pointerLockControls.getObject().rotation._y), 0, -Math.cos(pointerLockControls.getObject().rotation._y));
 
     bullet.alive = true;
     setTimeout(function () {

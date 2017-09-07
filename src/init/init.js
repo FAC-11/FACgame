@@ -106,7 +106,8 @@ const init = () => {
     scene,
     renderer,
     raycaster,
-    objects
+    objects,
+    pointerLockControls
   };
 }
 
