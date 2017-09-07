@@ -1,9 +1,12 @@
 // const controls = require('./controls');
+const sockets = require('./sockets');
 const init = require('./init/init');
 const getRenderer = require('./init/getRenderer');
 const letsMove = require('./letsMove');
 const pointLockers = require('./pointLockers');
 const blocker = require('./blocker');
+const otherPlayers = require('./otherPlayers');
+const moveOtherPlayer = require('./moveOtherPlayer');
 
 const start = (options) => {
   const {
@@ -29,10 +32,20 @@ const start = (options) => {
       const time = performance.now();
       letsMove(objects, raycaster, prevTime, time);
       //
-      // const player = pointLockers();
+      const player = pointLockers();
+      sockets.emitPlayerPosition(player.position, player.rotation);
+      const players = otherPlayers.get();
+
+      Object.keys(players).forEach((id) => {
+        moveOtherPlayer(id, players[id]);
+      });
 
       prevTime = time;
     }
+
+
+
+
 
     // mesh.rotation.x += 0.1;
     // mesh.rotation.y += 0.1;

@@ -1,4 +1,11840 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+module.exports = after
+
+function after(count, callback, err_cb) {
+    var bail = false
+    err_cb = err_cb || noop
+    proxy.count = count
+
+    return (count === 0) ? callback() : proxy
+
+    function proxy(err, result) {
+        if (proxy.count <= 0) {
+            throw new Error('after called too many times')
+        }
+        --proxy.count
+
+        // after first error, rest are passed to err_cb
+        if (err) {
+            bail = true
+            callback(err)
+            // future error callbacks will go to error handler
+            callback = err_cb
+        } else if (proxy.count === 0 && !bail) {
+            callback(null, result)
+        }
+    }
+}
+
+function noop() {}
+
+},{}],2:[function(require,module,exports){
+/**
+ * An abstraction for slicing an arraybuffer even when
+ * ArrayBuffer.prototype.slice is not supported
+ *
+ * @api public
+ */
+
+module.exports = function(arraybuffer, start, end) {
+  var bytes = arraybuffer.byteLength;
+  start = start || 0;
+  end = end || bytes;
+
+  if (arraybuffer.slice) { return arraybuffer.slice(start, end); }
+
+  if (start < 0) { start += bytes; }
+  if (end < 0) { end += bytes; }
+  if (end > bytes) { end = bytes; }
+
+  if (start >= bytes || start >= end || bytes === 0) {
+    return new ArrayBuffer(0);
+  }
+
+  var abv = new Uint8Array(arraybuffer);
+  var result = new Uint8Array(end - start);
+  for (var i = start, ii = 0; i < end; i++, ii++) {
+    result[ii] = abv[i];
+  }
+  return result.buffer;
+};
+
+},{}],3:[function(require,module,exports){
+
+/**
+ * Expose `Backoff`.
+ */
+
+module.exports = Backoff;
+
+/**
+ * Initialize backoff timer with `opts`.
+ *
+ * - `min` initial timeout in milliseconds [100]
+ * - `max` max timeout [10000]
+ * - `jitter` [0]
+ * - `factor` [2]
+ *
+ * @param {Object} opts
+ * @api public
+ */
+
+function Backoff(opts) {
+  opts = opts || {};
+  this.ms = opts.min || 100;
+  this.max = opts.max || 10000;
+  this.factor = opts.factor || 2;
+  this.jitter = opts.jitter > 0 && opts.jitter <= 1 ? opts.jitter : 0;
+  this.attempts = 0;
+}
+
+/**
+ * Return the backoff duration.
+ *
+ * @return {Number}
+ * @api public
+ */
+
+Backoff.prototype.duration = function(){
+  var ms = this.ms * Math.pow(this.factor, this.attempts++);
+  if (this.jitter) {
+    var rand =  Math.random();
+    var deviation = Math.floor(rand * this.jitter * ms);
+    ms = (Math.floor(rand * 10) & 1) == 0  ? ms - deviation : ms + deviation;
+  }
+  return Math.min(ms, this.max) | 0;
+};
+
+/**
+ * Reset the number of attempts.
+ *
+ * @api public
+ */
+
+Backoff.prototype.reset = function(){
+  this.attempts = 0;
+};
+
+/**
+ * Set the minimum duration
+ *
+ * @api public
+ */
+
+Backoff.prototype.setMin = function(min){
+  this.ms = min;
+};
+
+/**
+ * Set the maximum duration
+ *
+ * @api public
+ */
+
+Backoff.prototype.setMax = function(max){
+  this.max = max;
+};
+
+/**
+ * Set the jitter
+ *
+ * @api public
+ */
+
+Backoff.prototype.setJitter = function(jitter){
+  this.jitter = jitter;
+};
+
+
+},{}],4:[function(require,module,exports){
+/*
+ * base64-arraybuffer
+ * https://github.com/niklasvh/base64-arraybuffer
+ *
+ * Copyright (c) 2012 Niklas von Hertzen
+ * Licensed under the MIT license.
+ */
+(function(){
+  "use strict";
+
+  var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+  // Use a lookup table to find the index.
+  var lookup = new Uint8Array(256);
+  for (var i = 0; i < chars.length; i++) {
+    lookup[chars.charCodeAt(i)] = i;
+  }
+
+  exports.encode = function(arraybuffer) {
+    var bytes = new Uint8Array(arraybuffer),
+    i, len = bytes.length, base64 = "";
+
+    for (i = 0; i < len; i+=3) {
+      base64 += chars[bytes[i] >> 2];
+      base64 += chars[((bytes[i] & 3) << 4) | (bytes[i + 1] >> 4)];
+      base64 += chars[((bytes[i + 1] & 15) << 2) | (bytes[i + 2] >> 6)];
+      base64 += chars[bytes[i + 2] & 63];
+    }
+
+    if ((len % 3) === 2) {
+      base64 = base64.substring(0, base64.length - 1) + "=";
+    } else if (len % 3 === 1) {
+      base64 = base64.substring(0, base64.length - 2) + "==";
+    }
+
+    return base64;
+  };
+
+  exports.decode =  function(base64) {
+    var bufferLength = base64.length * 0.75,
+    len = base64.length, i, p = 0,
+    encoded1, encoded2, encoded3, encoded4;
+
+    if (base64[base64.length - 1] === "=") {
+      bufferLength--;
+      if (base64[base64.length - 2] === "=") {
+        bufferLength--;
+      }
+    }
+
+    var arraybuffer = new ArrayBuffer(bufferLength),
+    bytes = new Uint8Array(arraybuffer);
+
+    for (i = 0; i < len; i+=4) {
+      encoded1 = lookup[base64.charCodeAt(i)];
+      encoded2 = lookup[base64.charCodeAt(i+1)];
+      encoded3 = lookup[base64.charCodeAt(i+2)];
+      encoded4 = lookup[base64.charCodeAt(i+3)];
+
+      bytes[p++] = (encoded1 << 2) | (encoded2 >> 4);
+      bytes[p++] = ((encoded2 & 15) << 4) | (encoded3 >> 2);
+      bytes[p++] = ((encoded3 & 3) << 6) | (encoded4 & 63);
+    }
+
+    return arraybuffer;
+  };
+})();
+
+},{}],5:[function(require,module,exports){
+(function (global){
+/**
+ * Create a blob builder even when vendor prefixes exist
+ */
+
+var BlobBuilder = global.BlobBuilder
+  || global.WebKitBlobBuilder
+  || global.MSBlobBuilder
+  || global.MozBlobBuilder;
+
+/**
+ * Check if Blob constructor is supported
+ */
+
+var blobSupported = (function() {
+  try {
+    var a = new Blob(['hi']);
+    return a.size === 2;
+  } catch(e) {
+    return false;
+  }
+})();
+
+/**
+ * Check if Blob constructor supports ArrayBufferViews
+ * Fails in Safari 6, so we need to map to ArrayBuffers there.
+ */
+
+var blobSupportsArrayBufferView = blobSupported && (function() {
+  try {
+    var b = new Blob([new Uint8Array([1,2])]);
+    return b.size === 2;
+  } catch(e) {
+    return false;
+  }
+})();
+
+/**
+ * Check if BlobBuilder is supported
+ */
+
+var blobBuilderSupported = BlobBuilder
+  && BlobBuilder.prototype.append
+  && BlobBuilder.prototype.getBlob;
+
+/**
+ * Helper function that maps ArrayBufferViews to ArrayBuffers
+ * Used by BlobBuilder constructor and old browsers that didn't
+ * support it in the Blob constructor.
+ */
+
+function mapArrayBufferViews(ary) {
+  for (var i = 0; i < ary.length; i++) {
+    var chunk = ary[i];
+    if (chunk.buffer instanceof ArrayBuffer) {
+      var buf = chunk.buffer;
+
+      // if this is a subarray, make a copy so we only
+      // include the subarray region from the underlying buffer
+      if (chunk.byteLength !== buf.byteLength) {
+        var copy = new Uint8Array(chunk.byteLength);
+        copy.set(new Uint8Array(buf, chunk.byteOffset, chunk.byteLength));
+        buf = copy.buffer;
+      }
+
+      ary[i] = buf;
+    }
+  }
+}
+
+function BlobBuilderConstructor(ary, options) {
+  options = options || {};
+
+  var bb = new BlobBuilder();
+  mapArrayBufferViews(ary);
+
+  for (var i = 0; i < ary.length; i++) {
+    bb.append(ary[i]);
+  }
+
+  return (options.type) ? bb.getBlob(options.type) : bb.getBlob();
+};
+
+function BlobConstructor(ary, options) {
+  mapArrayBufferViews(ary);
+  return new Blob(ary, options || {});
+};
+
+module.exports = (function() {
+  if (blobSupported) {
+    return blobSupportsArrayBufferView ? global.Blob : BlobConstructor;
+  } else if (blobBuilderSupported) {
+    return BlobBuilderConstructor;
+  } else {
+    return undefined;
+  }
+})();
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],6:[function(require,module,exports){
+
+},{}],7:[function(require,module,exports){
+/**
+ * Slice reference.
+ */
+
+var slice = [].slice;
+
+/**
+ * Bind `obj` to `fn`.
+ *
+ * @param {Object} obj
+ * @param {Function|String} fn or string
+ * @return {Function}
+ * @api public
+ */
+
+module.exports = function(obj, fn){
+  if ('string' == typeof fn) fn = obj[fn];
+  if ('function' != typeof fn) throw new Error('bind() requires a function');
+  var args = slice.call(arguments, 2);
+  return function(){
+    return fn.apply(obj, args.concat(slice.call(arguments)));
+  }
+};
+
+},{}],8:[function(require,module,exports){
+
+/**
+ * Expose `Emitter`.
+ */
+
+if (typeof module !== 'undefined') {
+  module.exports = Emitter;
+}
+
+/**
+ * Initialize a new `Emitter`.
+ *
+ * @api public
+ */
+
+function Emitter(obj) {
+  if (obj) return mixin(obj);
+};
+
+/**
+ * Mixin the emitter properties.
+ *
+ * @param {Object} obj
+ * @return {Object}
+ * @api private
+ */
+
+function mixin(obj) {
+  for (var key in Emitter.prototype) {
+    obj[key] = Emitter.prototype[key];
+  }
+  return obj;
+}
+
+/**
+ * Listen on the given `event` with `fn`.
+ *
+ * @param {String} event
+ * @param {Function} fn
+ * @return {Emitter}
+ * @api public
+ */
+
+Emitter.prototype.on =
+Emitter.prototype.addEventListener = function(event, fn){
+  this._callbacks = this._callbacks || {};
+  (this._callbacks['$' + event] = this._callbacks['$' + event] || [])
+    .push(fn);
+  return this;
+};
+
+/**
+ * Adds an `event` listener that will be invoked a single
+ * time then automatically removed.
+ *
+ * @param {String} event
+ * @param {Function} fn
+ * @return {Emitter}
+ * @api public
+ */
+
+Emitter.prototype.once = function(event, fn){
+  function on() {
+    this.off(event, on);
+    fn.apply(this, arguments);
+  }
+
+  on.fn = fn;
+  this.on(event, on);
+  return this;
+};
+
+/**
+ * Remove the given callback for `event` or all
+ * registered callbacks.
+ *
+ * @param {String} event
+ * @param {Function} fn
+ * @return {Emitter}
+ * @api public
+ */
+
+Emitter.prototype.off =
+Emitter.prototype.removeListener =
+Emitter.prototype.removeAllListeners =
+Emitter.prototype.removeEventListener = function(event, fn){
+  this._callbacks = this._callbacks || {};
+
+  // all
+  if (0 == arguments.length) {
+    this._callbacks = {};
+    return this;
+  }
+
+  // specific event
+  var callbacks = this._callbacks['$' + event];
+  if (!callbacks) return this;
+
+  // remove all handlers
+  if (1 == arguments.length) {
+    delete this._callbacks['$' + event];
+    return this;
+  }
+
+  // remove specific handler
+  var cb;
+  for (var i = 0; i < callbacks.length; i++) {
+    cb = callbacks[i];
+    if (cb === fn || cb.fn === fn) {
+      callbacks.splice(i, 1);
+      break;
+    }
+  }
+  return this;
+};
+
+/**
+ * Emit `event` with the given args.
+ *
+ * @param {String} event
+ * @param {Mixed} ...
+ * @return {Emitter}
+ */
+
+Emitter.prototype.emit = function(event){
+  this._callbacks = this._callbacks || {};
+  var args = [].slice.call(arguments, 1)
+    , callbacks = this._callbacks['$' + event];
+
+  if (callbacks) {
+    callbacks = callbacks.slice(0);
+    for (var i = 0, len = callbacks.length; i < len; ++i) {
+      callbacks[i].apply(this, args);
+    }
+  }
+
+  return this;
+};
+
+/**
+ * Return array of callbacks for `event`.
+ *
+ * @param {String} event
+ * @return {Array}
+ * @api public
+ */
+
+Emitter.prototype.listeners = function(event){
+  this._callbacks = this._callbacks || {};
+  return this._callbacks['$' + event] || [];
+};
+
+/**
+ * Check if this emitter has `event` handlers.
+ *
+ * @param {String} event
+ * @return {Boolean}
+ * @api public
+ */
+
+Emitter.prototype.hasListeners = function(event){
+  return !! this.listeners(event).length;
+};
+
+},{}],9:[function(require,module,exports){
+
+module.exports = function(a, b){
+  var fn = function(){};
+  fn.prototype = b.prototype;
+  a.prototype = new fn;
+  a.prototype.constructor = a;
+};
+},{}],10:[function(require,module,exports){
+(function (process){
+/**
+ * This is the web browser implementation of `debug()`.
+ *
+ * Expose `debug()` as the module.
+ */
+
+exports = module.exports = require('./debug');
+exports.log = log;
+exports.formatArgs = formatArgs;
+exports.save = save;
+exports.load = load;
+exports.useColors = useColors;
+exports.storage = 'undefined' != typeof chrome
+               && 'undefined' != typeof chrome.storage
+                  ? chrome.storage.local
+                  : localstorage();
+
+/**
+ * Colors.
+ */
+
+exports.colors = [
+  'lightseagreen',
+  'forestgreen',
+  'goldenrod',
+  'dodgerblue',
+  'darkorchid',
+  'crimson'
+];
+
+/**
+ * Currently only WebKit-based Web Inspectors, Firefox >= v31,
+ * and the Firebug extension (any Firefox version) are known
+ * to support "%c" CSS customizations.
+ *
+ * TODO: add a `localStorage` variable to explicitly enable/disable colors
+ */
+
+function useColors() {
+  // NB: In an Electron preload script, document will be defined but not fully
+  // initialized. Since we know we're in Chrome, we'll just detect this case
+  // explicitly
+  if (typeof window !== 'undefined' && window.process && window.process.type === 'renderer') {
+    return true;
+  }
+
+  // is webkit? http://stackoverflow.com/a/16459606/376773
+  // document is undefined in react-native: https://github.com/facebook/react-native/pull/1632
+  return (typeof document !== 'undefined' && document.documentElement && document.documentElement.style && document.documentElement.style.WebkitAppearance) ||
+    // is firebug? http://stackoverflow.com/a/398120/376773
+    (typeof window !== 'undefined' && window.console && (window.console.firebug || (window.console.exception && window.console.table))) ||
+    // is firefox >= v31?
+    // https://developer.mozilla.org/en-US/docs/Tools/Web_Console#Styling_messages
+    (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31) ||
+    // double check webkit in userAgent just in case we are in a worker
+    (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/applewebkit\/(\d+)/));
+}
+
+/**
+ * Map %j to `JSON.stringify()`, since no Web Inspectors do that by default.
+ */
+
+exports.formatters.j = function(v) {
+  try {
+    return JSON.stringify(v);
+  } catch (err) {
+    return '[UnexpectedJSONParseError]: ' + err.message;
+  }
+};
+
+
+/**
+ * Colorize log arguments if enabled.
+ *
+ * @api public
+ */
+
+function formatArgs(args) {
+  var useColors = this.useColors;
+
+  args[0] = (useColors ? '%c' : '')
+    + this.namespace
+    + (useColors ? ' %c' : ' ')
+    + args[0]
+    + (useColors ? '%c ' : ' ')
+    + '+' + exports.humanize(this.diff);
+
+  if (!useColors) return;
+
+  var c = 'color: ' + this.color;
+  args.splice(1, 0, c, 'color: inherit')
+
+  // the final "%c" is somewhat tricky, because there could be other
+  // arguments passed either before or after the %c, so we need to
+  // figure out the correct index to insert the CSS into
+  var index = 0;
+  var lastC = 0;
+  args[0].replace(/%[a-zA-Z%]/g, function(match) {
+    if ('%%' === match) return;
+    index++;
+    if ('%c' === match) {
+      // we only are interested in the *last* %c
+      // (the user may have provided their own)
+      lastC = index;
+    }
+  });
+
+  args.splice(lastC, 0, c);
+}
+
+/**
+ * Invokes `console.log()` when available.
+ * No-op when `console.log` is not a "function".
+ *
+ * @api public
+ */
+
+function log() {
+  // this hackery is required for IE8/9, where
+  // the `console.log` function doesn't have 'apply'
+  return 'object' === typeof console
+    && console.log
+    && Function.prototype.apply.call(console.log, console, arguments);
+}
+
+/**
+ * Save `namespaces`.
+ *
+ * @param {String} namespaces
+ * @api private
+ */
+
+function save(namespaces) {
+  try {
+    if (null == namespaces) {
+      exports.storage.removeItem('debug');
+    } else {
+      exports.storage.debug = namespaces;
+    }
+  } catch(e) {}
+}
+
+/**
+ * Load `namespaces`.
+ *
+ * @return {String} returns the previously persisted debug modes
+ * @api private
+ */
+
+function load() {
+  var r;
+  try {
+    r = exports.storage.debug;
+  } catch(e) {}
+
+  // If debug isn't set in LS, and we're in Electron, try to load $DEBUG
+  if (!r && typeof process !== 'undefined' && 'env' in process) {
+    r = process.env.DEBUG;
+  }
+
+  return r;
+}
+
+/**
+ * Enable namespaces listed in `localStorage.debug` initially.
+ */
+
+exports.enable(load());
+
+/**
+ * Localstorage attempts to return the localstorage.
+ *
+ * This is necessary because safari throws
+ * when a user disables cookies/localstorage
+ * and you attempt to access it.
+ *
+ * @return {LocalStorage}
+ * @api private
+ */
+
+function localstorage() {
+  try {
+    return window.localStorage;
+  } catch (e) {}
+}
+
+}).call(this,require('_process'))
+},{"./debug":11,"_process":33}],11:[function(require,module,exports){
+
+/**
+ * This is the common logic for both the Node.js and web browser
+ * implementations of `debug()`.
+ *
+ * Expose `debug()` as the module.
+ */
+
+exports = module.exports = createDebug.debug = createDebug['default'] = createDebug;
+exports.coerce = coerce;
+exports.disable = disable;
+exports.enable = enable;
+exports.enabled = enabled;
+exports.humanize = require('ms');
+
+/**
+ * The currently active debug mode names, and names to skip.
+ */
+
+exports.names = [];
+exports.skips = [];
+
+/**
+ * Map of special "%n" handling functions, for the debug "format" argument.
+ *
+ * Valid key names are a single, lower or upper-case letter, i.e. "n" and "N".
+ */
+
+exports.formatters = {};
+
+/**
+ * Previous log timestamp.
+ */
+
+var prevTime;
+
+/**
+ * Select a color.
+ * @param {String} namespace
+ * @return {Number}
+ * @api private
+ */
+
+function selectColor(namespace) {
+  var hash = 0, i;
+
+  for (i in namespace) {
+    hash  = ((hash << 5) - hash) + namespace.charCodeAt(i);
+    hash |= 0; // Convert to 32bit integer
+  }
+
+  return exports.colors[Math.abs(hash) % exports.colors.length];
+}
+
+/**
+ * Create a debugger with the given `namespace`.
+ *
+ * @param {String} namespace
+ * @return {Function}
+ * @api public
+ */
+
+function createDebug(namespace) {
+
+  function debug() {
+    // disabled?
+    if (!debug.enabled) return;
+
+    var self = debug;
+
+    // set `diff` timestamp
+    var curr = +new Date();
+    var ms = curr - (prevTime || curr);
+    self.diff = ms;
+    self.prev = prevTime;
+    self.curr = curr;
+    prevTime = curr;
+
+    // turn the `arguments` into a proper Array
+    var args = new Array(arguments.length);
+    for (var i = 0; i < args.length; i++) {
+      args[i] = arguments[i];
+    }
+
+    args[0] = exports.coerce(args[0]);
+
+    if ('string' !== typeof args[0]) {
+      // anything else let's inspect with %O
+      args.unshift('%O');
+    }
+
+    // apply any `formatters` transformations
+    var index = 0;
+    args[0] = args[0].replace(/%([a-zA-Z%])/g, function(match, format) {
+      // if we encounter an escaped % then don't increase the array index
+      if (match === '%%') return match;
+      index++;
+      var formatter = exports.formatters[format];
+      if ('function' === typeof formatter) {
+        var val = args[index];
+        match = formatter.call(self, val);
+
+        // now we need to remove `args[index]` since it's inlined in the `format`
+        args.splice(index, 1);
+        index--;
+      }
+      return match;
+    });
+
+    // apply env-specific formatting (colors, etc.)
+    exports.formatArgs.call(self, args);
+
+    var logFn = debug.log || exports.log || console.log.bind(console);
+    logFn.apply(self, args);
+  }
+
+  debug.namespace = namespace;
+  debug.enabled = exports.enabled(namespace);
+  debug.useColors = exports.useColors();
+  debug.color = selectColor(namespace);
+
+  // env-specific initialization logic for debug instances
+  if ('function' === typeof exports.init) {
+    exports.init(debug);
+  }
+
+  return debug;
+}
+
+/**
+ * Enables a debug mode by namespaces. This can include modes
+ * separated by a colon and wildcards.
+ *
+ * @param {String} namespaces
+ * @api public
+ */
+
+function enable(namespaces) {
+  exports.save(namespaces);
+
+  exports.names = [];
+  exports.skips = [];
+
+  var split = (typeof namespaces === 'string' ? namespaces : '').split(/[\s,]+/);
+  var len = split.length;
+
+  for (var i = 0; i < len; i++) {
+    if (!split[i]) continue; // ignore empty strings
+    namespaces = split[i].replace(/\*/g, '.*?');
+    if (namespaces[0] === '-') {
+      exports.skips.push(new RegExp('^' + namespaces.substr(1) + '$'));
+    } else {
+      exports.names.push(new RegExp('^' + namespaces + '$'));
+    }
+  }
+}
+
+/**
+ * Disable debug output.
+ *
+ * @api public
+ */
+
+function disable() {
+  exports.enable('');
+}
+
+/**
+ * Returns true if the given mode name is enabled, false otherwise.
+ *
+ * @param {String} name
+ * @return {Boolean}
+ * @api public
+ */
+
+function enabled(name) {
+  var i, len;
+  for (i = 0, len = exports.skips.length; i < len; i++) {
+    if (exports.skips[i].test(name)) {
+      return false;
+    }
+  }
+  for (i = 0, len = exports.names.length; i < len; i++) {
+    if (exports.names[i].test(name)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Coerce `val`.
+ *
+ * @param {Mixed} val
+ * @return {Mixed}
+ * @api private
+ */
+
+function coerce(val) {
+  if (val instanceof Error) return val.stack || val.message;
+  return val;
+}
+
+},{"ms":29}],12:[function(require,module,exports){
+
+module.exports = require('./lib/index');
+
+},{"./lib/index":13}],13:[function(require,module,exports){
+
+module.exports = require('./socket');
+
+/**
+ * Exports parser
+ *
+ * @api public
+ *
+ */
+module.exports.parser = require('engine.io-parser');
+
+},{"./socket":14,"engine.io-parser":22}],14:[function(require,module,exports){
+(function (global){
+/**
+ * Module dependencies.
+ */
+
+var transports = require('./transports/index');
+var Emitter = require('component-emitter');
+var debug = require('debug')('engine.io-client:socket');
+var index = require('indexof');
+var parser = require('engine.io-parser');
+var parseuri = require('parseuri');
+var parsejson = require('parsejson');
+var parseqs = require('parseqs');
+
+/**
+ * Module exports.
+ */
+
+module.exports = Socket;
+
+/**
+ * Socket constructor.
+ *
+ * @param {String|Object} uri or options
+ * @param {Object} options
+ * @api public
+ */
+
+function Socket (uri, opts) {
+  if (!(this instanceof Socket)) return new Socket(uri, opts);
+
+  opts = opts || {};
+
+  if (uri && 'object' === typeof uri) {
+    opts = uri;
+    uri = null;
+  }
+
+  if (uri) {
+    uri = parseuri(uri);
+    opts.hostname = uri.host;
+    opts.secure = uri.protocol === 'https' || uri.protocol === 'wss';
+    opts.port = uri.port;
+    if (uri.query) opts.query = uri.query;
+  } else if (opts.host) {
+    opts.hostname = parseuri(opts.host).host;
+  }
+
+  this.secure = null != opts.secure ? opts.secure
+    : (global.location && 'https:' === location.protocol);
+
+  if (opts.hostname && !opts.port) {
+    // if no port is specified manually, use the protocol default
+    opts.port = this.secure ? '443' : '80';
+  }
+
+  this.agent = opts.agent || false;
+  this.hostname = opts.hostname ||
+    (global.location ? location.hostname : 'localhost');
+  this.port = opts.port || (global.location && location.port
+      ? location.port
+      : (this.secure ? 443 : 80));
+  this.query = opts.query || {};
+  if ('string' === typeof this.query) this.query = parseqs.decode(this.query);
+  this.upgrade = false !== opts.upgrade;
+  this.path = (opts.path || '/engine.io').replace(/\/$/, '') + '/';
+  this.forceJSONP = !!opts.forceJSONP;
+  this.jsonp = false !== opts.jsonp;
+  this.forceBase64 = !!opts.forceBase64;
+  this.enablesXDR = !!opts.enablesXDR;
+  this.timestampParam = opts.timestampParam || 't';
+  this.timestampRequests = opts.timestampRequests;
+  this.transports = opts.transports || ['polling', 'websocket'];
+  this.transportOptions = opts.transportOptions || {};
+  this.readyState = '';
+  this.writeBuffer = [];
+  this.prevBufferLen = 0;
+  this.policyPort = opts.policyPort || 843;
+  this.rememberUpgrade = opts.rememberUpgrade || false;
+  this.binaryType = null;
+  this.onlyBinaryUpgrades = opts.onlyBinaryUpgrades;
+  this.perMessageDeflate = false !== opts.perMessageDeflate ? (opts.perMessageDeflate || {}) : false;
+
+  if (true === this.perMessageDeflate) this.perMessageDeflate = {};
+  if (this.perMessageDeflate && null == this.perMessageDeflate.threshold) {
+    this.perMessageDeflate.threshold = 1024;
+  }
+
+  // SSL options for Node.js client
+  this.pfx = opts.pfx || null;
+  this.key = opts.key || null;
+  this.passphrase = opts.passphrase || null;
+  this.cert = opts.cert || null;
+  this.ca = opts.ca || null;
+  this.ciphers = opts.ciphers || null;
+  this.rejectUnauthorized = opts.rejectUnauthorized === undefined ? true : opts.rejectUnauthorized;
+  this.forceNode = !!opts.forceNode;
+
+  // other options for Node.js client
+  var freeGlobal = typeof global === 'object' && global;
+  if (freeGlobal.global === freeGlobal) {
+    if (opts.extraHeaders && Object.keys(opts.extraHeaders).length > 0) {
+      this.extraHeaders = opts.extraHeaders;
+    }
+
+    if (opts.localAddress) {
+      this.localAddress = opts.localAddress;
+    }
+  }
+
+  // set on handshake
+  this.id = null;
+  this.upgrades = null;
+  this.pingInterval = null;
+  this.pingTimeout = null;
+
+  // set on heartbeat
+  this.pingIntervalTimer = null;
+  this.pingTimeoutTimer = null;
+
+  this.open();
+}
+
+Socket.priorWebsocketSuccess = false;
+
+/**
+ * Mix in `Emitter`.
+ */
+
+Emitter(Socket.prototype);
+
+/**
+ * Protocol version.
+ *
+ * @api public
+ */
+
+Socket.protocol = parser.protocol; // this is an int
+
+/**
+ * Expose deps for legacy compatibility
+ * and standalone browser access.
+ */
+
+Socket.Socket = Socket;
+Socket.Transport = require('./transport');
+Socket.transports = require('./transports/index');
+Socket.parser = require('engine.io-parser');
+
+/**
+ * Creates transport of the given type.
+ *
+ * @param {String} transport name
+ * @return {Transport}
+ * @api private
+ */
+
+Socket.prototype.createTransport = function (name) {
+  debug('creating transport "%s"', name);
+  var query = clone(this.query);
+
+  // append engine.io protocol identifier
+  query.EIO = parser.protocol;
+
+  // transport name
+  query.transport = name;
+
+  // per-transport options
+  var options = this.transportOptions[name] || {};
+
+  // session id if we already have one
+  if (this.id) query.sid = this.id;
+
+  var transport = new transports[name]({
+    query: query,
+    socket: this,
+    agent: options.agent || this.agent,
+    hostname: options.hostname || this.hostname,
+    port: options.port || this.port,
+    secure: options.secure || this.secure,
+    path: options.path || this.path,
+    forceJSONP: options.forceJSONP || this.forceJSONP,
+    jsonp: options.jsonp || this.jsonp,
+    forceBase64: options.forceBase64 || this.forceBase64,
+    enablesXDR: options.enablesXDR || this.enablesXDR,
+    timestampRequests: options.timestampRequests || this.timestampRequests,
+    timestampParam: options.timestampParam || this.timestampParam,
+    policyPort: options.policyPort || this.policyPort,
+    pfx: options.pfx || this.pfx,
+    key: options.key || this.key,
+    passphrase: options.passphrase || this.passphrase,
+    cert: options.cert || this.cert,
+    ca: options.ca || this.ca,
+    ciphers: options.ciphers || this.ciphers,
+    rejectUnauthorized: options.rejectUnauthorized || this.rejectUnauthorized,
+    perMessageDeflate: options.perMessageDeflate || this.perMessageDeflate,
+    extraHeaders: options.extraHeaders || this.extraHeaders,
+    forceNode: options.forceNode || this.forceNode,
+    localAddress: options.localAddress || this.localAddress,
+    requestTimeout: options.requestTimeout || this.requestTimeout,
+    protocols: options.protocols || void (0)
+  });
+
+  return transport;
+};
+
+function clone (obj) {
+  var o = {};
+  for (var i in obj) {
+    if (obj.hasOwnProperty(i)) {
+      o[i] = obj[i];
+    }
+  }
+  return o;
+}
+
+/**
+ * Initializes transport to use and starts probe.
+ *
+ * @api private
+ */
+Socket.prototype.open = function () {
+  var transport;
+  if (this.rememberUpgrade && Socket.priorWebsocketSuccess && this.transports.indexOf('websocket') !== -1) {
+    transport = 'websocket';
+  } else if (0 === this.transports.length) {
+    // Emit error on next tick so it can be listened to
+    var self = this;
+    setTimeout(function () {
+      self.emit('error', 'No transports available');
+    }, 0);
+    return;
+  } else {
+    transport = this.transports[0];
+  }
+  this.readyState = 'opening';
+
+  // Retry with the next transport if the transport is disabled (jsonp: false)
+  try {
+    transport = this.createTransport(transport);
+  } catch (e) {
+    this.transports.shift();
+    this.open();
+    return;
+  }
+
+  transport.open();
+  this.setTransport(transport);
+};
+
+/**
+ * Sets the current transport. Disables the existing one (if any).
+ *
+ * @api private
+ */
+
+Socket.prototype.setTransport = function (transport) {
+  debug('setting transport %s', transport.name);
+  var self = this;
+
+  if (this.transport) {
+    debug('clearing existing transport %s', this.transport.name);
+    this.transport.removeAllListeners();
+  }
+
+  // set up transport
+  this.transport = transport;
+
+  // set up transport listeners
+  transport
+  .on('drain', function () {
+    self.onDrain();
+  })
+  .on('packet', function (packet) {
+    self.onPacket(packet);
+  })
+  .on('error', function (e) {
+    self.onError(e);
+  })
+  .on('close', function () {
+    self.onClose('transport close');
+  });
+};
+
+/**
+ * Probes a transport.
+ *
+ * @param {String} transport name
+ * @api private
+ */
+
+Socket.prototype.probe = function (name) {
+  debug('probing transport "%s"', name);
+  var transport = this.createTransport(name, { probe: 1 });
+  var failed = false;
+  var self = this;
+
+  Socket.priorWebsocketSuccess = false;
+
+  function onTransportOpen () {
+    if (self.onlyBinaryUpgrades) {
+      var upgradeLosesBinary = !this.supportsBinary && self.transport.supportsBinary;
+      failed = failed || upgradeLosesBinary;
+    }
+    if (failed) return;
+
+    debug('probe transport "%s" opened', name);
+    transport.send([{ type: 'ping', data: 'probe' }]);
+    transport.once('packet', function (msg) {
+      if (failed) return;
+      if ('pong' === msg.type && 'probe' === msg.data) {
+        debug('probe transport "%s" pong', name);
+        self.upgrading = true;
+        self.emit('upgrading', transport);
+        if (!transport) return;
+        Socket.priorWebsocketSuccess = 'websocket' === transport.name;
+
+        debug('pausing current transport "%s"', self.transport.name);
+        self.transport.pause(function () {
+          if (failed) return;
+          if ('closed' === self.readyState) return;
+          debug('changing transport and sending upgrade packet');
+
+          cleanup();
+
+          self.setTransport(transport);
+          transport.send([{ type: 'upgrade' }]);
+          self.emit('upgrade', transport);
+          transport = null;
+          self.upgrading = false;
+          self.flush();
+        });
+      } else {
+        debug('probe transport "%s" failed', name);
+        var err = new Error('probe error');
+        err.transport = transport.name;
+        self.emit('upgradeError', err);
+      }
+    });
+  }
+
+  function freezeTransport () {
+    if (failed) return;
+
+    // Any callback called by transport should be ignored since now
+    failed = true;
+
+    cleanup();
+
+    transport.close();
+    transport = null;
+  }
+
+  // Handle any error that happens while probing
+  function onerror (err) {
+    var error = new Error('probe error: ' + err);
+    error.transport = transport.name;
+
+    freezeTransport();
+
+    debug('probe transport "%s" failed because of error: %s', name, err);
+
+    self.emit('upgradeError', error);
+  }
+
+  function onTransportClose () {
+    onerror('transport closed');
+  }
+
+  // When the socket is closed while we're probing
+  function onclose () {
+    onerror('socket closed');
+  }
+
+  // When the socket is upgraded while we're probing
+  function onupgrade (to) {
+    if (transport && to.name !== transport.name) {
+      debug('"%s" works - aborting "%s"', to.name, transport.name);
+      freezeTransport();
+    }
+  }
+
+  // Remove all listeners on the transport and on self
+  function cleanup () {
+    transport.removeListener('open', onTransportOpen);
+    transport.removeListener('error', onerror);
+    transport.removeListener('close', onTransportClose);
+    self.removeListener('close', onclose);
+    self.removeListener('upgrading', onupgrade);
+  }
+
+  transport.once('open', onTransportOpen);
+  transport.once('error', onerror);
+  transport.once('close', onTransportClose);
+
+  this.once('close', onclose);
+  this.once('upgrading', onupgrade);
+
+  transport.open();
+};
+
+/**
+ * Called when connection is deemed open.
+ *
+ * @api public
+ */
+
+Socket.prototype.onOpen = function () {
+  debug('socket open');
+  this.readyState = 'open';
+  Socket.priorWebsocketSuccess = 'websocket' === this.transport.name;
+  this.emit('open');
+  this.flush();
+
+  // we check for `readyState` in case an `open`
+  // listener already closed the socket
+  if ('open' === this.readyState && this.upgrade && this.transport.pause) {
+    debug('starting upgrade probes');
+    for (var i = 0, l = this.upgrades.length; i < l; i++) {
+      this.probe(this.upgrades[i]);
+    }
+  }
+};
+
+/**
+ * Handles a packet.
+ *
+ * @api private
+ */
+
+Socket.prototype.onPacket = function (packet) {
+  if ('opening' === this.readyState || 'open' === this.readyState ||
+      'closing' === this.readyState) {
+    debug('socket receive: type "%s", data "%s"', packet.type, packet.data);
+
+    this.emit('packet', packet);
+
+    // Socket is live - any packet counts
+    this.emit('heartbeat');
+
+    switch (packet.type) {
+      case 'open':
+        this.onHandshake(parsejson(packet.data));
+        break;
+
+      case 'pong':
+        this.setPing();
+        this.emit('pong');
+        break;
+
+      case 'error':
+        var err = new Error('server error');
+        err.code = packet.data;
+        this.onError(err);
+        break;
+
+      case 'message':
+        this.emit('data', packet.data);
+        this.emit('message', packet.data);
+        break;
+    }
+  } else {
+    debug('packet received with socket readyState "%s"', this.readyState);
+  }
+};
+
+/**
+ * Called upon handshake completion.
+ *
+ * @param {Object} handshake obj
+ * @api private
+ */
+
+Socket.prototype.onHandshake = function (data) {
+  this.emit('handshake', data);
+  this.id = data.sid;
+  this.transport.query.sid = data.sid;
+  this.upgrades = this.filterUpgrades(data.upgrades);
+  this.pingInterval = data.pingInterval;
+  this.pingTimeout = data.pingTimeout;
+  this.onOpen();
+  // In case open handler closes socket
+  if ('closed' === this.readyState) return;
+  this.setPing();
+
+  // Prolong liveness of socket on heartbeat
+  this.removeListener('heartbeat', this.onHeartbeat);
+  this.on('heartbeat', this.onHeartbeat);
+};
+
+/**
+ * Resets ping timeout.
+ *
+ * @api private
+ */
+
+Socket.prototype.onHeartbeat = function (timeout) {
+  clearTimeout(this.pingTimeoutTimer);
+  var self = this;
+  self.pingTimeoutTimer = setTimeout(function () {
+    if ('closed' === self.readyState) return;
+    self.onClose('ping timeout');
+  }, timeout || (self.pingInterval + self.pingTimeout));
+};
+
+/**
+ * Pings server every `this.pingInterval` and expects response
+ * within `this.pingTimeout` or closes connection.
+ *
+ * @api private
+ */
+
+Socket.prototype.setPing = function () {
+  var self = this;
+  clearTimeout(self.pingIntervalTimer);
+  self.pingIntervalTimer = setTimeout(function () {
+    debug('writing ping packet - expecting pong within %sms', self.pingTimeout);
+    self.ping();
+    self.onHeartbeat(self.pingTimeout);
+  }, self.pingInterval);
+};
+
+/**
+* Sends a ping packet.
+*
+* @api private
+*/
+
+Socket.prototype.ping = function () {
+  var self = this;
+  this.sendPacket('ping', function () {
+    self.emit('ping');
+  });
+};
+
+/**
+ * Called on `drain` event
+ *
+ * @api private
+ */
+
+Socket.prototype.onDrain = function () {
+  this.writeBuffer.splice(0, this.prevBufferLen);
+
+  // setting prevBufferLen = 0 is very important
+  // for example, when upgrading, upgrade packet is sent over,
+  // and a nonzero prevBufferLen could cause problems on `drain`
+  this.prevBufferLen = 0;
+
+  if (0 === this.writeBuffer.length) {
+    this.emit('drain');
+  } else {
+    this.flush();
+  }
+};
+
+/**
+ * Flush write buffers.
+ *
+ * @api private
+ */
+
+Socket.prototype.flush = function () {
+  if ('closed' !== this.readyState && this.transport.writable &&
+    !this.upgrading && this.writeBuffer.length) {
+    debug('flushing %d packets in socket', this.writeBuffer.length);
+    this.transport.send(this.writeBuffer);
+    // keep track of current length of writeBuffer
+    // splice writeBuffer and callbackBuffer on `drain`
+    this.prevBufferLen = this.writeBuffer.length;
+    this.emit('flush');
+  }
+};
+
+/**
+ * Sends a message.
+ *
+ * @param {String} message.
+ * @param {Function} callback function.
+ * @param {Object} options.
+ * @return {Socket} for chaining.
+ * @api public
+ */
+
+Socket.prototype.write =
+Socket.prototype.send = function (msg, options, fn) {
+  this.sendPacket('message', msg, options, fn);
+  return this;
+};
+
+/**
+ * Sends a packet.
+ *
+ * @param {String} packet type.
+ * @param {String} data.
+ * @param {Object} options.
+ * @param {Function} callback function.
+ * @api private
+ */
+
+Socket.prototype.sendPacket = function (type, data, options, fn) {
+  if ('function' === typeof data) {
+    fn = data;
+    data = undefined;
+  }
+
+  if ('function' === typeof options) {
+    fn = options;
+    options = null;
+  }
+
+  if ('closing' === this.readyState || 'closed' === this.readyState) {
+    return;
+  }
+
+  options = options || {};
+  options.compress = false !== options.compress;
+
+  var packet = {
+    type: type,
+    data: data,
+    options: options
+  };
+  this.emit('packetCreate', packet);
+  this.writeBuffer.push(packet);
+  if (fn) this.once('flush', fn);
+  this.flush();
+};
+
+/**
+ * Closes the connection.
+ *
+ * @api private
+ */
+
+Socket.prototype.close = function () {
+  if ('opening' === this.readyState || 'open' === this.readyState) {
+    this.readyState = 'closing';
+
+    var self = this;
+
+    if (this.writeBuffer.length) {
+      this.once('drain', function () {
+        if (this.upgrading) {
+          waitForUpgrade();
+        } else {
+          close();
+        }
+      });
+    } else if (this.upgrading) {
+      waitForUpgrade();
+    } else {
+      close();
+    }
+  }
+
+  function close () {
+    self.onClose('forced close');
+    debug('socket closing - telling transport to close');
+    self.transport.close();
+  }
+
+  function cleanupAndClose () {
+    self.removeListener('upgrade', cleanupAndClose);
+    self.removeListener('upgradeError', cleanupAndClose);
+    close();
+  }
+
+  function waitForUpgrade () {
+    // wait for upgrade to finish since we can't send packets while pausing a transport
+    self.once('upgrade', cleanupAndClose);
+    self.once('upgradeError', cleanupAndClose);
+  }
+
+  return this;
+};
+
+/**
+ * Called upon transport error
+ *
+ * @api private
+ */
+
+Socket.prototype.onError = function (err) {
+  debug('socket error %j', err);
+  Socket.priorWebsocketSuccess = false;
+  this.emit('error', err);
+  this.onClose('transport error', err);
+};
+
+/**
+ * Called upon transport close.
+ *
+ * @api private
+ */
+
+Socket.prototype.onClose = function (reason, desc) {
+  if ('opening' === this.readyState || 'open' === this.readyState || 'closing' === this.readyState) {
+    debug('socket close with reason: "%s"', reason);
+    var self = this;
+
+    // clear timers
+    clearTimeout(this.pingIntervalTimer);
+    clearTimeout(this.pingTimeoutTimer);
+
+    // stop event from firing again for transport
+    this.transport.removeAllListeners('close');
+
+    // ensure transport won't stay open
+    this.transport.close();
+
+    // ignore further transport communication
+    this.transport.removeAllListeners();
+
+    // set ready state
+    this.readyState = 'closed';
+
+    // clear session id
+    this.id = null;
+
+    // emit close event
+    this.emit('close', reason, desc);
+
+    // clean buffers after, so users can still
+    // grab the buffers on `close` event
+    self.writeBuffer = [];
+    self.prevBufferLen = 0;
+  }
+};
+
+/**
+ * Filters upgrades, returning only those matching client transports.
+ *
+ * @param {Array} server upgrades
+ * @api private
+ *
+ */
+
+Socket.prototype.filterUpgrades = function (upgrades) {
+  var filteredUpgrades = [];
+  for (var i = 0, j = upgrades.length; i < j; i++) {
+    if (~index(this.transports, upgrades[i])) filteredUpgrades.push(upgrades[i]);
+  }
+  return filteredUpgrades;
+};
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"./transport":15,"./transports/index":16,"component-emitter":8,"debug":10,"engine.io-parser":22,"indexof":28,"parsejson":30,"parseqs":31,"parseuri":32}],15:[function(require,module,exports){
+/**
+ * Module dependencies.
+ */
+
+var parser = require('engine.io-parser');
+var Emitter = require('component-emitter');
+
+/**
+ * Module exports.
+ */
+
+module.exports = Transport;
+
+/**
+ * Transport abstract constructor.
+ *
+ * @param {Object} options.
+ * @api private
+ */
+
+function Transport (opts) {
+  this.path = opts.path;
+  this.hostname = opts.hostname;
+  this.port = opts.port;
+  this.secure = opts.secure;
+  this.query = opts.query;
+  this.timestampParam = opts.timestampParam;
+  this.timestampRequests = opts.timestampRequests;
+  this.readyState = '';
+  this.agent = opts.agent || false;
+  this.socket = opts.socket;
+  this.enablesXDR = opts.enablesXDR;
+
+  // SSL options for Node.js client
+  this.pfx = opts.pfx;
+  this.key = opts.key;
+  this.passphrase = opts.passphrase;
+  this.cert = opts.cert;
+  this.ca = opts.ca;
+  this.ciphers = opts.ciphers;
+  this.rejectUnauthorized = opts.rejectUnauthorized;
+  this.forceNode = opts.forceNode;
+
+  // other options for Node.js client
+  this.extraHeaders = opts.extraHeaders;
+  this.localAddress = opts.localAddress;
+}
+
+/**
+ * Mix in `Emitter`.
+ */
+
+Emitter(Transport.prototype);
+
+/**
+ * Emits an error.
+ *
+ * @param {String} str
+ * @return {Transport} for chaining
+ * @api public
+ */
+
+Transport.prototype.onError = function (msg, desc) {
+  var err = new Error(msg);
+  err.type = 'TransportError';
+  err.description = desc;
+  this.emit('error', err);
+  return this;
+};
+
+/**
+ * Opens the transport.
+ *
+ * @api public
+ */
+
+Transport.prototype.open = function () {
+  if ('closed' === this.readyState || '' === this.readyState) {
+    this.readyState = 'opening';
+    this.doOpen();
+  }
+
+  return this;
+};
+
+/**
+ * Closes the transport.
+ *
+ * @api private
+ */
+
+Transport.prototype.close = function () {
+  if ('opening' === this.readyState || 'open' === this.readyState) {
+    this.doClose();
+    this.onClose();
+  }
+
+  return this;
+};
+
+/**
+ * Sends multiple packets.
+ *
+ * @param {Array} packets
+ * @api private
+ */
+
+Transport.prototype.send = function (packets) {
+  if ('open' === this.readyState) {
+    this.write(packets);
+  } else {
+    throw new Error('Transport not open');
+  }
+};
+
+/**
+ * Called upon open
+ *
+ * @api private
+ */
+
+Transport.prototype.onOpen = function () {
+  this.readyState = 'open';
+  this.writable = true;
+  this.emit('open');
+};
+
+/**
+ * Called with data.
+ *
+ * @param {String} data
+ * @api private
+ */
+
+Transport.prototype.onData = function (data) {
+  var packet = parser.decodePacket(data, this.socket.binaryType);
+  this.onPacket(packet);
+};
+
+/**
+ * Called with a decoded packet.
+ */
+
+Transport.prototype.onPacket = function (packet) {
+  this.emit('packet', packet);
+};
+
+/**
+ * Called upon close.
+ *
+ * @api private
+ */
+
+Transport.prototype.onClose = function () {
+  this.readyState = 'closed';
+  this.emit('close');
+};
+
+},{"component-emitter":8,"engine.io-parser":22}],16:[function(require,module,exports){
+(function (global){
+/**
+ * Module dependencies
+ */
+
+var XMLHttpRequest = require('xmlhttprequest-ssl');
+var XHR = require('./polling-xhr');
+var JSONP = require('./polling-jsonp');
+var websocket = require('./websocket');
+
+/**
+ * Export transports.
+ */
+
+exports.polling = polling;
+exports.websocket = websocket;
+
+/**
+ * Polling transport polymorphic constructor.
+ * Decides on xhr vs jsonp based on feature detection.
+ *
+ * @api private
+ */
+
+function polling (opts) {
+  var xhr;
+  var xd = false;
+  var xs = false;
+  var jsonp = false !== opts.jsonp;
+
+  if (global.location) {
+    var isSSL = 'https:' === location.protocol;
+    var port = location.port;
+
+    // some user agents have empty `location.port`
+    if (!port) {
+      port = isSSL ? 443 : 80;
+    }
+
+    xd = opts.hostname !== location.hostname || port !== opts.port;
+    xs = opts.secure !== isSSL;
+  }
+
+  opts.xdomain = xd;
+  opts.xscheme = xs;
+  xhr = new XMLHttpRequest(opts);
+
+  if ('open' in xhr && !opts.forceJSONP) {
+    return new XHR(opts);
+  } else {
+    if (!jsonp) throw new Error('JSONP disabled');
+    return new JSONP(opts);
+  }
+}
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"./polling-jsonp":17,"./polling-xhr":18,"./websocket":20,"xmlhttprequest-ssl":21}],17:[function(require,module,exports){
+(function (global){
+
+/**
+ * Module requirements.
+ */
+
+var Polling = require('./polling');
+var inherit = require('component-inherit');
+
+/**
+ * Module exports.
+ */
+
+module.exports = JSONPPolling;
+
+/**
+ * Cached regular expressions.
+ */
+
+var rNewline = /\n/g;
+var rEscapedNewline = /\\n/g;
+
+/**
+ * Global JSONP callbacks.
+ */
+
+var callbacks;
+
+/**
+ * Noop.
+ */
+
+function empty () { }
+
+/**
+ * JSONP Polling constructor.
+ *
+ * @param {Object} opts.
+ * @api public
+ */
+
+function JSONPPolling (opts) {
+  Polling.call(this, opts);
+
+  this.query = this.query || {};
+
+  // define global callbacks array if not present
+  // we do this here (lazily) to avoid unneeded global pollution
+  if (!callbacks) {
+    // we need to consider multiple engines in the same page
+    if (!global.___eio) global.___eio = [];
+    callbacks = global.___eio;
+  }
+
+  // callback identifier
+  this.index = callbacks.length;
+
+  // add callback to jsonp global
+  var self = this;
+  callbacks.push(function (msg) {
+    self.onData(msg);
+  });
+
+  // append to query string
+  this.query.j = this.index;
+
+  // prevent spurious errors from being emitted when the window is unloaded
+  if (global.document && global.addEventListener) {
+    global.addEventListener('beforeunload', function () {
+      if (self.script) self.script.onerror = empty;
+    }, false);
+  }
+}
+
+/**
+ * Inherits from Polling.
+ */
+
+inherit(JSONPPolling, Polling);
+
+/*
+ * JSONP only supports binary as base64 encoded strings
+ */
+
+JSONPPolling.prototype.supportsBinary = false;
+
+/**
+ * Closes the socket.
+ *
+ * @api private
+ */
+
+JSONPPolling.prototype.doClose = function () {
+  if (this.script) {
+    this.script.parentNode.removeChild(this.script);
+    this.script = null;
+  }
+
+  if (this.form) {
+    this.form.parentNode.removeChild(this.form);
+    this.form = null;
+    this.iframe = null;
+  }
+
+  Polling.prototype.doClose.call(this);
+};
+
+/**
+ * Starts a poll cycle.
+ *
+ * @api private
+ */
+
+JSONPPolling.prototype.doPoll = function () {
+  var self = this;
+  var script = document.createElement('script');
+
+  if (this.script) {
+    this.script.parentNode.removeChild(this.script);
+    this.script = null;
+  }
+
+  script.async = true;
+  script.src = this.uri();
+  script.onerror = function (e) {
+    self.onError('jsonp poll error', e);
+  };
+
+  var insertAt = document.getElementsByTagName('script')[0];
+  if (insertAt) {
+    insertAt.parentNode.insertBefore(script, insertAt);
+  } else {
+    (document.head || document.body).appendChild(script);
+  }
+  this.script = script;
+
+  var isUAgecko = 'undefined' !== typeof navigator && /gecko/i.test(navigator.userAgent);
+
+  if (isUAgecko) {
+    setTimeout(function () {
+      var iframe = document.createElement('iframe');
+      document.body.appendChild(iframe);
+      document.body.removeChild(iframe);
+    }, 100);
+  }
+};
+
+/**
+ * Writes with a hidden iframe.
+ *
+ * @param {String} data to send
+ * @param {Function} called upon flush.
+ * @api private
+ */
+
+JSONPPolling.prototype.doWrite = function (data, fn) {
+  var self = this;
+
+  if (!this.form) {
+    var form = document.createElement('form');
+    var area = document.createElement('textarea');
+    var id = this.iframeId = 'eio_iframe_' + this.index;
+    var iframe;
+
+    form.className = 'socketio';
+    form.style.position = 'absolute';
+    form.style.top = '-1000px';
+    form.style.left = '-1000px';
+    form.target = id;
+    form.method = 'POST';
+    form.setAttribute('accept-charset', 'utf-8');
+    area.name = 'd';
+    form.appendChild(area);
+    document.body.appendChild(form);
+
+    this.form = form;
+    this.area = area;
+  }
+
+  this.form.action = this.uri();
+
+  function complete () {
+    initIframe();
+    fn();
+  }
+
+  function initIframe () {
+    if (self.iframe) {
+      try {
+        self.form.removeChild(self.iframe);
+      } catch (e) {
+        self.onError('jsonp polling iframe removal error', e);
+      }
+    }
+
+    try {
+      // ie6 dynamic iframes with target="" support (thanks Chris Lambacher)
+      var html = '<iframe src="javascript:0" name="' + self.iframeId + '">';
+      iframe = document.createElement(html);
+    } catch (e) {
+      iframe = document.createElement('iframe');
+      iframe.name = self.iframeId;
+      iframe.src = 'javascript:0';
+    }
+
+    iframe.id = self.iframeId;
+
+    self.form.appendChild(iframe);
+    self.iframe = iframe;
+  }
+
+  initIframe();
+
+  // escape \n to prevent it from being converted into \r\n by some UAs
+  // double escaping is required for escaped new lines because unescaping of new lines can be done safely on server-side
+  data = data.replace(rEscapedNewline, '\\\n');
+  this.area.value = data.replace(rNewline, '\\n');
+
+  try {
+    this.form.submit();
+  } catch (e) {}
+
+  if (this.iframe.attachEvent) {
+    this.iframe.onreadystatechange = function () {
+      if (self.iframe.readyState === 'complete') {
+        complete();
+      }
+    };
+  } else {
+    this.iframe.onload = complete;
+  }
+};
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"./polling":19,"component-inherit":9}],18:[function(require,module,exports){
+(function (global){
+/**
+ * Module requirements.
+ */
+
+var XMLHttpRequest = require('xmlhttprequest-ssl');
+var Polling = require('./polling');
+var Emitter = require('component-emitter');
+var inherit = require('component-inherit');
+var debug = require('debug')('engine.io-client:polling-xhr');
+
+/**
+ * Module exports.
+ */
+
+module.exports = XHR;
+module.exports.Request = Request;
+
+/**
+ * Empty function
+ */
+
+function empty () {}
+
+/**
+ * XHR Polling constructor.
+ *
+ * @param {Object} opts
+ * @api public
+ */
+
+function XHR (opts) {
+  Polling.call(this, opts);
+  this.requestTimeout = opts.requestTimeout;
+  this.extraHeaders = opts.extraHeaders;
+
+  if (global.location) {
+    var isSSL = 'https:' === location.protocol;
+    var port = location.port;
+
+    // some user agents have empty `location.port`
+    if (!port) {
+      port = isSSL ? 443 : 80;
+    }
+
+    this.xd = opts.hostname !== global.location.hostname ||
+      port !== opts.port;
+    this.xs = opts.secure !== isSSL;
+  }
+}
+
+/**
+ * Inherits from Polling.
+ */
+
+inherit(XHR, Polling);
+
+/**
+ * XHR supports binary
+ */
+
+XHR.prototype.supportsBinary = true;
+
+/**
+ * Creates a request.
+ *
+ * @param {String} method
+ * @api private
+ */
+
+XHR.prototype.request = function (opts) {
+  opts = opts || {};
+  opts.uri = this.uri();
+  opts.xd = this.xd;
+  opts.xs = this.xs;
+  opts.agent = this.agent || false;
+  opts.supportsBinary = this.supportsBinary;
+  opts.enablesXDR = this.enablesXDR;
+
+  // SSL options for Node.js client
+  opts.pfx = this.pfx;
+  opts.key = this.key;
+  opts.passphrase = this.passphrase;
+  opts.cert = this.cert;
+  opts.ca = this.ca;
+  opts.ciphers = this.ciphers;
+  opts.rejectUnauthorized = this.rejectUnauthorized;
+  opts.requestTimeout = this.requestTimeout;
+
+  // other options for Node.js client
+  opts.extraHeaders = this.extraHeaders;
+
+  return new Request(opts);
+};
+
+/**
+ * Sends data.
+ *
+ * @param {String} data to send.
+ * @param {Function} called upon flush.
+ * @api private
+ */
+
+XHR.prototype.doWrite = function (data, fn) {
+  var isBinary = typeof data !== 'string' && data !== undefined;
+  var req = this.request({ method: 'POST', data: data, isBinary: isBinary });
+  var self = this;
+  req.on('success', fn);
+  req.on('error', function (err) {
+    self.onError('xhr post error', err);
+  });
+  this.sendXhr = req;
+};
+
+/**
+ * Starts a poll cycle.
+ *
+ * @api private
+ */
+
+XHR.prototype.doPoll = function () {
+  debug('xhr poll');
+  var req = this.request();
+  var self = this;
+  req.on('data', function (data) {
+    self.onData(data);
+  });
+  req.on('error', function (err) {
+    self.onError('xhr poll error', err);
+  });
+  this.pollXhr = req;
+};
+
+/**
+ * Request constructor
+ *
+ * @param {Object} options
+ * @api public
+ */
+
+function Request (opts) {
+  this.method = opts.method || 'GET';
+  this.uri = opts.uri;
+  this.xd = !!opts.xd;
+  this.xs = !!opts.xs;
+  this.async = false !== opts.async;
+  this.data = undefined !== opts.data ? opts.data : null;
+  this.agent = opts.agent;
+  this.isBinary = opts.isBinary;
+  this.supportsBinary = opts.supportsBinary;
+  this.enablesXDR = opts.enablesXDR;
+  this.requestTimeout = opts.requestTimeout;
+
+  // SSL options for Node.js client
+  this.pfx = opts.pfx;
+  this.key = opts.key;
+  this.passphrase = opts.passphrase;
+  this.cert = opts.cert;
+  this.ca = opts.ca;
+  this.ciphers = opts.ciphers;
+  this.rejectUnauthorized = opts.rejectUnauthorized;
+
+  // other options for Node.js client
+  this.extraHeaders = opts.extraHeaders;
+
+  this.create();
+}
+
+/**
+ * Mix in `Emitter`.
+ */
+
+Emitter(Request.prototype);
+
+/**
+ * Creates the XHR object and sends the request.
+ *
+ * @api private
+ */
+
+Request.prototype.create = function () {
+  var opts = { agent: this.agent, xdomain: this.xd, xscheme: this.xs, enablesXDR: this.enablesXDR };
+
+  // SSL options for Node.js client
+  opts.pfx = this.pfx;
+  opts.key = this.key;
+  opts.passphrase = this.passphrase;
+  opts.cert = this.cert;
+  opts.ca = this.ca;
+  opts.ciphers = this.ciphers;
+  opts.rejectUnauthorized = this.rejectUnauthorized;
+
+  var xhr = this.xhr = new XMLHttpRequest(opts);
+  var self = this;
+
+  try {
+    debug('xhr open %s: %s', this.method, this.uri);
+    xhr.open(this.method, this.uri, this.async);
+    try {
+      if (this.extraHeaders) {
+        xhr.setDisableHeaderCheck && xhr.setDisableHeaderCheck(true);
+        for (var i in this.extraHeaders) {
+          if (this.extraHeaders.hasOwnProperty(i)) {
+            xhr.setRequestHeader(i, this.extraHeaders[i]);
+          }
+        }
+      }
+    } catch (e) {}
+
+    if ('POST' === this.method) {
+      try {
+        if (this.isBinary) {
+          xhr.setRequestHeader('Content-type', 'application/octet-stream');
+        } else {
+          xhr.setRequestHeader('Content-type', 'text/plain;charset=UTF-8');
+        }
+      } catch (e) {}
+    }
+
+    try {
+      xhr.setRequestHeader('Accept', '*/*');
+    } catch (e) {}
+
+    // ie6 check
+    if ('withCredentials' in xhr) {
+      xhr.withCredentials = true;
+    }
+
+    if (this.requestTimeout) {
+      xhr.timeout = this.requestTimeout;
+    }
+
+    if (this.hasXDR()) {
+      xhr.onload = function () {
+        self.onLoad();
+      };
+      xhr.onerror = function () {
+        self.onError(xhr.responseText);
+      };
+    } else {
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState === 2) {
+          var contentType;
+          try {
+            contentType = xhr.getResponseHeader('Content-Type');
+          } catch (e) {}
+          if (contentType === 'application/octet-stream') {
+            xhr.responseType = 'arraybuffer';
+          }
+        }
+        if (4 !== xhr.readyState) return;
+        if (200 === xhr.status || 1223 === xhr.status) {
+          self.onLoad();
+        } else {
+          // make sure the `error` event handler that's user-set
+          // does not throw in the same tick and gets caught here
+          setTimeout(function () {
+            self.onError(xhr.status);
+          }, 0);
+        }
+      };
+    }
+
+    debug('xhr data %s', this.data);
+    xhr.send(this.data);
+  } catch (e) {
+    // Need to defer since .create() is called directly fhrom the constructor
+    // and thus the 'error' event can only be only bound *after* this exception
+    // occurs.  Therefore, also, we cannot throw here at all.
+    setTimeout(function () {
+      self.onError(e);
+    }, 0);
+    return;
+  }
+
+  if (global.document) {
+    this.index = Request.requestsCount++;
+    Request.requests[this.index] = this;
+  }
+};
+
+/**
+ * Called upon successful response.
+ *
+ * @api private
+ */
+
+Request.prototype.onSuccess = function () {
+  this.emit('success');
+  this.cleanup();
+};
+
+/**
+ * Called if we have data.
+ *
+ * @api private
+ */
+
+Request.prototype.onData = function (data) {
+  this.emit('data', data);
+  this.onSuccess();
+};
+
+/**
+ * Called upon error.
+ *
+ * @api private
+ */
+
+Request.prototype.onError = function (err) {
+  this.emit('error', err);
+  this.cleanup(true);
+};
+
+/**
+ * Cleans up house.
+ *
+ * @api private
+ */
+
+Request.prototype.cleanup = function (fromError) {
+  if ('undefined' === typeof this.xhr || null === this.xhr) {
+    return;
+  }
+  // xmlhttprequest
+  if (this.hasXDR()) {
+    this.xhr.onload = this.xhr.onerror = empty;
+  } else {
+    this.xhr.onreadystatechange = empty;
+  }
+
+  if (fromError) {
+    try {
+      this.xhr.abort();
+    } catch (e) {}
+  }
+
+  if (global.document) {
+    delete Request.requests[this.index];
+  }
+
+  this.xhr = null;
+};
+
+/**
+ * Called upon load.
+ *
+ * @api private
+ */
+
+Request.prototype.onLoad = function () {
+  var data;
+  try {
+    var contentType;
+    try {
+      contentType = this.xhr.getResponseHeader('Content-Type');
+    } catch (e) {}
+    if (contentType === 'application/octet-stream') {
+      data = this.xhr.response || this.xhr.responseText;
+    } else {
+      data = this.xhr.responseText;
+    }
+  } catch (e) {
+    this.onError(e);
+  }
+  if (null != data) {
+    this.onData(data);
+  }
+};
+
+/**
+ * Check if it has XDomainRequest.
+ *
+ * @api private
+ */
+
+Request.prototype.hasXDR = function () {
+  return 'undefined' !== typeof global.XDomainRequest && !this.xs && this.enablesXDR;
+};
+
+/**
+ * Aborts the request.
+ *
+ * @api public
+ */
+
+Request.prototype.abort = function () {
+  this.cleanup();
+};
+
+/**
+ * Aborts pending requests when unloading the window. This is needed to prevent
+ * memory leaks (e.g. when using IE) and to ensure that no spurious error is
+ * emitted.
+ */
+
+Request.requestsCount = 0;
+Request.requests = {};
+
+if (global.document) {
+  if (global.attachEvent) {
+    global.attachEvent('onunload', unloadHandler);
+  } else if (global.addEventListener) {
+    global.addEventListener('beforeunload', unloadHandler, false);
+  }
+}
+
+function unloadHandler () {
+  for (var i in Request.requests) {
+    if (Request.requests.hasOwnProperty(i)) {
+      Request.requests[i].abort();
+    }
+  }
+}
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"./polling":19,"component-emitter":8,"component-inherit":9,"debug":10,"xmlhttprequest-ssl":21}],19:[function(require,module,exports){
+/**
+ * Module dependencies.
+ */
+
+var Transport = require('../transport');
+var parseqs = require('parseqs');
+var parser = require('engine.io-parser');
+var inherit = require('component-inherit');
+var yeast = require('yeast');
+var debug = require('debug')('engine.io-client:polling');
+
+/**
+ * Module exports.
+ */
+
+module.exports = Polling;
+
+/**
+ * Is XHR2 supported?
+ */
+
+var hasXHR2 = (function () {
+  var XMLHttpRequest = require('xmlhttprequest-ssl');
+  var xhr = new XMLHttpRequest({ xdomain: false });
+  return null != xhr.responseType;
+})();
+
+/**
+ * Polling interface.
+ *
+ * @param {Object} opts
+ * @api private
+ */
+
+function Polling (opts) {
+  var forceBase64 = (opts && opts.forceBase64);
+  if (!hasXHR2 || forceBase64) {
+    this.supportsBinary = false;
+  }
+  Transport.call(this, opts);
+}
+
+/**
+ * Inherits from Transport.
+ */
+
+inherit(Polling, Transport);
+
+/**
+ * Transport name.
+ */
+
+Polling.prototype.name = 'polling';
+
+/**
+ * Opens the socket (triggers polling). We write a PING message to determine
+ * when the transport is open.
+ *
+ * @api private
+ */
+
+Polling.prototype.doOpen = function () {
+  this.poll();
+};
+
+/**
+ * Pauses polling.
+ *
+ * @param {Function} callback upon buffers are flushed and transport is paused
+ * @api private
+ */
+
+Polling.prototype.pause = function (onPause) {
+  var self = this;
+
+  this.readyState = 'pausing';
+
+  function pause () {
+    debug('paused');
+    self.readyState = 'paused';
+    onPause();
+  }
+
+  if (this.polling || !this.writable) {
+    var total = 0;
+
+    if (this.polling) {
+      debug('we are currently polling - waiting to pause');
+      total++;
+      this.once('pollComplete', function () {
+        debug('pre-pause polling complete');
+        --total || pause();
+      });
+    }
+
+    if (!this.writable) {
+      debug('we are currently writing - waiting to pause');
+      total++;
+      this.once('drain', function () {
+        debug('pre-pause writing complete');
+        --total || pause();
+      });
+    }
+  } else {
+    pause();
+  }
+};
+
+/**
+ * Starts polling cycle.
+ *
+ * @api public
+ */
+
+Polling.prototype.poll = function () {
+  debug('polling');
+  this.polling = true;
+  this.doPoll();
+  this.emit('poll');
+};
+
+/**
+ * Overloads onData to detect payloads.
+ *
+ * @api private
+ */
+
+Polling.prototype.onData = function (data) {
+  var self = this;
+  debug('polling got data %s', data);
+  var callback = function (packet, index, total) {
+    // if its the first message we consider the transport open
+    if ('opening' === self.readyState) {
+      self.onOpen();
+    }
+
+    // if its a close packet, we close the ongoing requests
+    if ('close' === packet.type) {
+      self.onClose();
+      return false;
+    }
+
+    // otherwise bypass onData and handle the message
+    self.onPacket(packet);
+  };
+
+  // decode payload
+  parser.decodePayload(data, this.socket.binaryType, callback);
+
+  // if an event did not trigger closing
+  if ('closed' !== this.readyState) {
+    // if we got data we're not polling
+    this.polling = false;
+    this.emit('pollComplete');
+
+    if ('open' === this.readyState) {
+      this.poll();
+    } else {
+      debug('ignoring poll - transport state "%s"', this.readyState);
+    }
+  }
+};
+
+/**
+ * For polling, send a close packet.
+ *
+ * @api private
+ */
+
+Polling.prototype.doClose = function () {
+  var self = this;
+
+  function close () {
+    debug('writing close packet');
+    self.write([{ type: 'close' }]);
+  }
+
+  if ('open' === this.readyState) {
+    debug('transport open - closing');
+    close();
+  } else {
+    // in case we're trying to close while
+    // handshaking is in progress (GH-164)
+    debug('transport not open - deferring close');
+    this.once('open', close);
+  }
+};
+
+/**
+ * Writes a packets payload.
+ *
+ * @param {Array} data packets
+ * @param {Function} drain callback
+ * @api private
+ */
+
+Polling.prototype.write = function (packets) {
+  var self = this;
+  this.writable = false;
+  var callbackfn = function () {
+    self.writable = true;
+    self.emit('drain');
+  };
+
+  parser.encodePayload(packets, this.supportsBinary, function (data) {
+    self.doWrite(data, callbackfn);
+  });
+};
+
+/**
+ * Generates uri for connection.
+ *
+ * @api private
+ */
+
+Polling.prototype.uri = function () {
+  var query = this.query || {};
+  var schema = this.secure ? 'https' : 'http';
+  var port = '';
+
+  // cache busting is forced
+  if (false !== this.timestampRequests) {
+    query[this.timestampParam] = yeast();
+  }
+
+  if (!this.supportsBinary && !query.sid) {
+    query.b64 = 1;
+  }
+
+  query = parseqs.encode(query);
+
+  // avoid port if default for schema
+  if (this.port && (('https' === schema && Number(this.port) !== 443) ||
+     ('http' === schema && Number(this.port) !== 80))) {
+    port = ':' + this.port;
+  }
+
+  // prepend ? to query
+  if (query.length) {
+    query = '?' + query;
+  }
+
+  var ipv6 = this.hostname.indexOf(':') !== -1;
+  return schema + '://' + (ipv6 ? '[' + this.hostname + ']' : this.hostname) + port + this.path + query;
+};
+
+},{"../transport":15,"component-inherit":9,"debug":10,"engine.io-parser":22,"parseqs":31,"xmlhttprequest-ssl":21,"yeast":50}],20:[function(require,module,exports){
+(function (global){
+/**
+ * Module dependencies.
+ */
+
+var Transport = require('../transport');
+var parser = require('engine.io-parser');
+var parseqs = require('parseqs');
+var inherit = require('component-inherit');
+var yeast = require('yeast');
+var debug = require('debug')('engine.io-client:websocket');
+var BrowserWebSocket = global.WebSocket || global.MozWebSocket;
+var NodeWebSocket;
+if (typeof window === 'undefined') {
+  try {
+    NodeWebSocket = require('ws');
+  } catch (e) { }
+}
+
+/**
+ * Get either the `WebSocket` or `MozWebSocket` globals
+ * in the browser or try to resolve WebSocket-compatible
+ * interface exposed by `ws` for Node-like environment.
+ */
+
+var WebSocket = BrowserWebSocket;
+if (!WebSocket && typeof window === 'undefined') {
+  WebSocket = NodeWebSocket;
+}
+
+/**
+ * Module exports.
+ */
+
+module.exports = WS;
+
+/**
+ * WebSocket transport constructor.
+ *
+ * @api {Object} connection options
+ * @api public
+ */
+
+function WS (opts) {
+  var forceBase64 = (opts && opts.forceBase64);
+  if (forceBase64) {
+    this.supportsBinary = false;
+  }
+  this.perMessageDeflate = opts.perMessageDeflate;
+  this.usingBrowserWebSocket = BrowserWebSocket && !opts.forceNode;
+  this.protocols = opts.protocols;
+  if (!this.usingBrowserWebSocket) {
+    WebSocket = NodeWebSocket;
+  }
+  Transport.call(this, opts);
+}
+
+/**
+ * Inherits from Transport.
+ */
+
+inherit(WS, Transport);
+
+/**
+ * Transport name.
+ *
+ * @api public
+ */
+
+WS.prototype.name = 'websocket';
+
+/*
+ * WebSockets support binary
+ */
+
+WS.prototype.supportsBinary = true;
+
+/**
+ * Opens socket.
+ *
+ * @api private
+ */
+
+WS.prototype.doOpen = function () {
+  if (!this.check()) {
+    // let probe timeout
+    return;
+  }
+
+  var uri = this.uri();
+  var protocols = this.protocols;
+  var opts = {
+    agent: this.agent,
+    perMessageDeflate: this.perMessageDeflate
+  };
+
+  // SSL options for Node.js client
+  opts.pfx = this.pfx;
+  opts.key = this.key;
+  opts.passphrase = this.passphrase;
+  opts.cert = this.cert;
+  opts.ca = this.ca;
+  opts.ciphers = this.ciphers;
+  opts.rejectUnauthorized = this.rejectUnauthorized;
+  if (this.extraHeaders) {
+    opts.headers = this.extraHeaders;
+  }
+  if (this.localAddress) {
+    opts.localAddress = this.localAddress;
+  }
+
+  try {
+    this.ws = this.usingBrowserWebSocket ? (protocols ? new WebSocket(uri, protocols) : new WebSocket(uri)) : new WebSocket(uri, protocols, opts);
+  } catch (err) {
+    return this.emit('error', err);
+  }
+
+  if (this.ws.binaryType === undefined) {
+    this.supportsBinary = false;
+  }
+
+  if (this.ws.supports && this.ws.supports.binary) {
+    this.supportsBinary = true;
+    this.ws.binaryType = 'nodebuffer';
+  } else {
+    this.ws.binaryType = 'arraybuffer';
+  }
+
+  this.addEventListeners();
+};
+
+/**
+ * Adds event listeners to the socket
+ *
+ * @api private
+ */
+
+WS.prototype.addEventListeners = function () {
+  var self = this;
+
+  this.ws.onopen = function () {
+    self.onOpen();
+  };
+  this.ws.onclose = function () {
+    self.onClose();
+  };
+  this.ws.onmessage = function (ev) {
+    self.onData(ev.data);
+  };
+  this.ws.onerror = function (e) {
+    self.onError('websocket error', e);
+  };
+};
+
+/**
+ * Writes data to socket.
+ *
+ * @param {Array} array of packets.
+ * @api private
+ */
+
+WS.prototype.write = function (packets) {
+  var self = this;
+  this.writable = false;
+
+  // encodePacket efficient as it uses WS framing
+  // no need for encodePayload
+  var total = packets.length;
+  for (var i = 0, l = total; i < l; i++) {
+    (function (packet) {
+      parser.encodePacket(packet, self.supportsBinary, function (data) {
+        if (!self.usingBrowserWebSocket) {
+          // always create a new object (GH-437)
+          var opts = {};
+          if (packet.options) {
+            opts.compress = packet.options.compress;
+          }
+
+          if (self.perMessageDeflate) {
+            var len = 'string' === typeof data ? global.Buffer.byteLength(data) : data.length;
+            if (len < self.perMessageDeflate.threshold) {
+              opts.compress = false;
+            }
+          }
+        }
+
+        // Sometimes the websocket has already been closed but the browser didn't
+        // have a chance of informing us about it yet, in that case send will
+        // throw an error
+        try {
+          if (self.usingBrowserWebSocket) {
+            // TypeError is thrown when passing the second argument on Safari
+            self.ws.send(data);
+          } else {
+            self.ws.send(data, opts);
+          }
+        } catch (e) {
+          debug('websocket closed before onclose event');
+        }
+
+        --total || done();
+      });
+    })(packets[i]);
+  }
+
+  function done () {
+    self.emit('flush');
+
+    // fake drain
+    // defer to next tick to allow Socket to clear writeBuffer
+    setTimeout(function () {
+      self.writable = true;
+      self.emit('drain');
+    }, 0);
+  }
+};
+
+/**
+ * Called upon close
+ *
+ * @api private
+ */
+
+WS.prototype.onClose = function () {
+  Transport.prototype.onClose.call(this);
+};
+
+/**
+ * Closes socket.
+ *
+ * @api private
+ */
+
+WS.prototype.doClose = function () {
+  if (typeof this.ws !== 'undefined') {
+    this.ws.close();
+  }
+};
+
+/**
+ * Generates uri for connection.
+ *
+ * @api private
+ */
+
+WS.prototype.uri = function () {
+  var query = this.query || {};
+  var schema = this.secure ? 'wss' : 'ws';
+  var port = '';
+
+  // avoid port if default for schema
+  if (this.port && (('wss' === schema && Number(this.port) !== 443) ||
+    ('ws' === schema && Number(this.port) !== 80))) {
+    port = ':' + this.port;
+  }
+
+  // append timestamp to URI
+  if (this.timestampRequests) {
+    query[this.timestampParam] = yeast();
+  }
+
+  // communicate binary support capabilities
+  if (!this.supportsBinary) {
+    query.b64 = 1;
+  }
+
+  query = parseqs.encode(query);
+
+  // prepend ? to query
+  if (query.length) {
+    query = '?' + query;
+  }
+
+  var ipv6 = this.hostname.indexOf(':') !== -1;
+  return schema + '://' + (ipv6 ? '[' + this.hostname + ']' : this.hostname) + port + this.path + query;
+};
+
+/**
+ * Feature detection for WebSocket.
+ *
+ * @return {Boolean} whether this transport is available.
+ * @api public
+ */
+
+WS.prototype.check = function () {
+  return !!WebSocket && !('__initialize' in WebSocket && this.name === WS.prototype.name);
+};
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"../transport":15,"component-inherit":9,"debug":10,"engine.io-parser":22,"parseqs":31,"ws":6,"yeast":50}],21:[function(require,module,exports){
+(function (global){
+// browser shim for xmlhttprequest module
+
+var hasCORS = require('has-cors');
+
+module.exports = function (opts) {
+  var xdomain = opts.xdomain;
+
+  // scheme must be same when usign XDomainRequest
+  // http://blogs.msdn.com/b/ieinternals/archive/2010/05/13/xdomainrequest-restrictions-limitations-and-workarounds.aspx
+  var xscheme = opts.xscheme;
+
+  // XDomainRequest has a flow of not sending cookie, therefore it should be disabled as a default.
+  // https://github.com/Automattic/engine.io-client/pull/217
+  var enablesXDR = opts.enablesXDR;
+
+  // XMLHttpRequest can be disabled on IE
+  try {
+    if ('undefined' !== typeof XMLHttpRequest && (!xdomain || hasCORS)) {
+      return new XMLHttpRequest();
+    }
+  } catch (e) { }
+
+  // Use XDomainRequest for IE8 if enablesXDR is true
+  // because loading bar keeps flashing when using jsonp-polling
+  // https://github.com/yujiosaka/socke.io-ie8-loading-example
+  try {
+    if ('undefined' !== typeof XDomainRequest && !xscheme && enablesXDR) {
+      return new XDomainRequest();
+    }
+  } catch (e) { }
+
+  if (!xdomain) {
+    try {
+      return new global[['Active'].concat('Object').join('X')]('Microsoft.XMLHTTP');
+    } catch (e) { }
+  }
+};
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"has-cors":27}],22:[function(require,module,exports){
+(function (global){
+/**
+ * Module dependencies.
+ */
+
+var keys = require('./keys');
+var hasBinary = require('has-binary2');
+var sliceBuffer = require('arraybuffer.slice');
+var after = require('after');
+var utf8 = require('./utf8');
+
+var base64encoder;
+if (global && global.ArrayBuffer) {
+  base64encoder = require('base64-arraybuffer');
+}
+
+/**
+ * Check if we are running an android browser. That requires us to use
+ * ArrayBuffer with polling transports...
+ *
+ * http://ghinda.net/jpeg-blob-ajax-android/
+ */
+
+var isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
+
+/**
+ * Check if we are running in PhantomJS.
+ * Uploading a Blob with PhantomJS does not work correctly, as reported here:
+ * https://github.com/ariya/phantomjs/issues/11395
+ * @type boolean
+ */
+var isPhantomJS = typeof navigator !== 'undefined' && /PhantomJS/i.test(navigator.userAgent);
+
+/**
+ * When true, avoids using Blobs to encode payloads.
+ * @type boolean
+ */
+var dontSendBlobs = isAndroid || isPhantomJS;
+
+/**
+ * Current protocol version.
+ */
+
+exports.protocol = 3;
+
+/**
+ * Packet types.
+ */
+
+var packets = exports.packets = {
+    open:     0    // non-ws
+  , close:    1    // non-ws
+  , ping:     2
+  , pong:     3
+  , message:  4
+  , upgrade:  5
+  , noop:     6
+};
+
+var packetslist = keys(packets);
+
+/**
+ * Premade error packet.
+ */
+
+var err = { type: 'error', data: 'parser error' };
+
+/**
+ * Create a blob api even for blob builder when vendor prefixes exist
+ */
+
+var Blob = require('blob');
+
+/**
+ * Encodes a packet.
+ *
+ *     <packet type id> [ <data> ]
+ *
+ * Example:
+ *
+ *     5hello world
+ *     3
+ *     4
+ *
+ * Binary is encoded in an identical principle
+ *
+ * @api private
+ */
+
+exports.encodePacket = function (packet, supportsBinary, utf8encode, callback) {
+  if (typeof supportsBinary === 'function') {
+    callback = supportsBinary;
+    supportsBinary = false;
+  }
+
+  if (typeof utf8encode === 'function') {
+    callback = utf8encode;
+    utf8encode = null;
+  }
+
+  var data = (packet.data === undefined)
+    ? undefined
+    : packet.data.buffer || packet.data;
+
+  if (global.ArrayBuffer && data instanceof ArrayBuffer) {
+    return encodeArrayBuffer(packet, supportsBinary, callback);
+  } else if (Blob && data instanceof global.Blob) {
+    return encodeBlob(packet, supportsBinary, callback);
+  }
+
+  // might be an object with { base64: true, data: dataAsBase64String }
+  if (data && data.base64) {
+    return encodeBase64Object(packet, callback);
+  }
+
+  // Sending data as a utf-8 string
+  var encoded = packets[packet.type];
+
+  // data fragment is optional
+  if (undefined !== packet.data) {
+    encoded += utf8encode ? utf8.encode(String(packet.data), { strict: false }) : String(packet.data);
+  }
+
+  return callback('' + encoded);
+
+};
+
+function encodeBase64Object(packet, callback) {
+  // packet data is an object { base64: true, data: dataAsBase64String }
+  var message = 'b' + exports.packets[packet.type] + packet.data.data;
+  return callback(message);
+}
+
+/**
+ * Encode packet helpers for binary types
+ */
+
+function encodeArrayBuffer(packet, supportsBinary, callback) {
+  if (!supportsBinary) {
+    return exports.encodeBase64Packet(packet, callback);
+  }
+
+  var data = packet.data;
+  var contentArray = new Uint8Array(data);
+  var resultBuffer = new Uint8Array(1 + data.byteLength);
+
+  resultBuffer[0] = packets[packet.type];
+  for (var i = 0; i < contentArray.length; i++) {
+    resultBuffer[i+1] = contentArray[i];
+  }
+
+  return callback(resultBuffer.buffer);
+}
+
+function encodeBlobAsArrayBuffer(packet, supportsBinary, callback) {
+  if (!supportsBinary) {
+    return exports.encodeBase64Packet(packet, callback);
+  }
+
+  var fr = new FileReader();
+  fr.onload = function() {
+    packet.data = fr.result;
+    exports.encodePacket(packet, supportsBinary, true, callback);
+  };
+  return fr.readAsArrayBuffer(packet.data);
+}
+
+function encodeBlob(packet, supportsBinary, callback) {
+  if (!supportsBinary) {
+    return exports.encodeBase64Packet(packet, callback);
+  }
+
+  if (dontSendBlobs) {
+    return encodeBlobAsArrayBuffer(packet, supportsBinary, callback);
+  }
+
+  var length = new Uint8Array(1);
+  length[0] = packets[packet.type];
+  var blob = new Blob([length.buffer, packet.data]);
+
+  return callback(blob);
+}
+
+/**
+ * Encodes a packet with binary data in a base64 string
+ *
+ * @param {Object} packet, has `type` and `data`
+ * @return {String} base64 encoded message
+ */
+
+exports.encodeBase64Packet = function(packet, callback) {
+  var message = 'b' + exports.packets[packet.type];
+  if (Blob && packet.data instanceof global.Blob) {
+    var fr = new FileReader();
+    fr.onload = function() {
+      var b64 = fr.result.split(',')[1];
+      callback(message + b64);
+    };
+    return fr.readAsDataURL(packet.data);
+  }
+
+  var b64data;
+  try {
+    b64data = String.fromCharCode.apply(null, new Uint8Array(packet.data));
+  } catch (e) {
+    // iPhone Safari doesn't let you apply with typed arrays
+    var typed = new Uint8Array(packet.data);
+    var basic = new Array(typed.length);
+    for (var i = 0; i < typed.length; i++) {
+      basic[i] = typed[i];
+    }
+    b64data = String.fromCharCode.apply(null, basic);
+  }
+  message += global.btoa(b64data);
+  return callback(message);
+};
+
+/**
+ * Decodes a packet. Changes format to Blob if requested.
+ *
+ * @return {Object} with `type` and `data` (if any)
+ * @api private
+ */
+
+exports.decodePacket = function (data, binaryType, utf8decode) {
+  if (data === undefined) {
+    return err;
+  }
+  // String data
+  if (typeof data === 'string') {
+    if (data.charAt(0) === 'b') {
+      return exports.decodeBase64Packet(data.substr(1), binaryType);
+    }
+
+    if (utf8decode) {
+      data = tryDecode(data);
+      if (data === false) {
+        return err;
+      }
+    }
+    var type = data.charAt(0);
+
+    if (Number(type) != type || !packetslist[type]) {
+      return err;
+    }
+
+    if (data.length > 1) {
+      return { type: packetslist[type], data: data.substring(1) };
+    } else {
+      return { type: packetslist[type] };
+    }
+  }
+
+  var asArray = new Uint8Array(data);
+  var type = asArray[0];
+  var rest = sliceBuffer(data, 1);
+  if (Blob && binaryType === 'blob') {
+    rest = new Blob([rest]);
+  }
+  return { type: packetslist[type], data: rest };
+};
+
+function tryDecode(data) {
+  try {
+    data = utf8.decode(data, { strict: false });
+  } catch (e) {
+    return false;
+  }
+  return data;
+}
+
+/**
+ * Decodes a packet encoded in a base64 string
+ *
+ * @param {String} base64 encoded message
+ * @return {Object} with `type` and `data` (if any)
+ */
+
+exports.decodeBase64Packet = function(msg, binaryType) {
+  var type = packetslist[msg.charAt(0)];
+  if (!base64encoder) {
+    return { type: type, data: { base64: true, data: msg.substr(1) } };
+  }
+
+  var data = base64encoder.decode(msg.substr(1));
+
+  if (binaryType === 'blob' && Blob) {
+    data = new Blob([data]);
+  }
+
+  return { type: type, data: data };
+};
+
+/**
+ * Encodes multiple messages (payload).
+ *
+ *     <length>:data
+ *
+ * Example:
+ *
+ *     11:hello world2:hi
+ *
+ * If any contents are binary, they will be encoded as base64 strings. Base64
+ * encoded strings are marked with a b before the length specifier
+ *
+ * @param {Array} packets
+ * @api private
+ */
+
+exports.encodePayload = function (packets, supportsBinary, callback) {
+  if (typeof supportsBinary === 'function') {
+    callback = supportsBinary;
+    supportsBinary = null;
+  }
+
+  var isBinary = hasBinary(packets);
+
+  if (supportsBinary && isBinary) {
+    if (Blob && !dontSendBlobs) {
+      return exports.encodePayloadAsBlob(packets, callback);
+    }
+
+    return exports.encodePayloadAsArrayBuffer(packets, callback);
+  }
+
+  if (!packets.length) {
+    return callback('0:');
+  }
+
+  function setLengthHeader(message) {
+    return message.length + ':' + message;
+  }
+
+  function encodeOne(packet, doneCallback) {
+    exports.encodePacket(packet, !isBinary ? false : supportsBinary, false, function(message) {
+      doneCallback(null, setLengthHeader(message));
+    });
+  }
+
+  map(packets, encodeOne, function(err, results) {
+    return callback(results.join(''));
+  });
+};
+
+/**
+ * Async array map using after
+ */
+
+function map(ary, each, done) {
+  var result = new Array(ary.length);
+  var next = after(ary.length, done);
+
+  var eachWithIndex = function(i, el, cb) {
+    each(el, function(error, msg) {
+      result[i] = msg;
+      cb(error, result);
+    });
+  };
+
+  for (var i = 0; i < ary.length; i++) {
+    eachWithIndex(i, ary[i], next);
+  }
+}
+
+/*
+ * Decodes data when a payload is maybe expected. Possible binary contents are
+ * decoded from their base64 representation
+ *
+ * @param {String} data, callback method
+ * @api public
+ */
+
+exports.decodePayload = function (data, binaryType, callback) {
+  if (typeof data !== 'string') {
+    return exports.decodePayloadAsBinary(data, binaryType, callback);
+  }
+
+  if (typeof binaryType === 'function') {
+    callback = binaryType;
+    binaryType = null;
+  }
+
+  var packet;
+  if (data === '') {
+    // parser error - ignoring payload
+    return callback(err, 0, 1);
+  }
+
+  var length = '', n, msg;
+
+  for (var i = 0, l = data.length; i < l; i++) {
+    var chr = data.charAt(i);
+
+    if (chr !== ':') {
+      length += chr;
+      continue;
+    }
+
+    if (length === '' || (length != (n = Number(length)))) {
+      // parser error - ignoring payload
+      return callback(err, 0, 1);
+    }
+
+    msg = data.substr(i + 1, n);
+
+    if (length != msg.length) {
+      // parser error - ignoring payload
+      return callback(err, 0, 1);
+    }
+
+    if (msg.length) {
+      packet = exports.decodePacket(msg, binaryType, false);
+
+      if (err.type === packet.type && err.data === packet.data) {
+        // parser error in individual packet - ignoring payload
+        return callback(err, 0, 1);
+      }
+
+      var ret = callback(packet, i + n, l);
+      if (false === ret) return;
+    }
+
+    // advance cursor
+    i += n;
+    length = '';
+  }
+
+  if (length !== '') {
+    // parser error - ignoring payload
+    return callback(err, 0, 1);
+  }
+
+};
+
+/**
+ * Encodes multiple messages (payload) as binary.
+ *
+ * <1 = binary, 0 = string><number from 0-9><number from 0-9>[...]<number
+ * 255><data>
+ *
+ * Example:
+ * 1 3 255 1 2 3, if the binary contents are interpreted as 8 bit integers
+ *
+ * @param {Array} packets
+ * @return {ArrayBuffer} encoded payload
+ * @api private
+ */
+
+exports.encodePayloadAsArrayBuffer = function(packets, callback) {
+  if (!packets.length) {
+    return callback(new ArrayBuffer(0));
+  }
+
+  function encodeOne(packet, doneCallback) {
+    exports.encodePacket(packet, true, true, function(data) {
+      return doneCallback(null, data);
+    });
+  }
+
+  map(packets, encodeOne, function(err, encodedPackets) {
+    var totalLength = encodedPackets.reduce(function(acc, p) {
+      var len;
+      if (typeof p === 'string'){
+        len = p.length;
+      } else {
+        len = p.byteLength;
+      }
+      return acc + len.toString().length + len + 2; // string/binary identifier + separator = 2
+    }, 0);
+
+    var resultArray = new Uint8Array(totalLength);
+
+    var bufferIndex = 0;
+    encodedPackets.forEach(function(p) {
+      var isString = typeof p === 'string';
+      var ab = p;
+      if (isString) {
+        var view = new Uint8Array(p.length);
+        for (var i = 0; i < p.length; i++) {
+          view[i] = p.charCodeAt(i);
+        }
+        ab = view.buffer;
+      }
+
+      if (isString) { // not true binary
+        resultArray[bufferIndex++] = 0;
+      } else { // true binary
+        resultArray[bufferIndex++] = 1;
+      }
+
+      var lenStr = ab.byteLength.toString();
+      for (var i = 0; i < lenStr.length; i++) {
+        resultArray[bufferIndex++] = parseInt(lenStr[i]);
+      }
+      resultArray[bufferIndex++] = 255;
+
+      var view = new Uint8Array(ab);
+      for (var i = 0; i < view.length; i++) {
+        resultArray[bufferIndex++] = view[i];
+      }
+    });
+
+    return callback(resultArray.buffer);
+  });
+};
+
+/**
+ * Encode as Blob
+ */
+
+exports.encodePayloadAsBlob = function(packets, callback) {
+  function encodeOne(packet, doneCallback) {
+    exports.encodePacket(packet, true, true, function(encoded) {
+      var binaryIdentifier = new Uint8Array(1);
+      binaryIdentifier[0] = 1;
+      if (typeof encoded === 'string') {
+        var view = new Uint8Array(encoded.length);
+        for (var i = 0; i < encoded.length; i++) {
+          view[i] = encoded.charCodeAt(i);
+        }
+        encoded = view.buffer;
+        binaryIdentifier[0] = 0;
+      }
+
+      var len = (encoded instanceof ArrayBuffer)
+        ? encoded.byteLength
+        : encoded.size;
+
+      var lenStr = len.toString();
+      var lengthAry = new Uint8Array(lenStr.length + 1);
+      for (var i = 0; i < lenStr.length; i++) {
+        lengthAry[i] = parseInt(lenStr[i]);
+      }
+      lengthAry[lenStr.length] = 255;
+
+      if (Blob) {
+        var blob = new Blob([binaryIdentifier.buffer, lengthAry.buffer, encoded]);
+        doneCallback(null, blob);
+      }
+    });
+  }
+
+  map(packets, encodeOne, function(err, results) {
+    return callback(new Blob(results));
+  });
+};
+
+/*
+ * Decodes data when a payload is maybe expected. Strings are decoded by
+ * interpreting each byte as a key code for entries marked to start with 0. See
+ * description of encodePayloadAsBinary
+ *
+ * @param {ArrayBuffer} data, callback method
+ * @api public
+ */
+
+exports.decodePayloadAsBinary = function (data, binaryType, callback) {
+  if (typeof binaryType === 'function') {
+    callback = binaryType;
+    binaryType = null;
+  }
+
+  var bufferTail = data;
+  var buffers = [];
+
+  while (bufferTail.byteLength > 0) {
+    var tailArray = new Uint8Array(bufferTail);
+    var isString = tailArray[0] === 0;
+    var msgLength = '';
+
+    for (var i = 1; ; i++) {
+      if (tailArray[i] === 255) break;
+
+      // 310 = char length of Number.MAX_VALUE
+      if (msgLength.length > 310) {
+        return callback(err, 0, 1);
+      }
+
+      msgLength += tailArray[i];
+    }
+
+    bufferTail = sliceBuffer(bufferTail, 2 + msgLength.length);
+    msgLength = parseInt(msgLength);
+
+    var msg = sliceBuffer(bufferTail, 0, msgLength);
+    if (isString) {
+      try {
+        msg = String.fromCharCode.apply(null, new Uint8Array(msg));
+      } catch (e) {
+        // iPhone Safari doesn't let you apply to typed arrays
+        var typed = new Uint8Array(msg);
+        msg = '';
+        for (var i = 0; i < typed.length; i++) {
+          msg += String.fromCharCode(typed[i]);
+        }
+      }
+    }
+
+    buffers.push(msg);
+    bufferTail = sliceBuffer(bufferTail, msgLength);
+  }
+
+  var total = buffers.length;
+  buffers.forEach(function(buffer, i) {
+    callback(exports.decodePacket(buffer, binaryType, true), i, total);
+  });
+};
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"./keys":23,"./utf8":24,"after":1,"arraybuffer.slice":2,"base64-arraybuffer":4,"blob":5,"has-binary2":25}],23:[function(require,module,exports){
+
+/**
+ * Gets the keys for an object.
+ *
+ * @return {Array} keys
+ * @api private
+ */
+
+module.exports = Object.keys || function keys (obj){
+  var arr = [];
+  var has = Object.prototype.hasOwnProperty;
+
+  for (var i in obj) {
+    if (has.call(obj, i)) {
+      arr.push(i);
+    }
+  }
+  return arr;
+};
+
+},{}],24:[function(require,module,exports){
+(function (global){
+/*! https://mths.be/utf8js v2.1.2 by @mathias */
+;(function(root) {
+
+	// Detect free variables `exports`
+	var freeExports = typeof exports == 'object' && exports;
+
+	// Detect free variable `module`
+	var freeModule = typeof module == 'object' && module &&
+		module.exports == freeExports && module;
+
+	// Detect free variable `global`, from Node.js or Browserified code,
+	// and use it as `root`
+	var freeGlobal = typeof global == 'object' && global;
+	if (freeGlobal.global === freeGlobal || freeGlobal.window === freeGlobal) {
+		root = freeGlobal;
+	}
+
+	/*--------------------------------------------------------------------------*/
+
+	var stringFromCharCode = String.fromCharCode;
+
+	// Taken from https://mths.be/punycode
+	function ucs2decode(string) {
+		var output = [];
+		var counter = 0;
+		var length = string.length;
+		var value;
+		var extra;
+		while (counter < length) {
+			value = string.charCodeAt(counter++);
+			if (value >= 0xD800 && value <= 0xDBFF && counter < length) {
+				// high surrogate, and there is a next character
+				extra = string.charCodeAt(counter++);
+				if ((extra & 0xFC00) == 0xDC00) { // low surrogate
+					output.push(((value & 0x3FF) << 10) + (extra & 0x3FF) + 0x10000);
+				} else {
+					// unmatched surrogate; only append this code unit, in case the next
+					// code unit is the high surrogate of a surrogate pair
+					output.push(value);
+					counter--;
+				}
+			} else {
+				output.push(value);
+			}
+		}
+		return output;
+	}
+
+	// Taken from https://mths.be/punycode
+	function ucs2encode(array) {
+		var length = array.length;
+		var index = -1;
+		var value;
+		var output = '';
+		while (++index < length) {
+			value = array[index];
+			if (value > 0xFFFF) {
+				value -= 0x10000;
+				output += stringFromCharCode(value >>> 10 & 0x3FF | 0xD800);
+				value = 0xDC00 | value & 0x3FF;
+			}
+			output += stringFromCharCode(value);
+		}
+		return output;
+	}
+
+	function checkScalarValue(codePoint, strict) {
+		if (codePoint >= 0xD800 && codePoint <= 0xDFFF) {
+			if (strict) {
+				throw Error(
+					'Lone surrogate U+' + codePoint.toString(16).toUpperCase() +
+					' is not a scalar value'
+				);
+			}
+			return false;
+		}
+		return true;
+	}
+	/*--------------------------------------------------------------------------*/
+
+	function createByte(codePoint, shift) {
+		return stringFromCharCode(((codePoint >> shift) & 0x3F) | 0x80);
+	}
+
+	function encodeCodePoint(codePoint, strict) {
+		if ((codePoint & 0xFFFFFF80) == 0) { // 1-byte sequence
+			return stringFromCharCode(codePoint);
+		}
+		var symbol = '';
+		if ((codePoint & 0xFFFFF800) == 0) { // 2-byte sequence
+			symbol = stringFromCharCode(((codePoint >> 6) & 0x1F) | 0xC0);
+		}
+		else if ((codePoint & 0xFFFF0000) == 0) { // 3-byte sequence
+			if (!checkScalarValue(codePoint, strict)) {
+				codePoint = 0xFFFD;
+			}
+			symbol = stringFromCharCode(((codePoint >> 12) & 0x0F) | 0xE0);
+			symbol += createByte(codePoint, 6);
+		}
+		else if ((codePoint & 0xFFE00000) == 0) { // 4-byte sequence
+			symbol = stringFromCharCode(((codePoint >> 18) & 0x07) | 0xF0);
+			symbol += createByte(codePoint, 12);
+			symbol += createByte(codePoint, 6);
+		}
+		symbol += stringFromCharCode((codePoint & 0x3F) | 0x80);
+		return symbol;
+	}
+
+	function utf8encode(string, opts) {
+		opts = opts || {};
+		var strict = false !== opts.strict;
+
+		var codePoints = ucs2decode(string);
+		var length = codePoints.length;
+		var index = -1;
+		var codePoint;
+		var byteString = '';
+		while (++index < length) {
+			codePoint = codePoints[index];
+			byteString += encodeCodePoint(codePoint, strict);
+		}
+		return byteString;
+	}
+
+	/*--------------------------------------------------------------------------*/
+
+	function readContinuationByte() {
+		if (byteIndex >= byteCount) {
+			throw Error('Invalid byte index');
+		}
+
+		var continuationByte = byteArray[byteIndex] & 0xFF;
+		byteIndex++;
+
+		if ((continuationByte & 0xC0) == 0x80) {
+			return continuationByte & 0x3F;
+		}
+
+		// If we end up here, it’s not a continuation byte
+		throw Error('Invalid continuation byte');
+	}
+
+	function decodeSymbol(strict) {
+		var byte1;
+		var byte2;
+		var byte3;
+		var byte4;
+		var codePoint;
+
+		if (byteIndex > byteCount) {
+			throw Error('Invalid byte index');
+		}
+
+		if (byteIndex == byteCount) {
+			return false;
+		}
+
+		// Read first byte
+		byte1 = byteArray[byteIndex] & 0xFF;
+		byteIndex++;
+
+		// 1-byte sequence (no continuation bytes)
+		if ((byte1 & 0x80) == 0) {
+			return byte1;
+		}
+
+		// 2-byte sequence
+		if ((byte1 & 0xE0) == 0xC0) {
+			byte2 = readContinuationByte();
+			codePoint = ((byte1 & 0x1F) << 6) | byte2;
+			if (codePoint >= 0x80) {
+				return codePoint;
+			} else {
+				throw Error('Invalid continuation byte');
+			}
+		}
+
+		// 3-byte sequence (may include unpaired surrogates)
+		if ((byte1 & 0xF0) == 0xE0) {
+			byte2 = readContinuationByte();
+			byte3 = readContinuationByte();
+			codePoint = ((byte1 & 0x0F) << 12) | (byte2 << 6) | byte3;
+			if (codePoint >= 0x0800) {
+				return checkScalarValue(codePoint, strict) ? codePoint : 0xFFFD;
+			} else {
+				throw Error('Invalid continuation byte');
+			}
+		}
+
+		// 4-byte sequence
+		if ((byte1 & 0xF8) == 0xF0) {
+			byte2 = readContinuationByte();
+			byte3 = readContinuationByte();
+			byte4 = readContinuationByte();
+			codePoint = ((byte1 & 0x07) << 0x12) | (byte2 << 0x0C) |
+				(byte3 << 0x06) | byte4;
+			if (codePoint >= 0x010000 && codePoint <= 0x10FFFF) {
+				return codePoint;
+			}
+		}
+
+		throw Error('Invalid UTF-8 detected');
+	}
+
+	var byteArray;
+	var byteCount;
+	var byteIndex;
+	function utf8decode(byteString, opts) {
+		opts = opts || {};
+		var strict = false !== opts.strict;
+
+		byteArray = ucs2decode(byteString);
+		byteCount = byteArray.length;
+		byteIndex = 0;
+		var codePoints = [];
+		var tmp;
+		while ((tmp = decodeSymbol(strict)) !== false) {
+			codePoints.push(tmp);
+		}
+		return ucs2encode(codePoints);
+	}
+
+	/*--------------------------------------------------------------------------*/
+
+	var utf8 = {
+		'version': '2.1.2',
+		'encode': utf8encode,
+		'decode': utf8decode
+	};
+
+	// Some AMD build optimizers, like r.js, check for specific condition patterns
+	// like the following:
+	if (
+		typeof define == 'function' &&
+		typeof define.amd == 'object' &&
+		define.amd
+	) {
+		define(function() {
+			return utf8;
+		});
+	}	else if (freeExports && !freeExports.nodeType) {
+		if (freeModule) { // in Node.js or RingoJS v0.8.0+
+			freeModule.exports = utf8;
+		} else { // in Narwhal or RingoJS v0.7.0-
+			var object = {};
+			var hasOwnProperty = object.hasOwnProperty;
+			for (var key in utf8) {
+				hasOwnProperty.call(utf8, key) && (freeExports[key] = utf8[key]);
+			}
+		}
+	} else { // in Rhino or a web browser
+		root.utf8 = utf8;
+	}
+
+}(this));
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],25:[function(require,module,exports){
+(function (global){
+/* global Blob File */
+
+/*
+ * Module requirements.
+ */
+
+var isArray = require('isarray');
+
+var toString = Object.prototype.toString;
+var withNativeBlob = typeof global.Blob === 'function' || toString.call(global.Blob) === '[object BlobConstructor]';
+var withNativeFile = typeof global.File === 'function' || toString.call(global.File) === '[object FileConstructor]';
+
+/**
+ * Module exports.
+ */
+
+module.exports = hasBinary;
+
+/**
+ * Checks for binary data.
+ *
+ * Supports Buffer, ArrayBuffer, Blob and File.
+ *
+ * @param {Object} anything
+ * @api public
+ */
+
+function hasBinary (obj) {
+  if (!obj || typeof obj !== 'object') {
+    return false;
+  }
+
+  if (isArray(obj)) {
+    for (var i = 0, l = obj.length; i < l; i++) {
+      if (hasBinary(obj[i])) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  if ((typeof global.Buffer === 'function' && global.Buffer.isBuffer && global.Buffer.isBuffer(obj)) ||
+     (typeof global.ArrayBuffer === 'function' && obj instanceof ArrayBuffer) ||
+     (withNativeBlob && obj instanceof Blob) ||
+     (withNativeFile && obj instanceof File)
+    ) {
+    return true;
+  }
+
+  // see: https://github.com/Automattic/has-binary/pull/4
+  if (obj.toJSON && typeof obj.toJSON === 'function' && arguments.length === 1) {
+    return hasBinary(obj.toJSON(), true);
+  }
+
+  for (var key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key) && hasBinary(obj[key])) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"isarray":26}],26:[function(require,module,exports){
+var toString = {}.toString;
+
+module.exports = Array.isArray || function (arr) {
+  return toString.call(arr) == '[object Array]';
+};
+
+},{}],27:[function(require,module,exports){
+
+/**
+ * Module exports.
+ *
+ * Logic borrowed from Modernizr:
+ *
+ *   - https://github.com/Modernizr/Modernizr/blob/master/feature-detects/cors.js
+ */
+
+try {
+  module.exports = typeof XMLHttpRequest !== 'undefined' &&
+    'withCredentials' in new XMLHttpRequest();
+} catch (err) {
+  // if XMLHttp support is disabled in IE then it will throw
+  // when trying to create
+  module.exports = false;
+}
+
+},{}],28:[function(require,module,exports){
+
+var indexOf = [].indexOf;
+
+module.exports = function(arr, obj){
+  if (indexOf) return arr.indexOf(obj);
+  for (var i = 0; i < arr.length; ++i) {
+    if (arr[i] === obj) return i;
+  }
+  return -1;
+};
+},{}],29:[function(require,module,exports){
+/**
+ * Helpers.
+ */
+
+var s = 1000;
+var m = s * 60;
+var h = m * 60;
+var d = h * 24;
+var y = d * 365.25;
+
+/**
+ * Parse or format the given `val`.
+ *
+ * Options:
+ *
+ *  - `long` verbose formatting [false]
+ *
+ * @param {String|Number} val
+ * @param {Object} [options]
+ * @throws {Error} throw an error if val is not a non-empty string or a number
+ * @return {String|Number}
+ * @api public
+ */
+
+module.exports = function(val, options) {
+  options = options || {};
+  var type = typeof val;
+  if (type === 'string' && val.length > 0) {
+    return parse(val);
+  } else if (type === 'number' && isNaN(val) === false) {
+    return options.long ? fmtLong(val) : fmtShort(val);
+  }
+  throw new Error(
+    'val is not a non-empty string or a valid number. val=' +
+      JSON.stringify(val)
+  );
+};
+
+/**
+ * Parse the given `str` and return milliseconds.
+ *
+ * @param {String} str
+ * @return {Number}
+ * @api private
+ */
+
+function parse(str) {
+  str = String(str);
+  if (str.length > 100) {
+    return;
+  }
+  var match = /^((?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|years?|yrs?|y)?$/i.exec(
+    str
+  );
+  if (!match) {
+    return;
+  }
+  var n = parseFloat(match[1]);
+  var type = (match[2] || 'ms').toLowerCase();
+  switch (type) {
+    case 'years':
+    case 'year':
+    case 'yrs':
+    case 'yr':
+    case 'y':
+      return n * y;
+    case 'days':
+    case 'day':
+    case 'd':
+      return n * d;
+    case 'hours':
+    case 'hour':
+    case 'hrs':
+    case 'hr':
+    case 'h':
+      return n * h;
+    case 'minutes':
+    case 'minute':
+    case 'mins':
+    case 'min':
+    case 'm':
+      return n * m;
+    case 'seconds':
+    case 'second':
+    case 'secs':
+    case 'sec':
+    case 's':
+      return n * s;
+    case 'milliseconds':
+    case 'millisecond':
+    case 'msecs':
+    case 'msec':
+    case 'ms':
+      return n;
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * Short format for `ms`.
+ *
+ * @param {Number} ms
+ * @return {String}
+ * @api private
+ */
+
+function fmtShort(ms) {
+  if (ms >= d) {
+    return Math.round(ms / d) + 'd';
+  }
+  if (ms >= h) {
+    return Math.round(ms / h) + 'h';
+  }
+  if (ms >= m) {
+    return Math.round(ms / m) + 'm';
+  }
+  if (ms >= s) {
+    return Math.round(ms / s) + 's';
+  }
+  return ms + 'ms';
+}
+
+/**
+ * Long format for `ms`.
+ *
+ * @param {Number} ms
+ * @return {String}
+ * @api private
+ */
+
+function fmtLong(ms) {
+  return plural(ms, d, 'day') ||
+    plural(ms, h, 'hour') ||
+    plural(ms, m, 'minute') ||
+    plural(ms, s, 'second') ||
+    ms + ' ms';
+}
+
+/**
+ * Pluralization helper.
+ */
+
+function plural(ms, n, name) {
+  if (ms < n) {
+    return;
+  }
+  if (ms < n * 1.5) {
+    return Math.floor(ms / n) + ' ' + name;
+  }
+  return Math.ceil(ms / n) + ' ' + name + 's';
+}
+
+},{}],30:[function(require,module,exports){
+(function (global){
+/**
+ * JSON parse.
+ *
+ * @see Based on jQuery#parseJSON (MIT) and JSON2
+ * @api private
+ */
+
+var rvalidchars = /^[\],:{}\s]*$/;
+var rvalidescape = /\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g;
+var rvalidtokens = /"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g;
+var rvalidbraces = /(?:^|:|,)(?:\s*\[)+/g;
+var rtrimLeft = /^\s+/;
+var rtrimRight = /\s+$/;
+
+module.exports = function parsejson(data) {
+  if ('string' != typeof data || !data) {
+    return null;
+  }
+
+  data = data.replace(rtrimLeft, '').replace(rtrimRight, '');
+
+  // Attempt to parse using the native JSON parser first
+  if (global.JSON && JSON.parse) {
+    return JSON.parse(data);
+  }
+
+  if (rvalidchars.test(data.replace(rvalidescape, '@')
+      .replace(rvalidtokens, ']')
+      .replace(rvalidbraces, ''))) {
+    return (new Function('return ' + data))();
+  }
+};
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],31:[function(require,module,exports){
+/**
+ * Compiles a querystring
+ * Returns string representation of the object
+ *
+ * @param {Object}
+ * @api private
+ */
+
+exports.encode = function (obj) {
+  var str = '';
+
+  for (var i in obj) {
+    if (obj.hasOwnProperty(i)) {
+      if (str.length) str += '&';
+      str += encodeURIComponent(i) + '=' + encodeURIComponent(obj[i]);
+    }
+  }
+
+  return str;
+};
+
+/**
+ * Parses a simple querystring into an object
+ *
+ * @param {String} qs
+ * @api private
+ */
+
+exports.decode = function(qs){
+  var qry = {};
+  var pairs = qs.split('&');
+  for (var i = 0, l = pairs.length; i < l; i++) {
+    var pair = pairs[i].split('=');
+    qry[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1]);
+  }
+  return qry;
+};
+
+},{}],32:[function(require,module,exports){
+/**
+ * Parses an URI
+ *
+ * @author Steven Levithan <stevenlevithan.com> (MIT license)
+ * @api private
+ */
+
+var re = /^(?:(?![^:@]+:[^:@\/]*@)(http|https|ws|wss):\/\/)?((?:(([^:@]*)(?::([^:@]*))?)?@)?((?:[a-f0-9]{0,4}:){2,7}[a-f0-9]{0,4}|[^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/;
+
+var parts = [
+    'source', 'protocol', 'authority', 'userInfo', 'user', 'password', 'host', 'port', 'relative', 'path', 'directory', 'file', 'query', 'anchor'
+];
+
+module.exports = function parseuri(str) {
+    var src = str,
+        b = str.indexOf('['),
+        e = str.indexOf(']');
+
+    if (b != -1 && e != -1) {
+        str = str.substring(0, b) + str.substring(b, e).replace(/:/g, ';') + str.substring(e, str.length);
+    }
+
+    var m = re.exec(str || ''),
+        uri = {},
+        i = 14;
+
+    while (i--) {
+        uri[parts[i]] = m[i] || '';
+    }
+
+    if (b != -1 && e != -1) {
+        uri.source = src;
+        uri.host = uri.host.substring(1, uri.host.length - 1).replace(/;/g, ':');
+        uri.authority = uri.authority.replace('[', '').replace(']', '').replace(/;/g, ':');
+        uri.ipv6uri = true;
+    }
+
+    return uri;
+};
+
+},{}],33:[function(require,module,exports){
+// shim for using process in browser
+var process = module.exports = {};
+
+// cached from whatever global is present so that test runners that stub it
+// don't break things.  But we need to wrap it in a try catch in case it is
+// wrapped in strict mode code which doesn't define any globals.  It's inside a
+// function because try/catches deoptimize in certain engines.
+
+var cachedSetTimeout;
+var cachedClearTimeout;
+
+function defaultSetTimout() {
+    throw new Error('setTimeout has not been defined');
+}
+function defaultClearTimeout () {
+    throw new Error('clearTimeout has not been defined');
+}
+(function () {
+    try {
+        if (typeof setTimeout === 'function') {
+            cachedSetTimeout = setTimeout;
+        } else {
+            cachedSetTimeout = defaultSetTimout;
+        }
+    } catch (e) {
+        cachedSetTimeout = defaultSetTimout;
+    }
+    try {
+        if (typeof clearTimeout === 'function') {
+            cachedClearTimeout = clearTimeout;
+        } else {
+            cachedClearTimeout = defaultClearTimeout;
+        }
+    } catch (e) {
+        cachedClearTimeout = defaultClearTimeout;
+    }
+} ())
+function runTimeout(fun) {
+    if (cachedSetTimeout === setTimeout) {
+        //normal enviroments in sane situations
+        return setTimeout(fun, 0);
+    }
+    // if setTimeout wasn't available but was latter defined
+    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+        cachedSetTimeout = setTimeout;
+        return setTimeout(fun, 0);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedSetTimeout(fun, 0);
+    } catch(e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+            return cachedSetTimeout.call(null, fun, 0);
+        } catch(e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+            return cachedSetTimeout.call(this, fun, 0);
+        }
+    }
+
+
+}
+function runClearTimeout(marker) {
+    if (cachedClearTimeout === clearTimeout) {
+        //normal enviroments in sane situations
+        return clearTimeout(marker);
+    }
+    // if clearTimeout wasn't available but was latter defined
+    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+        cachedClearTimeout = clearTimeout;
+        return clearTimeout(marker);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedClearTimeout(marker);
+    } catch (e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+            return cachedClearTimeout.call(null, marker);
+        } catch (e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
+            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
+            return cachedClearTimeout.call(this, marker);
+        }
+    }
+
+
+
+}
+var queue = [];
+var draining = false;
+var currentQueue;
+var queueIndex = -1;
+
+function cleanUpNextTick() {
+    if (!draining || !currentQueue) {
+        return;
+    }
+    draining = false;
+    if (currentQueue.length) {
+        queue = currentQueue.concat(queue);
+    } else {
+        queueIndex = -1;
+    }
+    if (queue.length) {
+        drainQueue();
+    }
+}
+
+function drainQueue() {
+    if (draining) {
+        return;
+    }
+    var timeout = runTimeout(cleanUpNextTick);
+    draining = true;
+
+    var len = queue.length;
+    while(len) {
+        currentQueue = queue;
+        queue = [];
+        while (++queueIndex < len) {
+            if (currentQueue) {
+                currentQueue[queueIndex].run();
+            }
+        }
+        queueIndex = -1;
+        len = queue.length;
+    }
+    currentQueue = null;
+    draining = false;
+    runClearTimeout(timeout);
+}
+
+process.nextTick = function (fun) {
+    var args = new Array(arguments.length - 1);
+    if (arguments.length > 1) {
+        for (var i = 1; i < arguments.length; i++) {
+            args[i - 1] = arguments[i];
+        }
+    }
+    queue.push(new Item(fun, args));
+    if (queue.length === 1 && !draining) {
+        runTimeout(drainQueue);
+    }
+};
+
+// v8 likes predictible objects
+function Item(fun, array) {
+    this.fun = fun;
+    this.array = array;
+}
+Item.prototype.run = function () {
+    this.fun.apply(null, this.array);
+};
+process.title = 'browser';
+process.browser = true;
+process.env = {};
+process.argv = [];
+process.version = ''; // empty string to avoid regexp issues
+process.versions = {};
+
+function noop() {}
+
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+process.prependListener = noop;
+process.prependOnceListener = noop;
+
+process.listeners = function (name) { return [] }
+
+process.binding = function (name) {
+    throw new Error('process.binding is not supported');
+};
+
+process.cwd = function () { return '/' };
+process.chdir = function (dir) {
+    throw new Error('process.chdir is not supported');
+};
+process.umask = function() { return 0; };
+
+},{}],34:[function(require,module,exports){
+
+/**
+ * Module dependencies.
+ */
+
+var url = require('./url');
+var parser = require('socket.io-parser');
+var Manager = require('./manager');
+var debug = require('debug')('socket.io-client');
+
+/**
+ * Module exports.
+ */
+
+module.exports = exports = lookup;
+
+/**
+ * Managers cache.
+ */
+
+var cache = exports.managers = {};
+
+/**
+ * Looks up an existing `Manager` for multiplexing.
+ * If the user summons:
+ *
+ *   `io('http://localhost/a');`
+ *   `io('http://localhost/b');`
+ *
+ * We reuse the existing instance based on same scheme/port/host,
+ * and we initialize sockets for each namespace.
+ *
+ * @api public
+ */
+
+function lookup (uri, opts) {
+  if (typeof uri === 'object') {
+    opts = uri;
+    uri = undefined;
+  }
+
+  opts = opts || {};
+
+  var parsed = url(uri);
+  var source = parsed.source;
+  var id = parsed.id;
+  var path = parsed.path;
+  var sameNamespace = cache[id] && path in cache[id].nsps;
+  var newConnection = opts.forceNew || opts['force new connection'] ||
+                      false === opts.multiplex || sameNamespace;
+
+  var io;
+
+  if (newConnection) {
+    debug('ignoring socket cache for %s', source);
+    io = Manager(source, opts);
+  } else {
+    if (!cache[id]) {
+      debug('new io instance for %s', source);
+      cache[id] = Manager(source, opts);
+    }
+    io = cache[id];
+  }
+  if (parsed.query && !opts.query) {
+    opts.query = parsed.query;
+  }
+  return io.socket(parsed.path, opts);
+}
+
+/**
+ * Protocol version.
+ *
+ * @api public
+ */
+
+exports.protocol = parser.protocol;
+
+/**
+ * `connect`.
+ *
+ * @param {String} uri
+ * @api public
+ */
+
+exports.connect = lookup;
+
+/**
+ * Expose constructors for standalone build.
+ *
+ * @api public
+ */
+
+exports.Manager = require('./manager');
+exports.Socket = require('./socket');
+
+},{"./manager":35,"./socket":37,"./url":38,"debug":10,"socket.io-parser":40}],35:[function(require,module,exports){
+
+/**
+ * Module dependencies.
+ */
+
+var eio = require('engine.io-client');
+var Socket = require('./socket');
+var Emitter = require('component-emitter');
+var parser = require('socket.io-parser');
+var on = require('./on');
+var bind = require('component-bind');
+var debug = require('debug')('socket.io-client:manager');
+var indexOf = require('indexof');
+var Backoff = require('backo2');
+
+/**
+ * IE6+ hasOwnProperty
+ */
+
+var has = Object.prototype.hasOwnProperty;
+
+/**
+ * Module exports
+ */
+
+module.exports = Manager;
+
+/**
+ * `Manager` constructor.
+ *
+ * @param {String} engine instance or engine uri/opts
+ * @param {Object} options
+ * @api public
+ */
+
+function Manager (uri, opts) {
+  if (!(this instanceof Manager)) return new Manager(uri, opts);
+  if (uri && ('object' === typeof uri)) {
+    opts = uri;
+    uri = undefined;
+  }
+  opts = opts || {};
+
+  opts.path = opts.path || '/socket.io';
+  this.nsps = {};
+  this.subs = [];
+  this.opts = opts;
+  this.reconnection(opts.reconnection !== false);
+  this.reconnectionAttempts(opts.reconnectionAttempts || Infinity);
+  this.reconnectionDelay(opts.reconnectionDelay || 1000);
+  this.reconnectionDelayMax(opts.reconnectionDelayMax || 5000);
+  this.randomizationFactor(opts.randomizationFactor || 0.5);
+  this.backoff = new Backoff({
+    min: this.reconnectionDelay(),
+    max: this.reconnectionDelayMax(),
+    jitter: this.randomizationFactor()
+  });
+  this.timeout(null == opts.timeout ? 20000 : opts.timeout);
+  this.readyState = 'closed';
+  this.uri = uri;
+  this.connecting = [];
+  this.lastPing = null;
+  this.encoding = false;
+  this.packetBuffer = [];
+  var _parser = opts.parser || parser;
+  this.encoder = new _parser.Encoder();
+  this.decoder = new _parser.Decoder();
+  this.autoConnect = opts.autoConnect !== false;
+  if (this.autoConnect) this.open();
+}
+
+/**
+ * Propagate given event to sockets and emit on `this`
+ *
+ * @api private
+ */
+
+Manager.prototype.emitAll = function () {
+  this.emit.apply(this, arguments);
+  for (var nsp in this.nsps) {
+    if (has.call(this.nsps, nsp)) {
+      this.nsps[nsp].emit.apply(this.nsps[nsp], arguments);
+    }
+  }
+};
+
+/**
+ * Update `socket.id` of all sockets
+ *
+ * @api private
+ */
+
+Manager.prototype.updateSocketIds = function () {
+  for (var nsp in this.nsps) {
+    if (has.call(this.nsps, nsp)) {
+      this.nsps[nsp].id = this.generateId(nsp);
+    }
+  }
+};
+
+/**
+ * generate `socket.id` for the given `nsp`
+ *
+ * @param {String} nsp
+ * @return {String}
+ * @api private
+ */
+
+Manager.prototype.generateId = function (nsp) {
+  return (nsp === '/' ? '' : (nsp + '#')) + this.engine.id;
+};
+
+/**
+ * Mix in `Emitter`.
+ */
+
+Emitter(Manager.prototype);
+
+/**
+ * Sets the `reconnection` config.
+ *
+ * @param {Boolean} true/false if it should automatically reconnect
+ * @return {Manager} self or value
+ * @api public
+ */
+
+Manager.prototype.reconnection = function (v) {
+  if (!arguments.length) return this._reconnection;
+  this._reconnection = !!v;
+  return this;
+};
+
+/**
+ * Sets the reconnection attempts config.
+ *
+ * @param {Number} max reconnection attempts before giving up
+ * @return {Manager} self or value
+ * @api public
+ */
+
+Manager.prototype.reconnectionAttempts = function (v) {
+  if (!arguments.length) return this._reconnectionAttempts;
+  this._reconnectionAttempts = v;
+  return this;
+};
+
+/**
+ * Sets the delay between reconnections.
+ *
+ * @param {Number} delay
+ * @return {Manager} self or value
+ * @api public
+ */
+
+Manager.prototype.reconnectionDelay = function (v) {
+  if (!arguments.length) return this._reconnectionDelay;
+  this._reconnectionDelay = v;
+  this.backoff && this.backoff.setMin(v);
+  return this;
+};
+
+Manager.prototype.randomizationFactor = function (v) {
+  if (!arguments.length) return this._randomizationFactor;
+  this._randomizationFactor = v;
+  this.backoff && this.backoff.setJitter(v);
+  return this;
+};
+
+/**
+ * Sets the maximum delay between reconnections.
+ *
+ * @param {Number} delay
+ * @return {Manager} self or value
+ * @api public
+ */
+
+Manager.prototype.reconnectionDelayMax = function (v) {
+  if (!arguments.length) return this._reconnectionDelayMax;
+  this._reconnectionDelayMax = v;
+  this.backoff && this.backoff.setMax(v);
+  return this;
+};
+
+/**
+ * Sets the connection timeout. `false` to disable
+ *
+ * @return {Manager} self or value
+ * @api public
+ */
+
+Manager.prototype.timeout = function (v) {
+  if (!arguments.length) return this._timeout;
+  this._timeout = v;
+  return this;
+};
+
+/**
+ * Starts trying to reconnect if reconnection is enabled and we have not
+ * started reconnecting yet
+ *
+ * @api private
+ */
+
+Manager.prototype.maybeReconnectOnOpen = function () {
+  // Only try to reconnect if it's the first time we're connecting
+  if (!this.reconnecting && this._reconnection && this.backoff.attempts === 0) {
+    // keeps reconnection from firing twice for the same reconnection loop
+    this.reconnect();
+  }
+};
+
+/**
+ * Sets the current transport `socket`.
+ *
+ * @param {Function} optional, callback
+ * @return {Manager} self
+ * @api public
+ */
+
+Manager.prototype.open =
+Manager.prototype.connect = function (fn, opts) {
+  debug('readyState %s', this.readyState);
+  if (~this.readyState.indexOf('open')) return this;
+
+  debug('opening %s', this.uri);
+  this.engine = eio(this.uri, this.opts);
+  var socket = this.engine;
+  var self = this;
+  this.readyState = 'opening';
+  this.skipReconnect = false;
+
+  // emit `open`
+  var openSub = on(socket, 'open', function () {
+    self.onopen();
+    fn && fn();
+  });
+
+  // emit `connect_error`
+  var errorSub = on(socket, 'error', function (data) {
+    debug('connect_error');
+    self.cleanup();
+    self.readyState = 'closed';
+    self.emitAll('connect_error', data);
+    if (fn) {
+      var err = new Error('Connection error');
+      err.data = data;
+      fn(err);
+    } else {
+      // Only do this if there is no fn to handle the error
+      self.maybeReconnectOnOpen();
+    }
+  });
+
+  // emit `connect_timeout`
+  if (false !== this._timeout) {
+    var timeout = this._timeout;
+    debug('connect attempt will timeout after %d', timeout);
+
+    // set timer
+    var timer = setTimeout(function () {
+      debug('connect attempt timed out after %d', timeout);
+      openSub.destroy();
+      socket.close();
+      socket.emit('error', 'timeout');
+      self.emitAll('connect_timeout', timeout);
+    }, timeout);
+
+    this.subs.push({
+      destroy: function () {
+        clearTimeout(timer);
+      }
+    });
+  }
+
+  this.subs.push(openSub);
+  this.subs.push(errorSub);
+
+  return this;
+};
+
+/**
+ * Called upon transport open.
+ *
+ * @api private
+ */
+
+Manager.prototype.onopen = function () {
+  debug('open');
+
+  // clear old subs
+  this.cleanup();
+
+  // mark as open
+  this.readyState = 'open';
+  this.emit('open');
+
+  // add new subs
+  var socket = this.engine;
+  this.subs.push(on(socket, 'data', bind(this, 'ondata')));
+  this.subs.push(on(socket, 'ping', bind(this, 'onping')));
+  this.subs.push(on(socket, 'pong', bind(this, 'onpong')));
+  this.subs.push(on(socket, 'error', bind(this, 'onerror')));
+  this.subs.push(on(socket, 'close', bind(this, 'onclose')));
+  this.subs.push(on(this.decoder, 'decoded', bind(this, 'ondecoded')));
+};
+
+/**
+ * Called upon a ping.
+ *
+ * @api private
+ */
+
+Manager.prototype.onping = function () {
+  this.lastPing = new Date();
+  this.emitAll('ping');
+};
+
+/**
+ * Called upon a packet.
+ *
+ * @api private
+ */
+
+Manager.prototype.onpong = function () {
+  this.emitAll('pong', new Date() - this.lastPing);
+};
+
+/**
+ * Called with data.
+ *
+ * @api private
+ */
+
+Manager.prototype.ondata = function (data) {
+  this.decoder.add(data);
+};
+
+/**
+ * Called when parser fully decodes a packet.
+ *
+ * @api private
+ */
+
+Manager.prototype.ondecoded = function (packet) {
+  this.emit('packet', packet);
+};
+
+/**
+ * Called upon socket error.
+ *
+ * @api private
+ */
+
+Manager.prototype.onerror = function (err) {
+  debug('error', err);
+  this.emitAll('error', err);
+};
+
+/**
+ * Creates a new socket for the given `nsp`.
+ *
+ * @return {Socket}
+ * @api public
+ */
+
+Manager.prototype.socket = function (nsp, opts) {
+  var socket = this.nsps[nsp];
+  if (!socket) {
+    socket = new Socket(this, nsp, opts);
+    this.nsps[nsp] = socket;
+    var self = this;
+    socket.on('connecting', onConnecting);
+    socket.on('connect', function () {
+      socket.id = self.generateId(nsp);
+    });
+
+    if (this.autoConnect) {
+      // manually call here since connecting event is fired before listening
+      onConnecting();
+    }
+  }
+
+  function onConnecting () {
+    if (!~indexOf(self.connecting, socket)) {
+      self.connecting.push(socket);
+    }
+  }
+
+  return socket;
+};
+
+/**
+ * Called upon a socket close.
+ *
+ * @param {Socket} socket
+ */
+
+Manager.prototype.destroy = function (socket) {
+  var index = indexOf(this.connecting, socket);
+  if (~index) this.connecting.splice(index, 1);
+  if (this.connecting.length) return;
+
+  this.close();
+};
+
+/**
+ * Writes a packet.
+ *
+ * @param {Object} packet
+ * @api private
+ */
+
+Manager.prototype.packet = function (packet) {
+  debug('writing packet %j', packet);
+  var self = this;
+  if (packet.query && packet.type === 0) packet.nsp += '?' + packet.query;
+
+  if (!self.encoding) {
+    // encode, then write to engine with result
+    self.encoding = true;
+    this.encoder.encode(packet, function (encodedPackets) {
+      for (var i = 0; i < encodedPackets.length; i++) {
+        self.engine.write(encodedPackets[i], packet.options);
+      }
+      self.encoding = false;
+      self.processPacketQueue();
+    });
+  } else { // add packet to the queue
+    self.packetBuffer.push(packet);
+  }
+};
+
+/**
+ * If packet buffer is non-empty, begins encoding the
+ * next packet in line.
+ *
+ * @api private
+ */
+
+Manager.prototype.processPacketQueue = function () {
+  if (this.packetBuffer.length > 0 && !this.encoding) {
+    var pack = this.packetBuffer.shift();
+    this.packet(pack);
+  }
+};
+
+/**
+ * Clean up transport subscriptions and packet buffer.
+ *
+ * @api private
+ */
+
+Manager.prototype.cleanup = function () {
+  debug('cleanup');
+
+  var subsLength = this.subs.length;
+  for (var i = 0; i < subsLength; i++) {
+    var sub = this.subs.shift();
+    sub.destroy();
+  }
+
+  this.packetBuffer = [];
+  this.encoding = false;
+  this.lastPing = null;
+
+  this.decoder.destroy();
+};
+
+/**
+ * Close the current socket.
+ *
+ * @api private
+ */
+
+Manager.prototype.close =
+Manager.prototype.disconnect = function () {
+  debug('disconnect');
+  this.skipReconnect = true;
+  this.reconnecting = false;
+  if ('opening' === this.readyState) {
+    // `onclose` will not fire because
+    // an open event never happened
+    this.cleanup();
+  }
+  this.backoff.reset();
+  this.readyState = 'closed';
+  if (this.engine) this.engine.close();
+};
+
+/**
+ * Called upon engine close.
+ *
+ * @api private
+ */
+
+Manager.prototype.onclose = function (reason) {
+  debug('onclose');
+
+  this.cleanup();
+  this.backoff.reset();
+  this.readyState = 'closed';
+  this.emit('close', reason);
+
+  if (this._reconnection && !this.skipReconnect) {
+    this.reconnect();
+  }
+};
+
+/**
+ * Attempt a reconnection.
+ *
+ * @api private
+ */
+
+Manager.prototype.reconnect = function () {
+  if (this.reconnecting || this.skipReconnect) return this;
+
+  var self = this;
+
+  if (this.backoff.attempts >= this._reconnectionAttempts) {
+    debug('reconnect failed');
+    this.backoff.reset();
+    this.emitAll('reconnect_failed');
+    this.reconnecting = false;
+  } else {
+    var delay = this.backoff.duration();
+    debug('will wait %dms before reconnect attempt', delay);
+
+    this.reconnecting = true;
+    var timer = setTimeout(function () {
+      if (self.skipReconnect) return;
+
+      debug('attempting reconnect');
+      self.emitAll('reconnect_attempt', self.backoff.attempts);
+      self.emitAll('reconnecting', self.backoff.attempts);
+
+      // check again for the case socket closed in above events
+      if (self.skipReconnect) return;
+
+      self.open(function (err) {
+        if (err) {
+          debug('reconnect attempt error');
+          self.reconnecting = false;
+          self.reconnect();
+          self.emitAll('reconnect_error', err.data);
+        } else {
+          debug('reconnect success');
+          self.onreconnect();
+        }
+      });
+    }, delay);
+
+    this.subs.push({
+      destroy: function () {
+        clearTimeout(timer);
+      }
+    });
+  }
+};
+
+/**
+ * Called upon successful reconnect.
+ *
+ * @api private
+ */
+
+Manager.prototype.onreconnect = function () {
+  var attempt = this.backoff.attempts;
+  this.reconnecting = false;
+  this.backoff.reset();
+  this.updateSocketIds();
+  this.emitAll('reconnect', attempt);
+};
+
+},{"./on":36,"./socket":37,"backo2":3,"component-bind":7,"component-emitter":8,"debug":10,"engine.io-client":12,"indexof":28,"socket.io-parser":40}],36:[function(require,module,exports){
+
+/**
+ * Module exports.
+ */
+
+module.exports = on;
+
+/**
+ * Helper for subscriptions.
+ *
+ * @param {Object|EventEmitter} obj with `Emitter` mixin or `EventEmitter`
+ * @param {String} event name
+ * @param {Function} callback
+ * @api public
+ */
+
+function on (obj, ev, fn) {
+  obj.on(ev, fn);
+  return {
+    destroy: function () {
+      obj.removeListener(ev, fn);
+    }
+  };
+}
+
+},{}],37:[function(require,module,exports){
+
+/**
+ * Module dependencies.
+ */
+
+var parser = require('socket.io-parser');
+var Emitter = require('component-emitter');
+var toArray = require('to-array');
+var on = require('./on');
+var bind = require('component-bind');
+var debug = require('debug')('socket.io-client:socket');
+var parseqs = require('parseqs');
+
+/**
+ * Module exports.
+ */
+
+module.exports = exports = Socket;
+
+/**
+ * Internal events (blacklisted).
+ * These events can't be emitted by the user.
+ *
+ * @api private
+ */
+
+var events = {
+  connect: 1,
+  connect_error: 1,
+  connect_timeout: 1,
+  connecting: 1,
+  disconnect: 1,
+  error: 1,
+  reconnect: 1,
+  reconnect_attempt: 1,
+  reconnect_failed: 1,
+  reconnect_error: 1,
+  reconnecting: 1,
+  ping: 1,
+  pong: 1
+};
+
+/**
+ * Shortcut to `Emitter#emit`.
+ */
+
+var emit = Emitter.prototype.emit;
+
+/**
+ * `Socket` constructor.
+ *
+ * @api public
+ */
+
+function Socket (io, nsp, opts) {
+  this.io = io;
+  this.nsp = nsp;
+  this.json = this; // compat
+  this.ids = 0;
+  this.acks = {};
+  this.receiveBuffer = [];
+  this.sendBuffer = [];
+  this.connected = false;
+  this.disconnected = true;
+  if (opts && opts.query) {
+    this.query = opts.query;
+  }
+  if (this.io.autoConnect) this.open();
+}
+
+/**
+ * Mix in `Emitter`.
+ */
+
+Emitter(Socket.prototype);
+
+/**
+ * Subscribe to open, close and packet events
+ *
+ * @api private
+ */
+
+Socket.prototype.subEvents = function () {
+  if (this.subs) return;
+
+  var io = this.io;
+  this.subs = [
+    on(io, 'open', bind(this, 'onopen')),
+    on(io, 'packet', bind(this, 'onpacket')),
+    on(io, 'close', bind(this, 'onclose'))
+  ];
+};
+
+/**
+ * "Opens" the socket.
+ *
+ * @api public
+ */
+
+Socket.prototype.open =
+Socket.prototype.connect = function () {
+  if (this.connected) return this;
+
+  this.subEvents();
+  this.io.open(); // ensure open
+  if ('open' === this.io.readyState) this.onopen();
+  this.emit('connecting');
+  return this;
+};
+
+/**
+ * Sends a `message` event.
+ *
+ * @return {Socket} self
+ * @api public
+ */
+
+Socket.prototype.send = function () {
+  var args = toArray(arguments);
+  args.unshift('message');
+  this.emit.apply(this, args);
+  return this;
+};
+
+/**
+ * Override `emit`.
+ * If the event is in `events`, it's emitted normally.
+ *
+ * @param {String} event name
+ * @return {Socket} self
+ * @api public
+ */
+
+Socket.prototype.emit = function (ev) {
+  if (events.hasOwnProperty(ev)) {
+    emit.apply(this, arguments);
+    return this;
+  }
+
+  var args = toArray(arguments);
+  var packet = { type: parser.EVENT, data: args };
+
+  packet.options = {};
+  packet.options.compress = !this.flags || false !== this.flags.compress;
+
+  // event ack callback
+  if ('function' === typeof args[args.length - 1]) {
+    debug('emitting packet with ack id %d', this.ids);
+    this.acks[this.ids] = args.pop();
+    packet.id = this.ids++;
+  }
+
+  if (this.connected) {
+    this.packet(packet);
+  } else {
+    this.sendBuffer.push(packet);
+  }
+
+  delete this.flags;
+
+  return this;
+};
+
+/**
+ * Sends a packet.
+ *
+ * @param {Object} packet
+ * @api private
+ */
+
+Socket.prototype.packet = function (packet) {
+  packet.nsp = this.nsp;
+  this.io.packet(packet);
+};
+
+/**
+ * Called upon engine `open`.
+ *
+ * @api private
+ */
+
+Socket.prototype.onopen = function () {
+  debug('transport is open - connecting');
+
+  // write connect packet if necessary
+  if ('/' !== this.nsp) {
+    if (this.query) {
+      var query = typeof this.query === 'object' ? parseqs.encode(this.query) : this.query;
+      debug('sending connect packet with query %s', query);
+      this.packet({type: parser.CONNECT, query: query});
+    } else {
+      this.packet({type: parser.CONNECT});
+    }
+  }
+};
+
+/**
+ * Called upon engine `close`.
+ *
+ * @param {String} reason
+ * @api private
+ */
+
+Socket.prototype.onclose = function (reason) {
+  debug('close (%s)', reason);
+  this.connected = false;
+  this.disconnected = true;
+  delete this.id;
+  this.emit('disconnect', reason);
+};
+
+/**
+ * Called with socket packet.
+ *
+ * @param {Object} packet
+ * @api private
+ */
+
+Socket.prototype.onpacket = function (packet) {
+  if (packet.nsp !== this.nsp) return;
+
+  switch (packet.type) {
+    case parser.CONNECT:
+      this.onconnect();
+      break;
+
+    case parser.EVENT:
+      this.onevent(packet);
+      break;
+
+    case parser.BINARY_EVENT:
+      this.onevent(packet);
+      break;
+
+    case parser.ACK:
+      this.onack(packet);
+      break;
+
+    case parser.BINARY_ACK:
+      this.onack(packet);
+      break;
+
+    case parser.DISCONNECT:
+      this.ondisconnect();
+      break;
+
+    case parser.ERROR:
+      this.emit('error', packet.data);
+      break;
+  }
+};
+
+/**
+ * Called upon a server event.
+ *
+ * @param {Object} packet
+ * @api private
+ */
+
+Socket.prototype.onevent = function (packet) {
+  var args = packet.data || [];
+  debug('emitting event %j', args);
+
+  if (null != packet.id) {
+    debug('attaching ack callback to event');
+    args.push(this.ack(packet.id));
+  }
+
+  if (this.connected) {
+    emit.apply(this, args);
+  } else {
+    this.receiveBuffer.push(args);
+  }
+};
+
+/**
+ * Produces an ack callback to emit with an event.
+ *
+ * @api private
+ */
+
+Socket.prototype.ack = function (id) {
+  var self = this;
+  var sent = false;
+  return function () {
+    // prevent double callbacks
+    if (sent) return;
+    sent = true;
+    var args = toArray(arguments);
+    debug('sending ack %j', args);
+
+    self.packet({
+      type: parser.ACK,
+      id: id,
+      data: args
+    });
+  };
+};
+
+/**
+ * Called upon a server acknowlegement.
+ *
+ * @param {Object} packet
+ * @api private
+ */
+
+Socket.prototype.onack = function (packet) {
+  var ack = this.acks[packet.id];
+  if ('function' === typeof ack) {
+    debug('calling ack %s with %j', packet.id, packet.data);
+    ack.apply(this, packet.data);
+    delete this.acks[packet.id];
+  } else {
+    debug('bad ack %s', packet.id);
+  }
+};
+
+/**
+ * Called upon server connect.
+ *
+ * @api private
+ */
+
+Socket.prototype.onconnect = function () {
+  this.connected = true;
+  this.disconnected = false;
+  this.emit('connect');
+  this.emitBuffered();
+};
+
+/**
+ * Emit buffered events (received and emitted).
+ *
+ * @api private
+ */
+
+Socket.prototype.emitBuffered = function () {
+  var i;
+  for (i = 0; i < this.receiveBuffer.length; i++) {
+    emit.apply(this, this.receiveBuffer[i]);
+  }
+  this.receiveBuffer = [];
+
+  for (i = 0; i < this.sendBuffer.length; i++) {
+    this.packet(this.sendBuffer[i]);
+  }
+  this.sendBuffer = [];
+};
+
+/**
+ * Called upon server disconnect.
+ *
+ * @api private
+ */
+
+Socket.prototype.ondisconnect = function () {
+  debug('server disconnect (%s)', this.nsp);
+  this.destroy();
+  this.onclose('io server disconnect');
+};
+
+/**
+ * Called upon forced client/server side disconnections,
+ * this method ensures the manager stops tracking us and
+ * that reconnections don't get triggered for this.
+ *
+ * @api private.
+ */
+
+Socket.prototype.destroy = function () {
+  if (this.subs) {
+    // clean subscriptions to avoid reconnections
+    for (var i = 0; i < this.subs.length; i++) {
+      this.subs[i].destroy();
+    }
+    this.subs = null;
+  }
+
+  this.io.destroy(this);
+};
+
+/**
+ * Disconnects the socket manually.
+ *
+ * @return {Socket} self
+ * @api public
+ */
+
+Socket.prototype.close =
+Socket.prototype.disconnect = function () {
+  if (this.connected) {
+    debug('performing disconnect (%s)', this.nsp);
+    this.packet({ type: parser.DISCONNECT });
+  }
+
+  // remove socket from pool
+  this.destroy();
+
+  if (this.connected) {
+    // fire events
+    this.onclose('io client disconnect');
+  }
+  return this;
+};
+
+/**
+ * Sets the compress flag.
+ *
+ * @param {Boolean} if `true`, compresses the sending data
+ * @return {Socket} self
+ * @api public
+ */
+
+Socket.prototype.compress = function (compress) {
+  this.flags = this.flags || {};
+  this.flags.compress = compress;
+  return this;
+};
+
+},{"./on":36,"component-bind":7,"component-emitter":8,"debug":10,"parseqs":31,"socket.io-parser":40,"to-array":49}],38:[function(require,module,exports){
+(function (global){
+
+/**
+ * Module dependencies.
+ */
+
+var parseuri = require('parseuri');
+var debug = require('debug')('socket.io-client:url');
+
+/**
+ * Module exports.
+ */
+
+module.exports = url;
+
+/**
+ * URL parser.
+ *
+ * @param {String} url
+ * @param {Object} An object meant to mimic window.location.
+ *                 Defaults to window.location.
+ * @api public
+ */
+
+function url (uri, loc) {
+  var obj = uri;
+
+  // default to window.location
+  loc = loc || global.location;
+  if (null == uri) uri = loc.protocol + '//' + loc.host;
+
+  // relative path support
+  if ('string' === typeof uri) {
+    if ('/' === uri.charAt(0)) {
+      if ('/' === uri.charAt(1)) {
+        uri = loc.protocol + uri;
+      } else {
+        uri = loc.host + uri;
+      }
+    }
+
+    if (!/^(https?|wss?):\/\//.test(uri)) {
+      debug('protocol-less url %s', uri);
+      if ('undefined' !== typeof loc) {
+        uri = loc.protocol + '//' + uri;
+      } else {
+        uri = 'https://' + uri;
+      }
+    }
+
+    // parse
+    debug('parse %s', uri);
+    obj = parseuri(uri);
+  }
+
+  // make sure we treat `localhost:80` and `localhost` equally
+  if (!obj.port) {
+    if (/^(http|ws)$/.test(obj.protocol)) {
+      obj.port = '80';
+    } else if (/^(http|ws)s$/.test(obj.protocol)) {
+      obj.port = '443';
+    }
+  }
+
+  obj.path = obj.path || '/';
+
+  var ipv6 = obj.host.indexOf(':') !== -1;
+  var host = ipv6 ? '[' + obj.host + ']' : obj.host;
+
+  // define unique id
+  obj.id = obj.protocol + '://' + host + ':' + obj.port;
+  // define href
+  obj.href = obj.protocol + '://' + host + (loc && loc.port === obj.port ? '' : (':' + obj.port));
+
+  return obj;
+}
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"debug":10,"parseuri":32}],39:[function(require,module,exports){
+(function (global){
+/*global Blob,File*/
+
+/**
+ * Module requirements
+ */
+
+var isArray = require('isarray');
+var isBuf = require('./is-buffer');
+var toString = Object.prototype.toString;
+var withNativeBlob = typeof global.Blob === 'function' || toString.call(global.Blob) === '[object BlobConstructor]';
+var withNativeFile = typeof global.File === 'function' || toString.call(global.File) === '[object FileConstructor]';
+
+/**
+ * Replaces every Buffer | ArrayBuffer in packet with a numbered placeholder.
+ * Anything with blobs or files should be fed through removeBlobs before coming
+ * here.
+ *
+ * @param {Object} packet - socket.io event packet
+ * @return {Object} with deconstructed packet and list of buffers
+ * @api public
+ */
+
+exports.deconstructPacket = function(packet) {
+  var buffers = [];
+  var packetData = packet.data;
+  var pack = packet;
+  pack.data = _deconstructPacket(packetData, buffers);
+  pack.attachments = buffers.length; // number of binary 'attachments'
+  return {packet: pack, buffers: buffers};
+};
+
+function _deconstructPacket(data, buffers) {
+  if (!data) return data;
+
+  if (isBuf(data)) {
+    var placeholder = { _placeholder: true, num: buffers.length };
+    buffers.push(data);
+    return placeholder;
+  } else if (isArray(data)) {
+    var newData = new Array(data.length);
+    for (var i = 0; i < data.length; i++) {
+      newData[i] = _deconstructPacket(data[i], buffers);
+    }
+    return newData;
+  } else if (typeof data === 'object' && !(data instanceof Date)) {
+    var newData = {};
+    for (var key in data) {
+      newData[key] = _deconstructPacket(data[key], buffers);
+    }
+    return newData;
+  }
+  return data;
+}
+
+/**
+ * Reconstructs a binary packet from its placeholder packet and buffers
+ *
+ * @param {Object} packet - event packet with placeholders
+ * @param {Array} buffers - binary buffers to put in placeholder positions
+ * @return {Object} reconstructed packet
+ * @api public
+ */
+
+exports.reconstructPacket = function(packet, buffers) {
+  packet.data = _reconstructPacket(packet.data, buffers);
+  packet.attachments = undefined; // no longer useful
+  return packet;
+};
+
+function _reconstructPacket(data, buffers) {
+  if (!data) return data;
+
+  if (data && data._placeholder) {
+    return buffers[data.num]; // appropriate buffer (should be natural order anyway)
+  } else if (isArray(data)) {
+    for (var i = 0; i < data.length; i++) {
+      data[i] = _reconstructPacket(data[i], buffers);
+    }
+  } else if (typeof data === 'object') {
+    for (var key in data) {
+      data[key] = _reconstructPacket(data[key], buffers);
+    }
+  }
+
+  return data;
+}
+
+/**
+ * Asynchronously removes Blobs or Files from data via
+ * FileReader's readAsArrayBuffer method. Used before encoding
+ * data as msgpack. Calls callback with the blobless data.
+ *
+ * @param {Object} data
+ * @param {Function} callback
+ * @api private
+ */
+
+exports.removeBlobs = function(data, callback) {
+  function _removeBlobs(obj, curKey, containingObject) {
+    if (!obj) return obj;
+
+    // convert any blob
+    if ((withNativeBlob && obj instanceof Blob) ||
+        (withNativeFile && obj instanceof File)) {
+      pendingBlobs++;
+
+      // async filereader
+      var fileReader = new FileReader();
+      fileReader.onload = function() { // this.result == arraybuffer
+        if (containingObject) {
+          containingObject[curKey] = this.result;
+        }
+        else {
+          bloblessData = this.result;
+        }
+
+        // if nothing pending its callback time
+        if(! --pendingBlobs) {
+          callback(bloblessData);
+        }
+      };
+
+      fileReader.readAsArrayBuffer(obj); // blob -> arraybuffer
+    } else if (isArray(obj)) { // handle array
+      for (var i = 0; i < obj.length; i++) {
+        _removeBlobs(obj[i], i, obj);
+      }
+    } else if (typeof obj === 'object' && !isBuf(obj)) { // and object
+      for (var key in obj) {
+        _removeBlobs(obj[key], key, obj);
+      }
+    }
+  }
+
+  var pendingBlobs = 0;
+  var bloblessData = data;
+  _removeBlobs(bloblessData);
+  if (!pendingBlobs) {
+    callback(bloblessData);
+  }
+};
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"./is-buffer":41,"isarray":42}],40:[function(require,module,exports){
+
+/**
+ * Module dependencies.
+ */
+
+var debug = require('debug')('socket.io-parser');
+var Emitter = require('component-emitter');
+var hasBin = require('has-binary2');
+var binary = require('./binary');
+var isBuf = require('./is-buffer');
+
+/**
+ * Protocol version.
+ *
+ * @api public
+ */
+
+exports.protocol = 4;
+
+/**
+ * Packet types.
+ *
+ * @api public
+ */
+
+exports.types = [
+  'CONNECT',
+  'DISCONNECT',
+  'EVENT',
+  'ACK',
+  'ERROR',
+  'BINARY_EVENT',
+  'BINARY_ACK'
+];
+
+/**
+ * Packet type `connect`.
+ *
+ * @api public
+ */
+
+exports.CONNECT = 0;
+
+/**
+ * Packet type `disconnect`.
+ *
+ * @api public
+ */
+
+exports.DISCONNECT = 1;
+
+/**
+ * Packet type `event`.
+ *
+ * @api public
+ */
+
+exports.EVENT = 2;
+
+/**
+ * Packet type `ack`.
+ *
+ * @api public
+ */
+
+exports.ACK = 3;
+
+/**
+ * Packet type `error`.
+ *
+ * @api public
+ */
+
+exports.ERROR = 4;
+
+/**
+ * Packet type 'binary event'
+ *
+ * @api public
+ */
+
+exports.BINARY_EVENT = 5;
+
+/**
+ * Packet type `binary ack`. For acks with binary arguments.
+ *
+ * @api public
+ */
+
+exports.BINARY_ACK = 6;
+
+/**
+ * Encoder constructor.
+ *
+ * @api public
+ */
+
+exports.Encoder = Encoder;
+
+/**
+ * Decoder constructor.
+ *
+ * @api public
+ */
+
+exports.Decoder = Decoder;
+
+/**
+ * A socket.io Encoder instance
+ *
+ * @api public
+ */
+
+function Encoder() {}
+
+/**
+ * Encode a packet as a single string if non-binary, or as a
+ * buffer sequence, depending on packet type.
+ *
+ * @param {Object} obj - packet object
+ * @param {Function} callback - function to handle encodings (likely engine.write)
+ * @return Calls callback with Array of encodings
+ * @api public
+ */
+
+Encoder.prototype.encode = function(obj, callback){
+  if ((obj.type === exports.EVENT || obj.type === exports.ACK) && hasBin(obj.data)) {
+    obj.type = obj.type === exports.EVENT ? exports.BINARY_EVENT : exports.BINARY_ACK;
+  }
+
+  debug('encoding packet %j', obj);
+
+  if (exports.BINARY_EVENT === obj.type || exports.BINARY_ACK === obj.type) {
+    encodeAsBinary(obj, callback);
+  }
+  else {
+    var encoding = encodeAsString(obj);
+    callback([encoding]);
+  }
+};
+
+/**
+ * Encode packet as string.
+ *
+ * @param {Object} packet
+ * @return {String} encoded
+ * @api private
+ */
+
+function encodeAsString(obj) {
+
+  // first is type
+  var str = '' + obj.type;
+
+  // attachments if we have them
+  if (exports.BINARY_EVENT === obj.type || exports.BINARY_ACK === obj.type) {
+    str += obj.attachments + '-';
+  }
+
+  // if we have a namespace other than `/`
+  // we append it followed by a comma `,`
+  if (obj.nsp && '/' !== obj.nsp) {
+    str += obj.nsp + ',';
+  }
+
+  // immediately followed by the id
+  if (null != obj.id) {
+    str += obj.id;
+  }
+
+  // json data
+  if (null != obj.data) {
+    str += JSON.stringify(obj.data);
+  }
+
+  debug('encoded %j as %s', obj, str);
+  return str;
+}
+
+/**
+ * Encode packet as 'buffer sequence' by removing blobs, and
+ * deconstructing packet into object with placeholders and
+ * a list of buffers.
+ *
+ * @param {Object} packet
+ * @return {Buffer} encoded
+ * @api private
+ */
+
+function encodeAsBinary(obj, callback) {
+
+  function writeEncoding(bloblessData) {
+    var deconstruction = binary.deconstructPacket(bloblessData);
+    var pack = encodeAsString(deconstruction.packet);
+    var buffers = deconstruction.buffers;
+
+    buffers.unshift(pack); // add packet info to beginning of data list
+    callback(buffers); // write all the buffers
+  }
+
+  binary.removeBlobs(obj, writeEncoding);
+}
+
+/**
+ * A socket.io Decoder instance
+ *
+ * @return {Object} decoder
+ * @api public
+ */
+
+function Decoder() {
+  this.reconstructor = null;
+}
+
+/**
+ * Mix in `Emitter` with Decoder.
+ */
+
+Emitter(Decoder.prototype);
+
+/**
+ * Decodes an ecoded packet string into packet JSON.
+ *
+ * @param {String} obj - encoded packet
+ * @return {Object} packet
+ * @api public
+ */
+
+Decoder.prototype.add = function(obj) {
+  var packet;
+  if (typeof obj === 'string') {
+    packet = decodeString(obj);
+    if (exports.BINARY_EVENT === packet.type || exports.BINARY_ACK === packet.type) { // binary packet's json
+      this.reconstructor = new BinaryReconstructor(packet);
+
+      // no attachments, labeled binary but no binary data to follow
+      if (this.reconstructor.reconPack.attachments === 0) {
+        this.emit('decoded', packet);
+      }
+    } else { // non-binary full packet
+      this.emit('decoded', packet);
+    }
+  }
+  else if (isBuf(obj) || obj.base64) { // raw binary data
+    if (!this.reconstructor) {
+      throw new Error('got binary data when not reconstructing a packet');
+    } else {
+      packet = this.reconstructor.takeBinaryData(obj);
+      if (packet) { // received final buffer
+        this.reconstructor = null;
+        this.emit('decoded', packet);
+      }
+    }
+  }
+  else {
+    throw new Error('Unknown type: ' + obj);
+  }
+};
+
+/**
+ * Decode a packet String (JSON data)
+ *
+ * @param {String} str
+ * @return {Object} packet
+ * @api private
+ */
+
+function decodeString(str) {
+  var i = 0;
+  // look up type
+  var p = {
+    type: Number(str.charAt(0))
+  };
+
+  if (null == exports.types[p.type]) return error();
+
+  // look up attachments if type binary
+  if (exports.BINARY_EVENT === p.type || exports.BINARY_ACK === p.type) {
+    var buf = '';
+    while (str.charAt(++i) !== '-') {
+      buf += str.charAt(i);
+      if (i == str.length) break;
+    }
+    if (buf != Number(buf) || str.charAt(i) !== '-') {
+      throw new Error('Illegal attachments');
+    }
+    p.attachments = Number(buf);
+  }
+
+  // look up namespace (if any)
+  if ('/' === str.charAt(i + 1)) {
+    p.nsp = '';
+    while (++i) {
+      var c = str.charAt(i);
+      if (',' === c) break;
+      p.nsp += c;
+      if (i === str.length) break;
+    }
+  } else {
+    p.nsp = '/';
+  }
+
+  // look up id
+  var next = str.charAt(i + 1);
+  if ('' !== next && Number(next) == next) {
+    p.id = '';
+    while (++i) {
+      var c = str.charAt(i);
+      if (null == c || Number(c) != c) {
+        --i;
+        break;
+      }
+      p.id += str.charAt(i);
+      if (i === str.length) break;
+    }
+    p.id = Number(p.id);
+  }
+
+  // look up json data
+  if (str.charAt(++i)) {
+    p = tryParse(p, str.substr(i));
+  }
+
+  debug('decoded %s as %j', str, p);
+  return p;
+}
+
+function tryParse(p, str) {
+  try {
+    p.data = JSON.parse(str);
+  } catch(e){
+    return error();
+  }
+  return p; 
+}
+
+/**
+ * Deallocates a parser's resources
+ *
+ * @api public
+ */
+
+Decoder.prototype.destroy = function() {
+  if (this.reconstructor) {
+    this.reconstructor.finishedReconstruction();
+  }
+};
+
+/**
+ * A manager of a binary event's 'buffer sequence'. Should
+ * be constructed whenever a packet of type BINARY_EVENT is
+ * decoded.
+ *
+ * @param {Object} packet
+ * @return {BinaryReconstructor} initialized reconstructor
+ * @api private
+ */
+
+function BinaryReconstructor(packet) {
+  this.reconPack = packet;
+  this.buffers = [];
+}
+
+/**
+ * Method to be called when binary data received from connection
+ * after a BINARY_EVENT packet.
+ *
+ * @param {Buffer | ArrayBuffer} binData - the raw binary data received
+ * @return {null | Object} returns null if more binary data is expected or
+ *   a reconstructed packet object if all buffers have been received.
+ * @api private
+ */
+
+BinaryReconstructor.prototype.takeBinaryData = function(binData) {
+  this.buffers.push(binData);
+  if (this.buffers.length === this.reconPack.attachments) { // done with buffer list
+    var packet = binary.reconstructPacket(this.reconPack, this.buffers);
+    this.finishedReconstruction();
+    return packet;
+  }
+  return null;
+};
+
+/**
+ * Cleans up binary packet reconstruction variables.
+ *
+ * @api private
+ */
+
+BinaryReconstructor.prototype.finishedReconstruction = function() {
+  this.reconPack = null;
+  this.buffers = [];
+};
+
+function error() {
+  return {
+    type: exports.ERROR,
+    data: 'parser error'
+  };
+}
+
+},{"./binary":39,"./is-buffer":41,"component-emitter":8,"debug":10,"has-binary2":25}],41:[function(require,module,exports){
+(function (global){
+
+module.exports = isBuf;
+
+/**
+ * Returns true if obj is a buffer or an arraybuffer.
+ *
+ * @api private
+ */
+
+function isBuf(obj) {
+  return (global.Buffer && global.Buffer.isBuffer(obj)) ||
+         (global.ArrayBuffer && obj instanceof ArrayBuffer);
+}
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],42:[function(require,module,exports){
+arguments[4][26][0].apply(exports,arguments)
+},{"dup":26}],43:[function(require,module,exports){
+var THREE = require( 'three' );
+
+/**
+* @author Tim Knip / http://www.floorplanner.com/ / tim at floorplanner.com
+* @author Tony Parisi / http://www.tonyparisi.com/
+*/
+
+var ColladaLoader = function () {
+
+    var COLLADA = null;
+    var scene = null;
+    var visualScene;
+    var kinematicsModel;
+
+    var readyCallbackFunc = null;
+
+    var sources = {};
+    var images = {};
+    var animations = {};
+    var controllers = {};
+    var geometries = {};
+    var materials = {};
+    var effects = {};
+    var cameras = {};
+    var lights = {};
+
+    var animData;
+    var kinematics;
+    var visualScenes;
+    var kinematicsModels;
+    var baseUrl;
+    var morphs;
+    var skins;
+
+    var flip_uv = true;
+    var preferredShading = THREE.SmoothShading;
+
+    var options = {
+        // Force Geometry to always be centered at the local origin of the
+        // containing Mesh.
+        centerGeometry: false,
+
+        // Axis conversion is done for geometries, animations, and controllers.
+        // If we ever pull cameras or lights out of the COLLADA file, they'll
+        // need extra work.
+        convertUpAxis: false,
+
+        subdivideFaces: true,
+
+        upAxis: 'Y',
+
+        // For reflective or refractive materials we'll use this cubemap
+        defaultEnvMap: null
+
+    };
+
+    var colladaUnit = 1.0;
+    var colladaUp = 'Y';
+    var upConversion = null;
+
+    function load ( url, readyCallback, progressCallback, failCallback ) {
+
+        var length = 0;
+
+        if ( document.implementation && document.implementation.createDocument ) {
+
+            var request = new XMLHttpRequest();
+
+            request.onreadystatechange = function() {
+
+                if ( request.readyState === 4 ) {
+
+                    if ( request.status === 0 || request.status === 200 ) {
+
+                        if ( request.response ) {
+
+                            readyCallbackFunc = readyCallback;
+                            parse( request.response, undefined, url );
+
+                        } else {
+
+                            if ( failCallback ) {
+
+                                failCallback();
+
+                            } else {
+
+                                console.error( "ColladaLoader: Empty or non-existing file (" + url + ")" );
+
+                            }
+
+                        }
+
+                    }
+
+                } else if ( request.readyState === 3 ) {
+
+                    if ( progressCallback ) {
+
+                        if ( length === 0 ) {
+
+                            length = request.getResponseHeader( "Content-Length" );
+
+                        }
+
+                        progressCallback( { total: length, loaded: request.responseText.length } );
+
+                    }
+
+                }
+
+            };
+
+            request.open( "GET", url, true );
+            request.send( null );
+
+        } else {
+
+            alert( "Don't know how to parse XML!" );
+
+        }
+
+    }
+
+    function parse( text, callBack, url ) {
+
+        COLLADA = new DOMParser().parseFromString( text, 'text/xml' );
+        callBack = callBack || readyCallbackFunc;
+
+        if ( url !== undefined ) {
+
+            var parts = url.split( '/' );
+            parts.pop();
+            baseUrl = ( parts.length < 1 ? '.' : parts.join( '/' ) ) + '/';
+
+        }
+
+        parseAsset();
+        setUpConversion();
+        images = parseLib( "library_images image", _Image, "image" );
+        materials = parseLib( "library_materials material", Material, "material" );
+        effects = parseLib( "library_effects effect", Effect, "effect" );
+        geometries = parseLib( "library_geometries geometry", Geometry, "geometry" );
+        cameras = parseLib( "library_cameras camera", Camera, "camera" );
+        lights = parseLib( "library_lights light", Light, "light" );
+        controllers = parseLib( "library_controllers controller", Controller, "controller" );
+        animations = parseLib( "library_animations animation", Animation, "animation" );
+        visualScenes = parseLib( "library_visual_scenes visual_scene", VisualScene, "visual_scene" );
+        kinematicsModels = parseLib( "library_kinematics_models kinematics_model", KinematicsModel, "kinematics_model" );
+
+        morphs = [];
+        skins = [];
+
+        visualScene = parseScene();
+        scene = new THREE.Group();
+
+        for ( var i = 0; i < visualScene.nodes.length; i ++ ) {
+
+            scene.add( createSceneGraph( visualScene.nodes[ i ] ) );
+
+        }
+
+        // unit conversion
+        scene.scale.multiplyScalar( colladaUnit );
+
+        createAnimations();
+
+        kinematicsModel = parseKinematicsModel();
+        createKinematics();
+
+        var result = {
+
+            scene: scene,
+            morphs: morphs,
+            skins: skins,
+            animations: animData,
+            kinematics: kinematics,
+            dae: {
+                images: images,
+                materials: materials,
+                cameras: cameras,
+                lights: lights,
+                effects: effects,
+                geometries: geometries,
+                controllers: controllers,
+                animations: animations,
+                visualScenes: visualScenes,
+                visualScene: visualScene,
+                scene: visualScene,
+                kinematicsModels: kinematicsModels,
+                kinematicsModel: kinematicsModel
+            }
+
+        };
+
+        if ( callBack ) {
+
+            callBack( result );
+
+        }
+
+        return result;
+
+    }
+
+    function setPreferredShading ( shading ) {
+
+        preferredShading = shading;
+
+    }
+
+    function parseAsset () {
+
+        var elements = COLLADA.querySelectorAll('asset');
+
+        var element = elements[0];
+
+        if ( element && element.childNodes ) {
+
+            for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+                var child = element.childNodes[ i ];
+
+                switch ( child.nodeName ) {
+
+                    case 'unit':
+
+                        var meter = child.getAttribute( 'meter' );
+
+                        if ( meter ) {
+
+                            colladaUnit = parseFloat( meter );
+
+                        }
+
+                        break;
+
+                    case 'up_axis':
+
+                        colladaUp = child.textContent.charAt(0);
+                        break;
+
+                }
+
+            }
+
+        }
+
+    }
+
+    function parseLib ( q, classSpec, prefix ) {
+
+        var elements = COLLADA.querySelectorAll(q);
+
+        var lib = {};
+
+        var i = 0;
+
+        var elementsLength = elements.length;
+
+        for ( var j = 0; j < elementsLength; j ++ ) {
+
+            var element = elements[j];
+            var daeElement = ( new classSpec() ).parse( element );
+
+            if ( !daeElement.id || daeElement.id.length === 0 ) daeElement.id = prefix + ( i ++ );
+            lib[ daeElement.id ] = daeElement;
+
+        }
+
+        return lib;
+
+    }
+
+    function parseScene() {
+
+        var sceneElement = COLLADA.querySelectorAll('scene instance_visual_scene')[0];
+
+        if ( sceneElement ) {
+
+            var url = sceneElement.getAttribute( 'url' ).replace( /^#/, '' );
+            return visualScenes[ url.length > 0 ? url : 'visual_scene0' ];
+
+        } else {
+
+            return null;
+
+        }
+
+    }
+
+    function parseKinematicsModel() {
+
+        var kinematicsModelElement = COLLADA.querySelectorAll('instance_kinematics_model')[0];
+
+        if ( kinematicsModelElement ) {
+
+            var url = kinematicsModelElement.getAttribute( 'url' ).replace(/^#/, '');
+            return kinematicsModels[ url.length > 0 ? url : 'kinematics_model0' ];
+
+        } else {
+
+            return null;
+
+        }
+
+    }
+
+    function createAnimations() {
+
+        animData = [];
+
+        // fill in the keys
+        recurseHierarchy( scene );
+
+    }
+
+    function recurseHierarchy( node ) {
+
+        var n = visualScene.getChildById( node.colladaId, true ),
+            newData = null;
+
+        if ( n && n.keys ) {
+
+            newData = {
+                fps: 60,
+                hierarchy: [ {
+                    node: n,
+                    keys: n.keys,
+                    sids: n.sids
+                } ],
+                node: node,
+                name: 'animation_' + node.name,
+                length: 0
+            };
+
+            animData.push(newData);
+
+            for ( var i = 0, il = n.keys.length; i < il; i ++ ) {
+
+                newData.length = Math.max( newData.length, n.keys[i].time );
+
+            }
+
+        } else {
+
+            newData = {
+                hierarchy: [ {
+                    keys: [],
+                    sids: []
+                } ]
+            }
+
+        }
+
+        for ( var i = 0, il = node.children.length; i < il; i ++ ) {
+
+            var d = recurseHierarchy( node.children[i] );
+
+            for ( var j = 0, jl = d.hierarchy.length; j < jl; j ++ ) {
+
+                newData.hierarchy.push( {
+                    keys: [],
+                    sids: []
+                } );
+
+            }
+
+        }
+
+        return newData;
+
+    }
+
+    function calcAnimationBounds () {
+
+        var start = 1000000;
+        var end = -start;
+        var frames = 0;
+        var ID;
+        for ( var id in animations ) {
+
+            var animation = animations[ id ];
+            ID = ID || animation.id;
+            for ( var i = 0; i < animation.sampler.length; i ++ ) {
+
+                var sampler = animation.sampler[ i ];
+
+                sampler.create();
+
+                start = Math.min( start, sampler.startTime );
+                end = Math.max( end, sampler.endTime );
+                frames = Math.max( frames, sampler.input.length );
+
+            }
+
+        }
+
+        return { start:start, end:end, frames:frames,ID:ID };
+
+    }
+
+    function createMorph ( geometry, ctrl ) {
+
+        var morphCtrl = ctrl instanceof InstanceController ? controllers[ ctrl.url ] : ctrl;
+
+        if ( !morphCtrl || !morphCtrl.morph ) {
+
+            console.log("could not find morph controller!");
+            return;
+
+        }
+
+        var morph = morphCtrl.morph;
+
+        for ( var i = 0; i < morph.targets.length; i ++ ) {
+
+            var target_id = morph.targets[ i ];
+            var daeGeometry = geometries[ target_id ];
+
+            if ( !daeGeometry.mesh ||
+                 !daeGeometry.mesh.primitives ||
+                 !daeGeometry.mesh.primitives.length ) {
+                 continue;
+            }
+
+            var target = daeGeometry.mesh.primitives[ 0 ].geometry;
+
+            if ( target.vertices.length === geometry.vertices.length ) {
+
+                geometry.morphTargets.push( { name: "target_1", vertices: target.vertices } );
+
+            }
+
+        }
+
+        geometry.morphTargets.push( { name: "target_Z", vertices: geometry.vertices } );
+
+    }
+
+    function createSkin ( geometry, ctrl, applyBindShape ) {
+
+        var skinCtrl = controllers[ ctrl.url ];
+
+        if ( !skinCtrl || !skinCtrl.skin ) {
+
+            console.log( "could not find skin controller!" );
+            return;
+
+        }
+
+        if ( !ctrl.skeleton || !ctrl.skeleton.length ) {
+
+            console.log( "could not find the skeleton for the skin!" );
+            return;
+
+        }
+
+        var skin = skinCtrl.skin;
+        var skeleton = visualScene.getChildById( ctrl.skeleton[ 0 ] );
+        var hierarchy = [];
+
+        applyBindShape = applyBindShape !== undefined ? applyBindShape : true;
+
+        var bones = [];
+        geometry.skinWeights = [];
+        geometry.skinIndices = [];
+
+        //createBones( geometry.bones, skin, hierarchy, skeleton, null, -1 );
+        //createWeights( skin, geometry.bones, geometry.skinIndices, geometry.skinWeights );
+
+        /*
+        geometry.animation = {
+            name: 'take_001',
+            fps: 30,
+            length: 2,
+            JIT: true,
+            hierarchy: hierarchy
+        };
+        */
+
+        if ( applyBindShape ) {
+
+            for ( var i = 0; i < geometry.vertices.length; i ++ ) {
+
+                geometry.vertices[ i ].applyMatrix4( skin.bindShapeMatrix );
+
+            }
+
+        }
+
+    }
+
+    function setupSkeleton ( node, bones, frame, parent ) {
+
+        node.world = node.world || new THREE.Matrix4();
+        node.localworld = node.localworld || new THREE.Matrix4();
+        node.world.copy( node.matrix );
+        node.localworld.copy( node.matrix );
+
+        if ( node.channels && node.channels.length ) {
+
+            var channel = node.channels[ 0 ];
+            var m = channel.sampler.output[ frame ];
+
+            if ( m instanceof THREE.Matrix4 ) {
+
+                node.world.copy( m );
+                node.localworld.copy(m);
+                if (frame === 0)
+                    node.matrix.copy(m);
+            }
+
+        }
+
+        if ( parent ) {
+
+            node.world.multiplyMatrices( parent, node.world );
+
+        }
+
+        bones.push( node );
+
+        for ( var i = 0; i < node.nodes.length; i ++ ) {
+
+            setupSkeleton( node.nodes[ i ], bones, frame, node.world );
+
+        }
+
+    }
+
+    function setupSkinningMatrices ( bones, skin ) {
+
+        // FIXME: this is dumb...
+
+        for ( var i = 0; i < bones.length; i ++ ) {
+
+            var bone = bones[ i ];
+            var found = -1;
+
+            if ( bone.type != 'JOINT' ) continue;
+
+            for ( var j = 0; j < skin.joints.length; j ++ ) {
+
+                if ( bone.sid === skin.joints[ j ] ) {
+
+                    found = j;
+                    break;
+
+                }
+
+            }
+
+            if ( found >= 0 ) {
+
+                var inv = skin.invBindMatrices[ found ];
+
+                bone.invBindMatrix = inv;
+                bone.skinningMatrix = new THREE.Matrix4();
+                bone.skinningMatrix.multiplyMatrices(bone.world, inv); // (IBMi * JMi)
+                bone.animatrix = new THREE.Matrix4();
+
+                bone.animatrix.copy(bone.localworld);
+                bone.weights = [];
+
+                for ( var j = 0; j < skin.weights.length; j ++ ) {
+
+                    for (var k = 0; k < skin.weights[ j ].length; k ++ ) {
+
+                        var w = skin.weights[ j ][ k ];
+
+                        if ( w.joint === found ) {
+
+                            bone.weights.push( w );
+
+                        }
+
+                    }
+
+                }
+
+            } else {
+
+                console.warn( "ColladaLoader: Could not find joint '" + bone.sid + "'." );
+
+                bone.skinningMatrix = new THREE.Matrix4();
+                bone.weights = [];
+
+            }
+        }
+
+    }
+
+    //Walk the Collada tree and flatten the bones into a list, extract the position, quat and scale from the matrix
+    function flattenSkeleton(skeleton) {
+
+        var list = [];
+        var walk = function(parentid, node, list) {
+
+            var bone = {};
+            bone.name = node.sid;
+            bone.parent = parentid;
+            bone.matrix = node.matrix;
+            var data = [ new THREE.Vector3(),new THREE.Quaternion(),new THREE.Vector3() ];
+            bone.matrix.decompose(data[0], data[1], data[2]);
+
+            bone.pos = [ data[0].x,data[0].y,data[0].z ];
+
+            bone.scl = [ data[2].x,data[2].y,data[2].z ];
+            bone.rotq = [ data[1].x,data[1].y,data[1].z,data[1].w ];
+            list.push(bone);
+
+            for (var i in node.nodes) {
+
+                walk(node.sid, node.nodes[i], list);
+
+            }
+
+        };
+
+        walk(-1, skeleton, list);
+        return list;
+
+    }
+
+    //Move the vertices into the pose that is proper for the start of the animation
+    function skinToBindPose(geometry,skeleton,skinController) {
+
+        var bones = [];
+        setupSkeleton( skeleton, bones, -1 );
+        setupSkinningMatrices( bones, skinController.skin );
+        var v = new THREE.Vector3();
+        var skinned = [];
+
+        for (var i = 0; i < geometry.vertices.length; i ++) {
+
+            skinned.push(new THREE.Vector3());
+
+        }
+
+        for ( i = 0; i < bones.length; i ++ ) {
+
+            if ( bones[ i ].type != 'JOINT' ) continue;
+
+            for ( var j = 0; j < bones[ i ].weights.length; j ++ ) {
+
+                var w = bones[ i ].weights[ j ];
+                var vidx = w.index;
+                var weight = w.weight;
+
+                var o = geometry.vertices[vidx];
+                var s = skinned[vidx];
+
+                v.x = o.x;
+                v.y = o.y;
+                v.z = o.z;
+
+                v.applyMatrix4( bones[i].skinningMatrix );
+
+                s.x += (v.x * weight);
+                s.y += (v.y * weight);
+                s.z += (v.z * weight);
+            }
+
+        }
+
+        for (var i = 0; i < geometry.vertices.length; i ++) {
+
+            geometry.vertices[i] = skinned[i];
+
+        }
+
+    }
+
+    function applySkin ( geometry, instanceCtrl, frame ) {
+
+        var skinController = controllers[ instanceCtrl.url ];
+
+        frame = frame !== undefined ? frame : 40;
+
+        if ( !skinController || !skinController.skin ) {
+
+            console.log( 'ColladaLoader: Could not find skin controller.' );
+            return;
+
+        }
+
+        if ( !instanceCtrl.skeleton || !instanceCtrl.skeleton.length ) {
+
+            console.log( 'ColladaLoader: Could not find the skeleton for the skin. ' );
+            return;
+
+        }
+
+        var animationBounds = calcAnimationBounds();
+        var skeleton = visualScene.getChildById( instanceCtrl.skeleton[0], true ) || visualScene.getChildBySid( instanceCtrl.skeleton[0], true );
+
+        //flatten the skeleton into a list of bones
+        var bonelist = flattenSkeleton(skeleton);
+        var joints = skinController.skin.joints;
+
+        //sort that list so that the order reflects the order in the joint list
+        var sortedbones = [];
+        for (var i = 0; i < joints.length; i ++) {
+
+            for (var j = 0; j < bonelist.length; j ++) {
+
+                if (bonelist[j].name === joints[i]) {
+
+                    sortedbones[i] = bonelist[j];
+
+                }
+
+            }
+
+        }
+
+        //hook up the parents by index instead of name
+        for (var i = 0; i < sortedbones.length; i ++) {
+
+            for (var j = 0; j < sortedbones.length; j ++) {
+
+                if (sortedbones[i].parent === sortedbones[j].name) {
+
+                    sortedbones[i].parent = j;
+
+                }
+
+            }
+
+        }
+
+
+        var i, j, w, vidx, weight;
+        var v = new THREE.Vector3(), o, s;
+
+        // move vertices to bind shape
+        for ( i = 0; i < geometry.vertices.length; i ++ ) {
+            geometry.vertices[i].applyMatrix4( skinController.skin.bindShapeMatrix );
+        }
+
+        var skinIndices = [];
+        var skinWeights = [];
+        var weights = skinController.skin.weights;
+
+        // hook up the skin weights
+        // TODO - this might be a good place to choose greatest 4 weights
+        for ( var i =0; i < weights.length; i ++ ) {
+
+            var indicies = new THREE.Vector4(weights[i][0] ? weights[i][0].joint : 0,weights[i][1] ? weights[i][1].joint : 0,weights[i][2] ? weights[i][2].joint : 0,weights[i][3] ? weights[i][3].joint : 0);
+            var weight = new THREE.Vector4(weights[i][0] ? weights[i][0].weight : 0,weights[i][1] ? weights[i][1].weight : 0,weights[i][2] ? weights[i][2].weight : 0,weights[i][3] ? weights[i][3].weight : 0);
+
+            skinIndices.push(indicies);
+            skinWeights.push(weight);
+
+        }
+
+        geometry.skinIndices = skinIndices;
+        geometry.skinWeights = skinWeights;
+        geometry.bones = sortedbones;
+        // process animation, or simply pose the rig if no animation
+
+        //create an animation for the animated bones
+        //NOTE: this has no effect when using morphtargets
+        var animationdata = { "name":animationBounds.ID,"fps":30,"length":animationBounds.frames / 30,"hierarchy":[] };
+
+        for (var j = 0; j < sortedbones.length; j ++) {
+
+            animationdata.hierarchy.push({ parent:sortedbones[j].parent, name:sortedbones[j].name, keys:[] });
+
+        }
+
+        console.log( 'ColladaLoader:', animationBounds.ID + ' has ' + sortedbones.length + ' bones.' );
+
+
+
+        skinToBindPose(geometry, skeleton, skinController);
+
+
+        for ( frame = 0; frame < animationBounds.frames; frame ++ ) {
+
+            var bones = [];
+            var skinned = [];
+            // process the frame and setup the rig with a fresh
+            // transform, possibly from the bone's animation channel(s)
+
+            setupSkeleton( skeleton, bones, frame );
+            setupSkinningMatrices( bones, skinController.skin );
+
+            for (var i = 0; i < bones.length; i ++) {
+
+                for (var j = 0; j < animationdata.hierarchy.length; j ++) {
+
+                    if (animationdata.hierarchy[j].name === bones[i].sid) {
+
+                        var key = {};
+                        key.time = (frame / 30);
+                        key.matrix = bones[i].animatrix;
+
+                        if (frame === 0)
+                            bones[i].matrix = key.matrix;
+
+                        var data = [ new THREE.Vector3(),new THREE.Quaternion(),new THREE.Vector3() ];
+                        key.matrix.decompose(data[0], data[1], data[2]);
+
+                        key.pos = [ data[0].x,data[0].y,data[0].z ];
+
+                        key.scl = [ data[2].x,data[2].y,data[2].z ];
+                        key.rot = data[1];
+
+                        animationdata.hierarchy[j].keys.push(key);
+
+                    }
+
+                }
+
+            }
+
+            geometry.animation = animationdata;
+
+        }
+
+    }
+
+    function createKinematics() {
+
+        if ( kinematicsModel && kinematicsModel.joints.length === 0 ) {
+            kinematics = undefined;
+            return;
+        }
+
+        var jointMap = {};
+
+        var _addToMap = function( jointIndex, parentVisualElement ) {
+
+            var parentVisualElementId = parentVisualElement.getAttribute( 'id' );
+            var colladaNode = visualScene.getChildById( parentVisualElementId, true );
+            var joint = kinematicsModel.joints[ jointIndex ];
+
+            scene.traverse(function( node ) {
+
+                if ( node.colladaId == parentVisualElementId ) {
+
+                    jointMap[ jointIndex ] = {
+                        node: node,
+                        transforms: colladaNode.transforms,
+                        joint: joint,
+                        position: joint.zeroPosition
+                    };
+
+                }
+
+            });
+
+        };
+
+        kinematics = {
+
+            joints: kinematicsModel && kinematicsModel.joints,
+
+            getJointValue: function( jointIndex ) {
+
+                var jointData = jointMap[ jointIndex ];
+
+                if ( jointData ) {
+
+                    return jointData.position;
+
+                } else {
+
+                    console.log( 'getJointValue: joint ' + jointIndex + ' doesn\'t exist' );
+
+                }
+
+            },
+
+            setJointValue: function( jointIndex, value ) {
+
+                var jointData = jointMap[ jointIndex ];
+
+                if ( jointData ) {
+
+                    var joint = jointData.joint;
+
+                    if ( value > joint.limits.max || value < joint.limits.min ) {
+
+                        console.log( 'setJointValue: joint ' + jointIndex + ' value ' + value + ' outside of limits (min: ' + joint.limits.min + ', max: ' + joint.limits.max + ')' );
+
+                    } else if ( joint.static ) {
+
+                        console.log( 'setJointValue: joint ' + jointIndex + ' is static' );
+
+                    } else {
+
+                        var threejsNode = jointData.node;
+                        var axis = joint.axis;
+                        var transforms = jointData.transforms;
+
+                        var matrix = new THREE.Matrix4();
+
+                        for (i = 0; i < transforms.length; i ++ ) {
+
+                            var transform = transforms[ i ];
+
+                            // kinda ghetto joint detection
+                            if ( transform.sid && transform.sid.indexOf( 'joint' + jointIndex ) !== -1 ) {
+
+                                // apply actual joint value here
+                                switch ( joint.type ) {
+
+                                    case 'revolute':
+
+                                        matrix.multiply( m1.makeRotationAxis( axis, THREE.Math.degToRad(value) ) );
+                                        break;
+
+                                    case 'prismatic':
+
+                                        matrix.multiply( m1.makeTranslation(axis.x * value, axis.y * value, axis.z * value ) );
+                                        break;
+
+                                    default:
+
+                                        console.warn( 'setJointValue: unknown joint type: ' + joint.type );
+                                        break;
+
+                                }
+
+                            } else {
+
+                                var m1 = new THREE.Matrix4();
+
+                                switch ( transform.type ) {
+
+                                    case 'matrix':
+
+                                        matrix.multiply( transform.obj );
+
+                                        break;
+
+                                    case 'translate':
+
+                                        matrix.multiply( m1.makeTranslation( transform.obj.x, transform.obj.y, transform.obj.z ) );
+
+                                        break;
+
+                                    case 'rotate':
+
+                                        matrix.multiply( m1.makeRotationAxis( transform.obj, transform.angle ) );
+
+                                        break;
+
+                                }
+                            }
+                        }
+
+                        // apply the matrix to the threejs node
+                        var elementsFloat32Arr = matrix.elements;
+                        var elements = Array.prototype.slice.call( elementsFloat32Arr );
+
+                        var elementsRowMajor = [
+                            elements[ 0 ],
+                            elements[ 4 ],
+                            elements[ 8 ],
+                            elements[ 12 ],
+                            elements[ 1 ],
+                            elements[ 5 ],
+                            elements[ 9 ],
+                            elements[ 13 ],
+                            elements[ 2 ],
+                            elements[ 6 ],
+                            elements[ 10 ],
+                            elements[ 14 ],
+                            elements[ 3 ],
+                            elements[ 7 ],
+                            elements[ 11 ],
+                            elements[ 15 ]
+                        ];
+
+                        threejsNode.matrix.set.apply( threejsNode.matrix, elementsRowMajor );
+                        threejsNode.matrix.decompose( threejsNode.position, threejsNode.quaternion, threejsNode.scale );
+                    }
+
+                } else {
+
+                    console.log( 'setJointValue: joint ' + jointIndex + ' doesn\'t exist' );
+
+                }
+
+            }
+
+        };
+
+        var element = COLLADA.querySelector('scene instance_kinematics_scene');
+
+        if ( element ) {
+
+            for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+                var child = element.childNodes[ i ];
+
+                if ( child.nodeType != 1 ) continue;
+
+                switch ( child.nodeName ) {
+
+                    case 'bind_joint_axis':
+
+                        var visualTarget = child.getAttribute( 'target' ).split( '/' ).pop();
+                        var axis = child.querySelector('axis param').textContent;
+                        var jointIndex = parseInt( axis.split( 'joint' ).pop().split( '.' )[0] );
+                        var visualTargetElement = COLLADA.querySelector( '[sid="' + visualTarget + '"]' );
+
+                        if ( visualTargetElement ) {
+                            var parentVisualElement = visualTargetElement.parentElement;
+                            _addToMap(jointIndex, parentVisualElement);
+                        }
+
+                        break;
+
+                    default:
+
+                        break;
+
+                }
+
+            }
+        }
+
+    }
+
+    function createSceneGraph ( node, parent ) {
+
+        var obj = new THREE.Object3D();
+        var skinned = false;
+        var skinController;
+        var morphController;
+        var i, j;
+
+        // FIXME: controllers
+
+        for ( i = 0; i < node.controllers.length; i ++ ) {
+
+            var controller = controllers[ node.controllers[ i ].url ];
+
+            switch ( controller.type ) {
+
+                case 'skin':
+
+                    if ( geometries[ controller.skin.source ] ) {
+
+                        var inst_geom = new InstanceGeometry();
+
+                        inst_geom.url = controller.skin.source;
+                        inst_geom.instance_material = node.controllers[ i ].instance_material;
+
+                        node.geometries.push( inst_geom );
+                        skinned = true;
+                        skinController = node.controllers[ i ];
+
+                    } else if ( controllers[ controller.skin.source ] ) {
+
+                        // urgh: controller can be chained
+                        // handle the most basic case...
+
+                        var second = controllers[ controller.skin.source ];
+                        morphController = second;
+                    //	skinController = node.controllers[i];
+
+                        if ( second.morph && geometries[ second.morph.source ] ) {
+
+                            var inst_geom = new InstanceGeometry();
+
+                            inst_geom.url = second.morph.source;
+                            inst_geom.instance_material = node.controllers[ i ].instance_material;
+
+                            node.geometries.push( inst_geom );
+
+                        }
+
+                    }
+
+                    break;
+
+                case 'morph':
+
+                    if ( geometries[ controller.morph.source ] ) {
+
+                        var inst_geom = new InstanceGeometry();
+
+                        inst_geom.url = controller.morph.source;
+                        inst_geom.instance_material = node.controllers[ i ].instance_material;
+
+                        node.geometries.push( inst_geom );
+                        morphController = node.controllers[ i ];
+
+                    }
+
+                    console.log( 'ColladaLoader: Morph-controller partially supported.' );
+
+                default:
+                    break;
+
+            }
+
+        }
+
+        // geometries
+
+        var double_sided_materials = {};
+
+        for ( i = 0; i < node.geometries.length; i ++ ) {
+
+            var instance_geometry = node.geometries[i];
+            var instance_materials = instance_geometry.instance_material;
+            var geometry = geometries[ instance_geometry.url ];
+            var used_materials = {};
+            var used_materials_array = [];
+            var num_materials = 0;
+            var first_material;
+
+            if ( geometry ) {
+
+                if ( !geometry.mesh || !geometry.mesh.primitives )
+                    continue;
+
+                if ( obj.name.length === 0 ) {
+
+                    obj.name = geometry.id;
+
+                }
+
+                // collect used fx for this geometry-instance
+
+                if ( instance_materials ) {
+
+                    for ( j = 0; j < instance_materials.length; j ++ ) {
+
+                        var instance_material = instance_materials[ j ];
+                        var mat = materials[ instance_material.target ];
+                        var effect_id = mat.instance_effect.url;
+                        var shader = effects[ effect_id ].shader;
+                        var material3js = shader.material;
+
+                        if ( geometry.doubleSided ) {
+
+                            if ( !( instance_material.symbol in double_sided_materials ) ) {
+
+                                var _copied_material = material3js.clone();
+                                _copied_material.side = THREE.DoubleSide;
+                                double_sided_materials[ instance_material.symbol ] = _copied_material;
+
+                            }
+
+                            material3js = double_sided_materials[ instance_material.symbol ];
+
+                        }
+
+                        material3js.opacity = !material3js.opacity ? 1 : material3js.opacity;
+                        used_materials[ instance_material.symbol ] = num_materials;
+                        used_materials_array.push( material3js );
+                        first_material = material3js;
+                        first_material.name = mat.name === null || mat.name === '' ? mat.id : mat.name;
+                        num_materials ++;
+
+                    }
+
+                }
+
+                var mesh;
+                var material = first_material || new THREE.MeshLambertMaterial( { color: 0xdddddd, side: geometry.doubleSided ? THREE.DoubleSide : THREE.FrontSide } );
+                var geom = geometry.mesh.geometry3js;
+
+                if ( num_materials > 1 ) {
+
+                    material = new THREE.MultiMaterial( used_materials_array );
+
+                }
+
+                if ( skinController !== undefined ) {
+
+
+                    applySkin( geom, skinController );
+
+                    if ( geom.morphTargets.length > 0 ) {
+
+                        material.morphTargets = true;
+                        material.skinning = false;
+
+                    } else {
+
+                        material.morphTargets = false;
+                        material.skinning = true;
+
+                    }
+
+
+                    mesh = new THREE.SkinnedMesh( geom, material, false );
+
+
+                    //mesh.skeleton = skinController.skeleton;
+                    //mesh.skinController = controllers[ skinController.url ];
+                    //mesh.skinInstanceController = skinController;
+                    mesh.name = 'skin_' + skins.length;
+
+
+
+                    //mesh.animationHandle.setKey(0);
+                    skins.push( mesh );
+
+                } else if ( morphController !== undefined ) {
+
+                    createMorph( geom, morphController );
+
+                    material.morphTargets = true;
+
+                    mesh = new THREE.Mesh( geom, material );
+                    mesh.name = 'morph_' + morphs.length;
+
+                    morphs.push( mesh );
+
+                } else {
+
+                    if ( geom.isLineStrip === true ) {
+
+                        mesh = new THREE.Line( geom );
+
+                    } else {
+
+                        mesh = new THREE.Mesh( geom, material );
+
+                    }
+
+                }
+
+                obj.add(mesh);
+
+            }
+
+        }
+
+        for ( i = 0; i < node.cameras.length; i ++ ) {
+
+            var instance_camera = node.cameras[i];
+            var cparams = cameras[instance_camera.url];
+
+            var cam = new THREE.PerspectiveCamera(cparams.yfov, parseFloat(cparams.aspect_ratio),
+                    parseFloat(cparams.znear), parseFloat(cparams.zfar));
+
+            obj.add(cam);
+        }
+
+        for ( i = 0; i < node.lights.length; i ++ ) {
+
+            var light = null;
+            var instance_light = node.lights[i];
+            var lparams = lights[instance_light.url];
+
+            if ( lparams && lparams.technique ) {
+
+                var color = lparams.color.getHex();
+                var intensity = lparams.intensity;
+                var distance = lparams.distance;
+                var angle = lparams.falloff_angle;
+
+                switch ( lparams.technique ) {
+
+                    case 'directional':
+
+                        light = new THREE.DirectionalLight( color, intensity, distance );
+                        light.position.set(0, 0, 1);
+                        break;
+
+                    case 'point':
+
+                        light = new THREE.PointLight( color, intensity, distance );
+                        break;
+
+                    case 'spot':
+
+                        light = new THREE.SpotLight( color, intensity, distance, angle );
+                        light.position.set(0, 0, 1);
+                        break;
+
+                    case 'ambient':
+
+                        light = new THREE.AmbientLight( color );
+                        break;
+
+                }
+
+            }
+
+            if (light) {
+                obj.add(light);
+            }
+        }
+
+        obj.name = node.name || node.id || "";
+        obj.colladaId = node.id || "";
+        obj.layer = node.layer || "";
+        obj.matrix = node.matrix;
+        obj.matrix.decompose( obj.position, obj.quaternion, obj.scale );
+
+        if ( options.centerGeometry && obj.geometry ) {
+
+            var delta = obj.geometry.center();
+            delta.multiply( obj.scale );
+            delta.applyQuaternion( obj.quaternion );
+
+            obj.position.sub( delta );
+
+        }
+
+        for ( i = 0; i < node.nodes.length; i ++ ) {
+
+            obj.add( createSceneGraph( node.nodes[i], node ) );
+
+        }
+
+        return obj;
+
+    }
+
+    function getJointId( skin, id ) {
+
+        for ( var i = 0; i < skin.joints.length; i ++ ) {
+
+            if ( skin.joints[ i ] === id ) {
+
+                return i;
+
+            }
+
+        }
+
+    }
+
+    function getLibraryNode( id ) {
+
+        var nodes = COLLADA.querySelectorAll('library_nodes node');
+
+        for ( var i = 0; i < nodes.length; i++ ) {
+
+            var attObj = nodes[i].attributes.getNamedItem('id');
+
+            if ( attObj && attObj.value === id ) {
+
+                return nodes[i];
+
+            }
+
+        }
+
+        return undefined;
+
+    }
+
+    function getChannelsForNode ( node ) {
+
+        var channels = [];
+        var startTime = 1000000;
+        var endTime = -1000000;
+
+        for ( var id in animations ) {
+
+            var animation = animations[id];
+
+            for ( var i = 0; i < animation.channel.length; i ++ ) {
+
+                var channel = animation.channel[i];
+                var sampler = animation.sampler[i];
+                var id = channel.target.split('/')[0];
+
+                if ( id == node.id ) {
+
+                    sampler.create();
+                    channel.sampler = sampler;
+                    startTime = Math.min(startTime, sampler.startTime);
+                    endTime = Math.max(endTime, sampler.endTime);
+                    channels.push(channel);
+
+                }
+
+            }
+
+        }
+
+        if ( channels.length ) {
+
+            node.startTime = startTime;
+            node.endTime = endTime;
+
+        }
+
+        return channels;
+
+    }
+
+    function calcFrameDuration( node ) {
+
+        var minT = 10000000;
+
+        for ( var i = 0; i < node.channels.length; i ++ ) {
+
+            var sampler = node.channels[i].sampler;
+
+            for ( var j = 0; j < sampler.input.length - 1; j ++ ) {
+
+                var t0 = sampler.input[ j ];
+                var t1 = sampler.input[ j + 1 ];
+                minT = Math.min( minT, t1 - t0 );
+
+            }
+        }
+
+        return minT;
+
+    }
+
+    function calcMatrixAt( node, t ) {
+
+        var animated = {};
+
+        var i, j;
+
+        for ( i = 0; i < node.channels.length; i ++ ) {
+
+            var channel = node.channels[ i ];
+            animated[ channel.sid ] = channel;
+
+        }
+
+        var matrix = new THREE.Matrix4();
+
+        for ( i = 0; i < node.transforms.length; i ++ ) {
+
+            var transform = node.transforms[ i ];
+            var channel = animated[ transform.sid ];
+
+            if ( channel !== undefined ) {
+
+                var sampler = channel.sampler;
+                var value;
+
+                for ( j = 0; j < sampler.input.length - 1; j ++ ) {
+
+                    if ( sampler.input[ j + 1 ] > t ) {
+
+                        value = sampler.output[ j ];
+                        //console.log(value.flatten)
+                        break;
+
+                    }
+
+                }
+
+                if ( value !== undefined ) {
+
+                    if ( value instanceof THREE.Matrix4 ) {
+
+                        matrix.multiplyMatrices( matrix, value );
+
+                    } else {
+
+                        // FIXME: handle other types
+
+                        matrix.multiplyMatrices( matrix, transform.matrix );
+
+                    }
+
+                } else {
+
+                    matrix.multiplyMatrices( matrix, transform.matrix );
+
+                }
+
+            } else {
+
+                matrix.multiplyMatrices( matrix, transform.matrix );
+
+            }
+
+        }
+
+        return matrix;
+
+    }
+
+    function bakeAnimations ( node ) {
+
+        if ( node.channels && node.channels.length ) {
+
+            var keys = [],
+                sids = [];
+
+            for ( var i = 0, il = node.channels.length; i < il; i ++ ) {
+
+                var channel = node.channels[i],
+                    fullSid = channel.fullSid,
+                    sampler = channel.sampler,
+                    input = sampler.input,
+                    transform = node.getTransformBySid( channel.sid ),
+                    member;
+
+                if ( channel.arrIndices ) {
+
+                    member = [];
+
+                    for ( var j = 0, jl = channel.arrIndices.length; j < jl; j ++ ) {
+
+                        member[ j ] = getConvertedIndex( channel.arrIndices[ j ] );
+
+                    }
+
+                } else {
+
+                    member = getConvertedMember( channel.member );
+
+                }
+
+                if ( transform ) {
+
+                    if ( sids.indexOf( fullSid ) === -1 ) {
+
+                        sids.push( fullSid );
+
+                    }
+
+                    for ( var j = 0, jl = input.length; j < jl; j ++ ) {
+
+                        var time = input[j],
+                            data = sampler.getData( transform.type, j, member ),
+                            key = findKey( keys, time );
+
+                        if ( !key ) {
+
+                            key = new Key( time );
+                            var timeNdx = findTimeNdx( keys, time );
+                            keys.splice( timeNdx === -1 ? keys.length : timeNdx, 0, key );
+
+                        }
+
+                        key.addTarget( fullSid, transform, member, data );
+
+                    }
+
+                } else {
+
+                    console.log( 'Could not find transform "' + channel.sid + '" in node ' + node.id );
+
+                }
+
+            }
+
+            // post process
+            for ( var i = 0; i < sids.length; i ++ ) {
+
+                var sid = sids[ i ];
+
+                for ( var j = 0; j < keys.length; j ++ ) {
+
+                    var key = keys[ j ];
+
+                    if ( !key.hasTarget( sid ) ) {
+
+                        interpolateKeys( keys, key, j, sid );
+
+                    }
+
+                }
+
+            }
+
+            node.keys = keys;
+            node.sids = sids;
+
+        }
+
+    }
+
+    function findKey ( keys, time) {
+
+        var retVal = null;
+
+        for ( var i = 0, il = keys.length; i < il && retVal === null; i ++ ) {
+
+            var key = keys[i];
+
+            if ( key.time === time ) {
+
+                retVal = key;
+
+            } else if ( key.time > time ) {
+
+                break;
+
+            }
+
+        }
+
+        return retVal;
+
+    }
+
+    function findTimeNdx ( keys, time) {
+
+        var ndx = -1;
+
+        for ( var i = 0, il = keys.length; i < il && ndx === -1; i ++ ) {
+
+            var key = keys[i];
+
+            if ( key.time >= time ) {
+
+                ndx = i;
+
+            }
+
+        }
+
+        return ndx;
+
+    }
+
+    function interpolateKeys ( keys, key, ndx, fullSid ) {
+
+        var prevKey = getPrevKeyWith( keys, fullSid, ndx ? ndx - 1 : 0 ),
+            nextKey = getNextKeyWith( keys, fullSid, ndx + 1 );
+
+        if ( prevKey && nextKey ) {
+
+            var scale = (key.time - prevKey.time) / (nextKey.time - prevKey.time),
+                prevTarget = prevKey.getTarget( fullSid ),
+                nextData = nextKey.getTarget( fullSid ).data,
+                prevData = prevTarget.data,
+                data;
+
+            if ( prevTarget.type === 'matrix' ) {
+
+                data = prevData;
+
+            } else if ( prevData.length ) {
+
+                data = [];
+
+                for ( var i = 0; i < prevData.length; ++ i ) {
+
+                    data[ i ] = prevData[ i ] + ( nextData[ i ] - prevData[ i ] ) * scale;
+
+                }
+
+            } else {
+
+                data = prevData + ( nextData - prevData ) * scale;
+
+            }
+
+            key.addTarget( fullSid, prevTarget.transform, prevTarget.member, data );
+
+        }
+
+    }
+
+    // Get next key with given sid
+
+    function getNextKeyWith( keys, fullSid, ndx ) {
+
+        for ( ; ndx < keys.length; ndx ++ ) {
+
+            var key = keys[ ndx ];
+
+            if ( key.hasTarget( fullSid ) ) {
+
+                return key;
+
+            }
+
+        }
+
+        return null;
+
+    }
+
+    // Get previous key with given sid
+
+    function getPrevKeyWith( keys, fullSid, ndx ) {
+
+        ndx = ndx >= 0 ? ndx : ndx + keys.length;
+
+        for ( ; ndx >= 0; ndx -- ) {
+
+            var key = keys[ ndx ];
+
+            if ( key.hasTarget( fullSid ) ) {
+
+                return key;
+
+            }
+
+        }
+
+        return null;
+
+    }
+
+    function _Image() {
+
+        this.id = "";
+        this.init_from = "";
+
+    }
+
+    _Image.prototype.parse = function(element) {
+
+        this.id = element.getAttribute('id');
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[ i ];
+
+            if ( child.nodeName === 'init_from' ) {
+
+                this.init_from = child.textContent;
+
+            }
+
+        }
+
+        return this;
+
+    };
+
+    function Controller() {
+
+        this.id = "";
+        this.name = "";
+        this.type = "";
+        this.skin = null;
+        this.morph = null;
+
+    }
+
+    Controller.prototype.parse = function( element ) {
+
+        this.id = element.getAttribute('id');
+        this.name = element.getAttribute('name');
+        this.type = "none";
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[ i ];
+
+            switch ( child.nodeName ) {
+
+                case 'skin':
+
+                    this.skin = (new Skin()).parse(child);
+                    this.type = child.nodeName;
+                    break;
+
+                case 'morph':
+
+                    this.morph = (new Morph()).parse(child);
+                    this.type = child.nodeName;
+                    break;
+
+                default:
+                    break;
+
+            }
+        }
+
+        return this;
+
+    };
+
+    function Morph() {
+
+        this.method = null;
+        this.source = null;
+        this.targets = null;
+        this.weights = null;
+
+    }
+
+    Morph.prototype.parse = function( element ) {
+
+        var sources = {};
+        var inputs = [];
+        var i;
+
+        this.method = element.getAttribute( 'method' );
+        this.source = element.getAttribute( 'source' ).replace( /^#/, '' );
+
+        for ( i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[ i ];
+            if ( child.nodeType != 1 ) continue;
+
+            switch ( child.nodeName ) {
+
+                case 'source':
+
+                    var source = ( new Source() ).parse( child );
+                    sources[ source.id ] = source;
+                    break;
+
+                case 'targets':
+
+                    inputs = this.parseInputs( child );
+                    break;
+
+                default:
+
+                    console.log( child.nodeName );
+                    break;
+
+            }
+
+        }
+
+        for ( i = 0; i < inputs.length; i ++ ) {
+
+            var input = inputs[ i ];
+            var source = sources[ input.source ];
+
+            switch ( input.semantic ) {
+
+                case 'MORPH_TARGET':
+
+                    this.targets = source.read();
+                    break;
+
+                case 'MORPH_WEIGHT':
+
+                    this.weights = source.read();
+                    break;
+
+                default:
+                    break;
+
+            }
+        }
+
+        return this;
+
+    };
+
+    Morph.prototype.parseInputs = function(element) {
+
+        var inputs = [];
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[i];
+            if ( child.nodeType != 1) continue;
+
+            switch ( child.nodeName ) {
+
+                case 'input':
+
+                    inputs.push( (new Input()).parse(child) );
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        return inputs;
+
+    };
+
+    function Skin() {
+
+        this.source = "";
+        this.bindShapeMatrix = null;
+        this.invBindMatrices = [];
+        this.joints = [];
+        this.weights = [];
+
+    }
+
+    Skin.prototype.parse = function( element ) {
+
+        var sources = {};
+        var joints, weights;
+
+        this.source = element.getAttribute( 'source' ).replace( /^#/, '' );
+        this.invBindMatrices = [];
+        this.joints = [];
+        this.weights = [];
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[i];
+            if ( child.nodeType != 1 ) continue;
+
+            switch ( child.nodeName ) {
+
+                case 'bind_shape_matrix':
+
+                    var f = _floats(child.textContent);
+                    this.bindShapeMatrix = getConvertedMat4( f );
+                    break;
+
+                case 'source':
+
+                    var src = new Source().parse(child);
+                    sources[ src.id ] = src;
+                    break;
+
+                case 'joints':
+
+                    joints = child;
+                    break;
+
+                case 'vertex_weights':
+
+                    weights = child;
+                    break;
+
+                default:
+
+                    console.log( child.nodeName );
+                    break;
+
+            }
+        }
+
+        this.parseJoints( joints, sources );
+        this.parseWeights( weights, sources );
+
+        return this;
+
+    };
+
+    Skin.prototype.parseJoints = function ( element, sources ) {
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[ i ];
+            if ( child.nodeType != 1 ) continue;
+
+            switch ( child.nodeName ) {
+
+                case 'input':
+
+                    var input = ( new Input() ).parse( child );
+                    var source = sources[ input.source ];
+
+                    if ( input.semantic === 'JOINT' ) {
+
+                        this.joints = source.read();
+
+                    } else if ( input.semantic === 'INV_BIND_MATRIX' ) {
+
+                        this.invBindMatrices = source.read();
+
+                    }
+
+                    break;
+
+                default:
+                    break;
+            }
+
+        }
+
+    };
+
+    Skin.prototype.parseWeights = function ( element, sources ) {
+
+        var v, vcount, inputs = [];
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[ i ];
+            if ( child.nodeType != 1 ) continue;
+
+            switch ( child.nodeName ) {
+
+                case 'input':
+
+                    inputs.push( ( new Input() ).parse( child ) );
+                    break;
+
+                case 'v':
+
+                    v = _ints( child.textContent );
+                    break;
+
+                case 'vcount':
+
+                    vcount = _ints( child.textContent );
+                    break;
+
+                default:
+                    break;
+
+            }
+
+        }
+
+        var index = 0;
+
+        for ( var i = 0; i < vcount.length; i ++ ) {
+
+            var numBones = vcount[i];
+            var vertex_weights = [];
+
+            for ( var j = 0; j < numBones; j ++ ) {
+
+                var influence = {};
+
+                for ( var k = 0; k < inputs.length; k ++ ) {
+
+                    var input = inputs[ k ];
+                    var value = v[ index + input.offset ];
+
+                    switch ( input.semantic ) {
+
+                        case 'JOINT':
+
+                            influence.joint = value;//this.joints[value];
+                            break;
+
+                        case 'WEIGHT':
+
+                            influence.weight = sources[ input.source ].data[ value ];
+                            break;
+
+                        default:
+                            break;
+
+                    }
+
+                }
+
+                vertex_weights.push( influence );
+                index += inputs.length;
+            }
+
+            for ( var j = 0; j < vertex_weights.length; j ++ ) {
+
+                vertex_weights[ j ].index = i;
+
+            }
+
+            this.weights.push( vertex_weights );
+
+        }
+
+    };
+
+    function VisualScene () {
+
+        this.id = "";
+        this.name = "";
+        this.nodes = [];
+        this.scene = new THREE.Group();
+
+    }
+
+    VisualScene.prototype.getChildById = function( id, recursive ) {
+
+        for ( var i = 0; i < this.nodes.length; i ++ ) {
+
+            var node = this.nodes[ i ].getChildById( id, recursive );
+
+            if ( node ) {
+
+                return node;
+
+            }
+
+        }
+
+        return null;
+
+    };
+
+    VisualScene.prototype.getChildBySid = function( sid, recursive ) {
+
+        for ( var i = 0; i < this.nodes.length; i ++ ) {
+
+            var node = this.nodes[ i ].getChildBySid( sid, recursive );
+
+            if ( node ) {
+
+                return node;
+
+            }
+
+        }
+
+        return null;
+
+    };
+
+    VisualScene.prototype.parse = function( element ) {
+
+        this.id = element.getAttribute( 'id' );
+        this.name = element.getAttribute( 'name' );
+        this.nodes = [];
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[ i ];
+            if ( child.nodeType != 1 ) continue;
+
+            switch ( child.nodeName ) {
+
+                case 'node':
+
+                    this.nodes.push( ( new Node() ).parse( child ) );
+                    break;
+
+                default:
+                    break;
+
+            }
+
+        }
+
+        return this;
+
+    };
+
+    function Node() {
+
+        this.id = "";
+        this.name = "";
+        this.sid = "";
+        this.nodes = [];
+        this.controllers = [];
+        this.transforms = [];
+        this.geometries = [];
+        this.channels = [];
+        this.matrix = new THREE.Matrix4();
+
+    }
+
+    Node.prototype.getChannelForTransform = function( transformSid ) {
+
+        for ( var i = 0; i < this.channels.length; i ++ ) {
+
+            var channel = this.channels[i];
+            var parts = channel.target.split('/');
+            var id = parts.shift();
+            var sid = parts.shift();
+            var dotSyntax = (sid.indexOf(".") >= 0);
+            var arrSyntax = (sid.indexOf("(") >= 0);
+            var arrIndices;
+            var member;
+
+            if ( dotSyntax ) {
+
+                parts = sid.split(".");
+                sid = parts.shift();
+                member = parts.shift();
+
+            } else if ( arrSyntax ) {
+
+                arrIndices = sid.split("(");
+                sid = arrIndices.shift();
+
+                for ( var j = 0; j < arrIndices.length; j ++ ) {
+
+                    arrIndices[ j ] = parseInt( arrIndices[ j ].replace( /\)/, '' ) );
+
+                }
+
+            }
+
+            if ( sid === transformSid ) {
+
+                channel.info = { sid: sid, dotSyntax: dotSyntax, arrSyntax: arrSyntax, arrIndices: arrIndices };
+                return channel;
+
+            }
+
+        }
+
+        return null;
+
+    };
+
+    Node.prototype.getChildById = function ( id, recursive ) {
+
+        if ( this.id === id ) {
+
+            return this;
+
+        }
+
+        if ( recursive ) {
+
+            for ( var i = 0; i < this.nodes.length; i ++ ) {
+
+                var n = this.nodes[ i ].getChildById( id, recursive );
+
+                if ( n ) {
+
+                    return n;
+
+                }
+
+            }
+
+        }
+
+        return null;
+
+    };
+
+    Node.prototype.getChildBySid = function ( sid, recursive ) {
+
+        if ( this.sid === sid ) {
+
+            return this;
+
+        }
+
+        if ( recursive ) {
+
+            for ( var i = 0; i < this.nodes.length; i ++ ) {
+
+                var n = this.nodes[ i ].getChildBySid( sid, recursive );
+
+                if ( n ) {
+
+                    return n;
+
+                }
+
+            }
+        }
+
+        return null;
+
+    };
+
+    Node.prototype.getTransformBySid = function ( sid ) {
+
+        for ( var i = 0; i < this.transforms.length; i ++ ) {
+
+            if ( this.transforms[ i ].sid === sid ) return this.transforms[ i ];
+
+        }
+
+        return null;
+
+    };
+
+    Node.prototype.parse = function( element ) {
+
+        var url;
+
+        this.id = element.getAttribute('id');
+        this.sid = element.getAttribute('sid');
+        this.name = element.getAttribute('name');
+        this.type = element.getAttribute('type');
+        this.layer = element.getAttribute('layer');
+
+        this.type = this.type === 'JOINT' ? this.type : 'NODE';
+
+        this.nodes = [];
+        this.transforms = [];
+        this.geometries = [];
+        this.cameras = [];
+        this.lights = [];
+        this.controllers = [];
+        this.matrix = new THREE.Matrix4();
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[ i ];
+            if ( child.nodeType != 1 ) continue;
+
+            switch ( child.nodeName ) {
+
+                case 'node':
+
+                    this.nodes.push( ( new Node() ).parse( child ) );
+                    break;
+
+                case 'instance_camera':
+
+                    this.cameras.push( ( new InstanceCamera() ).parse( child ) );
+                    break;
+
+                case 'instance_controller':
+
+                    this.controllers.push( ( new InstanceController() ).parse( child ) );
+                    break;
+
+                case 'instance_geometry':
+
+                    this.geometries.push( ( new InstanceGeometry() ).parse( child ) );
+                    break;
+
+                case 'instance_light':
+
+                    this.lights.push( ( new InstanceLight() ).parse( child ) );
+                    break;
+
+                case 'instance_node':
+
+                    url = child.getAttribute( 'url' ).replace( /^#/, '' );
+                    var iNode = getLibraryNode( url );
+
+                    if ( iNode ) {
+
+                        this.nodes.push( ( new Node() ).parse( iNode )) ;
+
+                    }
+
+                    break;
+
+                case 'rotate':
+                case 'translate':
+                case 'scale':
+                case 'matrix':
+                case 'lookat':
+                case 'skew':
+
+                    this.transforms.push( ( new Transform() ).parse( child ) );
+                    break;
+
+                case 'extra':
+                    break;
+
+                default:
+
+                    console.log( child.nodeName );
+                    break;
+
+            }
+
+        }
+
+        this.channels = getChannelsForNode( this );
+        bakeAnimations( this );
+
+        this.updateMatrix();
+
+        return this;
+
+    };
+
+    Node.prototype.updateMatrix = function () {
+
+        this.matrix.identity();
+
+        for ( var i = 0; i < this.transforms.length; i ++ ) {
+
+            this.transforms[ i ].apply( this.matrix );
+
+        }
+
+    };
+
+    function Transform () {
+
+        this.sid = "";
+        this.type = "";
+        this.data = [];
+        this.obj = null;
+
+    }
+
+    Transform.prototype.parse = function ( element ) {
+
+        this.sid = element.getAttribute( 'sid' );
+        this.type = element.nodeName;
+        this.data = _floats( element.textContent );
+        this.convert();
+
+        return this;
+
+    };
+
+    Transform.prototype.convert = function () {
+
+        switch ( this.type ) {
+
+            case 'matrix':
+
+                this.obj = getConvertedMat4( this.data );
+                break;
+
+            case 'rotate':
+
+                this.angle = THREE.Math.degToRad( this.data[3] );
+
+            case 'translate':
+
+                fixCoords( this.data, -1 );
+                this.obj = new THREE.Vector3( this.data[ 0 ], this.data[ 1 ], this.data[ 2 ] );
+                break;
+
+            case 'scale':
+
+                fixCoords( this.data, 1 );
+                this.obj = new THREE.Vector3( this.data[ 0 ], this.data[ 1 ], this.data[ 2 ] );
+                break;
+
+            default:
+                console.log( 'Can not convert Transform of type ' + this.type );
+                break;
+
+        }
+
+    };
+
+    Transform.prototype.apply = function () {
+
+        var m1 = new THREE.Matrix4();
+
+        return function ( matrix ) {
+
+            switch ( this.type ) {
+
+                case 'matrix':
+
+                    matrix.multiply( this.obj );
+
+                    break;
+
+                case 'translate':
+
+                    matrix.multiply( m1.makeTranslation( this.obj.x, this.obj.y, this.obj.z ) );
+
+                    break;
+
+                case 'rotate':
+
+                    matrix.multiply( m1.makeRotationAxis( this.obj, this.angle ) );
+
+                    break;
+
+                case 'scale':
+
+                    matrix.scale( this.obj );
+
+                    break;
+
+            }
+
+        };
+
+    }();
+
+    Transform.prototype.update = function ( data, member ) {
+
+        var members = [ 'X', 'Y', 'Z', 'ANGLE' ];
+
+        switch ( this.type ) {
+
+            case 'matrix':
+
+                if ( ! member ) {
+
+                    this.obj.copy( data );
+
+                } else if ( member.length === 1 ) {
+
+                    switch ( member[ 0 ] ) {
+
+                        case 0:
+
+                            this.obj.n11 = data[ 0 ];
+                            this.obj.n21 = data[ 1 ];
+                            this.obj.n31 = data[ 2 ];
+                            this.obj.n41 = data[ 3 ];
+
+                            break;
+
+                        case 1:
+
+                            this.obj.n12 = data[ 0 ];
+                            this.obj.n22 = data[ 1 ];
+                            this.obj.n32 = data[ 2 ];
+                            this.obj.n42 = data[ 3 ];
+
+                            break;
+
+                        case 2:
+
+                            this.obj.n13 = data[ 0 ];
+                            this.obj.n23 = data[ 1 ];
+                            this.obj.n33 = data[ 2 ];
+                            this.obj.n43 = data[ 3 ];
+
+                            break;
+
+                        case 3:
+
+                            this.obj.n14 = data[ 0 ];
+                            this.obj.n24 = data[ 1 ];
+                            this.obj.n34 = data[ 2 ];
+                            this.obj.n44 = data[ 3 ];
+
+                            break;
+
+                    }
+
+                } else if ( member.length === 2 ) {
+
+                    var propName = 'n' + ( member[ 0 ] + 1 ) + ( member[ 1 ] + 1 );
+                    this.obj[ propName ] = data;
+
+                } else {
+
+                    console.log('Incorrect addressing of matrix in transform.');
+
+                }
+
+                break;
+
+            case 'translate':
+            case 'scale':
+
+                if ( Object.prototype.toString.call( member ) === '[object Array]' ) {
+
+                    member = members[ member[ 0 ] ];
+
+                }
+
+                switch ( member ) {
+
+                    case 'X':
+
+                        this.obj.x = data;
+                        break;
+
+                    case 'Y':
+
+                        this.obj.y = data;
+                        break;
+
+                    case 'Z':
+
+                        this.obj.z = data;
+                        break;
+
+                    default:
+
+                        this.obj.x = data[ 0 ];
+                        this.obj.y = data[ 1 ];
+                        this.obj.z = data[ 2 ];
+                        break;
+
+                }
+
+                break;
+
+            case 'rotate':
+
+                if ( Object.prototype.toString.call( member ) === '[object Array]' ) {
+
+                    member = members[ member[ 0 ] ];
+
+                }
+
+                switch ( member ) {
+
+                    case 'X':
+
+                        this.obj.x = data;
+                        break;
+
+                    case 'Y':
+
+                        this.obj.y = data;
+                        break;
+
+                    case 'Z':
+
+                        this.obj.z = data;
+                        break;
+
+                    case 'ANGLE':
+
+                        this.angle = THREE.Math.degToRad( data );
+                        break;
+
+                    default:
+
+                        this.obj.x = data[ 0 ];
+                        this.obj.y = data[ 1 ];
+                        this.obj.z = data[ 2 ];
+                        this.angle = THREE.Math.degToRad( data[ 3 ] );
+                        break;
+
+                }
+                break;
+
+        }
+
+    };
+
+    function InstanceController() {
+
+        this.url = "";
+        this.skeleton = [];
+        this.instance_material = [];
+
+    }
+
+    InstanceController.prototype.parse = function ( element ) {
+
+        this.url = element.getAttribute('url').replace(/^#/, '');
+        this.skeleton = [];
+        this.instance_material = [];
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[ i ];
+            if ( child.nodeType !== 1 ) continue;
+
+            switch ( child.nodeName ) {
+
+                case 'skeleton':
+
+                    this.skeleton.push( child.textContent.replace(/^#/, '') );
+                    break;
+
+                case 'bind_material':
+
+                    var instances = child.querySelectorAll('instance_material');
+
+                    for ( var j = 0; j < instances.length; j ++ ) {
+
+                        var instance = instances[j];
+                        this.instance_material.push( (new InstanceMaterial()).parse(instance) );
+
+                    }
+
+
+                    break;
+
+                case 'extra':
+                    break;
+
+                default:
+                    break;
+
+            }
+        }
+
+        return this;
+
+    };
+
+    function InstanceMaterial () {
+
+        this.symbol = "";
+        this.target = "";
+
+    }
+
+    InstanceMaterial.prototype.parse = function ( element ) {
+
+        this.symbol = element.getAttribute('symbol');
+        this.target = element.getAttribute('target').replace(/^#/, '');
+        return this;
+
+    };
+
+    function InstanceGeometry() {
+
+        this.url = "";
+        this.instance_material = [];
+
+    }
+
+    InstanceGeometry.prototype.parse = function ( element ) {
+
+        this.url = element.getAttribute('url').replace(/^#/, '');
+        this.instance_material = [];
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[i];
+            if ( child.nodeType != 1 ) continue;
+
+            if ( child.nodeName === 'bind_material' ) {
+
+                var instances = child.querySelectorAll('instance_material');
+
+                for ( var j = 0; j < instances.length; j ++ ) {
+
+                    var instance = instances[j];
+                    this.instance_material.push( (new InstanceMaterial()).parse(instance) );
+
+                }
+
+                break;
+
+            }
+
+        }
+
+        return this;
+
+    };
+
+    function Geometry() {
+
+        this.id = "";
+        this.mesh = null;
+
+    }
+
+    Geometry.prototype.parse = function ( element ) {
+
+        this.id = element.getAttribute('id');
+
+        extractDoubleSided( this, element );
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[i];
+
+            switch ( child.nodeName ) {
+
+                case 'mesh':
+
+                    this.mesh = (new Mesh(this)).parse(child);
+                    break;
+
+                case 'extra':
+
+                    // console.log( child );
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        return this;
+
+    };
+
+    function Mesh( geometry ) {
+
+        this.geometry = geometry.id;
+        this.primitives = [];
+        this.vertices = null;
+        this.geometry3js = null;
+
+    }
+
+    Mesh.prototype.parse = function ( element ) {
+
+        this.primitives = [];
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[ i ];
+
+            switch ( child.nodeName ) {
+
+                case 'source':
+
+                    _source( child );
+                    break;
+
+                case 'vertices':
+
+                    this.vertices = ( new Vertices() ).parse( child );
+                    break;
+
+                case 'linestrips':
+
+                    this.primitives.push( ( new LineStrips().parse( child ) ) );
+                    break;
+
+                case 'triangles':
+
+                    this.primitives.push( ( new Triangles().parse( child ) ) );
+                    break;
+
+                case 'polygons':
+
+                    this.primitives.push( ( new Polygons().parse( child ) ) );
+                    break;
+
+                case 'polylist':
+
+                    this.primitives.push( ( new Polylist().parse( child ) ) );
+                    break;
+
+                default:
+                    break;
+
+            }
+
+        }
+
+        this.geometry3js = new THREE.Geometry();
+
+        if ( this.vertices === null ) {
+
+            // TODO (mrdoob): Study case when this is null (carrier.dae)
+
+            return this;
+
+        }
+
+        var vertexData = sources[ this.vertices.input['POSITION'].source ].data;
+
+        for ( var i = 0; i < vertexData.length; i += 3 ) {
+
+            this.geometry3js.vertices.push( getConvertedVec3( vertexData, i ).clone() );
+
+        }
+
+        for ( var i = 0; i < this.primitives.length; i ++ ) {
+
+            var primitive = this.primitives[ i ];
+            primitive.setVertices( this.vertices );
+            this.handlePrimitive( primitive, this.geometry3js );
+
+        }
+
+        if ( this.geometry3js.calcNormals ) {
+
+            this.geometry3js.computeVertexNormals();
+            delete this.geometry3js.calcNormals;
+
+        }
+
+        return this;
+
+    };
+
+    Mesh.prototype.handlePrimitive = function ( primitive, geom ) {
+
+        if ( primitive instanceof LineStrips ) {
+
+            // TODO: Handle indices. Maybe easier with BufferGeometry?
+
+            geom.isLineStrip = true;
+            return;
+
+        }
+
+        var j, k, pList = primitive.p, inputs = primitive.inputs;
+        var input, index, idx32;
+        var source, numParams;
+        var vcIndex = 0, vcount = 3, maxOffset = 0;
+        var texture_sets = [];
+
+        for ( j = 0; j < inputs.length; j ++ ) {
+
+            input = inputs[ j ];
+
+            var offset = input.offset + 1;
+            maxOffset = (maxOffset < offset) ? offset : maxOffset;
+
+            switch ( input.semantic ) {
+
+                case 'TEXCOORD':
+                    texture_sets.push( input.set );
+                    break;
+
+            }
+
+        }
+
+        for ( var pCount = 0; pCount < pList.length; ++ pCount ) {
+
+            var p = pList[ pCount ], i = 0;
+
+            while ( i < p.length ) {
+
+                var vs = [];
+                var ns = [];
+                var ts = null;
+                var cs = [];
+
+                if ( primitive.vcount ) {
+
+                    vcount = primitive.vcount.length ? primitive.vcount[ vcIndex ++ ] : primitive.vcount;
+
+                } else {
+
+                    vcount = p.length / maxOffset;
+
+                }
+
+
+                for ( j = 0; j < vcount; j ++ ) {
+
+                    for ( k = 0; k < inputs.length; k ++ ) {
+
+                        input = inputs[ k ];
+                        source = sources[ input.source ];
+
+                        index = p[ i + ( j * maxOffset ) + input.offset ];
+                        numParams = source.accessor.params.length;
+                        idx32 = index * numParams;
+
+                        switch ( input.semantic ) {
+
+                            case 'VERTEX':
+
+                                vs.push( index );
+
+                                break;
+
+                            case 'NORMAL':
+
+                                ns.push( getConvertedVec3( source.data, idx32 ) );
+
+                                break;
+
+                            case 'TEXCOORD':
+
+                                ts = ts || { };
+                                if ( ts[ input.set ] === undefined ) ts[ input.set ] = [];
+                                // invert the V
+                                ts[ input.set ].push( new THREE.Vector2( source.data[ idx32 ], source.data[ idx32 + 1 ] ) );
+
+                                break;
+
+                            case 'COLOR':
+
+                                cs.push( new THREE.Color().setRGB( source.data[ idx32 ], source.data[ idx32 + 1 ], source.data[ idx32 + 2 ] ) );
+
+                                break;
+
+                            default:
+
+                                break;
+
+                        }
+
+                    }
+
+                }
+
+                if ( ns.length === 0 ) {
+
+                    // check the vertices inputs
+                    input = this.vertices.input.NORMAL;
+
+                    if ( input ) {
+
+                        source = sources[ input.source ];
+                        numParams = source.accessor.params.length;
+
+                        for ( var ndx = 0, len = vs.length; ndx < len; ndx ++ ) {
+
+                            ns.push( getConvertedVec3( source.data, vs[ ndx ] * numParams ) );
+
+                        }
+
+                    } else {
+
+                        geom.calcNormals = true;
+
+                    }
+
+                }
+
+                if ( !ts ) {
+
+                    ts = { };
+                    // check the vertices inputs
+                    input = this.vertices.input.TEXCOORD;
+
+                    if ( input ) {
+
+                        texture_sets.push( input.set );
+                        source = sources[ input.source ];
+                        numParams = source.accessor.params.length;
+
+                        for ( var ndx = 0, len = vs.length; ndx < len; ndx ++ ) {
+
+                            idx32 = vs[ ndx ] * numParams;
+                            if ( ts[ input.set ] === undefined ) ts[ input.set ] = [ ];
+                            // invert the V
+                            ts[ input.set ].push( new THREE.Vector2( source.data[ idx32 ], 1.0 - source.data[ idx32 + 1 ] ) );
+
+                        }
+
+                    }
+
+                }
+
+                if ( cs.length === 0 ) {
+
+                    // check the vertices inputs
+                    input = this.vertices.input.COLOR;
+
+                    if ( input ) {
+
+                        source = sources[ input.source ];
+                        numParams = source.accessor.params.length;
+
+                        for ( var ndx = 0, len = vs.length; ndx < len; ndx ++ ) {
+
+                            idx32 = vs[ ndx ] * numParams;
+                            cs.push( new THREE.Color().setRGB( source.data[ idx32 ], source.data[ idx32 + 1 ], source.data[ idx32 + 2 ] ) );
+
+                        }
+
+                    }
+
+                }
+
+                var face = null, faces = [], uv, uvArr;
+
+                if ( vcount === 3 ) {
+
+                    faces.push( new THREE.Face3( vs[0], vs[1], vs[2], ns, cs.length ? cs : new THREE.Color() ) );
+
+                } else if ( vcount === 4 ) {
+
+                    faces.push( new THREE.Face3( vs[0], vs[1], vs[3], ns.length ? [ ns[0].clone(), ns[1].clone(), ns[3].clone() ] : [], cs.length ? [ cs[0], cs[1], cs[3] ] : new THREE.Color() ) );
+
+                    faces.push( new THREE.Face3( vs[1], vs[2], vs[3], ns.length ? [ ns[1].clone(), ns[2].clone(), ns[3].clone() ] : [], cs.length ? [ cs[1], cs[2], cs[3] ] : new THREE.Color() ) );
+
+                } else if ( vcount > 4 && options.subdivideFaces ) {
+
+                    var clr = cs.length ? cs : new THREE.Color(),
+                        vec1, vec2, vec3, v1, v2, norm;
+
+                    // subdivide into multiple Face3s
+
+                    for ( k = 1; k < vcount - 1; ) {
+
+                        faces.push( new THREE.Face3( vs[0], vs[k], vs[k + 1], ns.length ? [ ns[0].clone(), ns[k ++].clone(), ns[k].clone() ] : [], clr ) );
+
+                    }
+
+                }
+
+                if ( faces.length ) {
+
+                    for ( var ndx = 0, len = faces.length; ndx < len; ndx ++ ) {
+
+                        face = faces[ndx];
+                        face.daeMaterial = primitive.material;
+                        geom.faces.push( face );
+
+                        for ( k = 0; k < texture_sets.length; k ++ ) {
+
+                            uv = ts[ texture_sets[k] ];
+
+                            if ( vcount > 4 ) {
+
+                                // Grab the right UVs for the vertices in this face
+                                uvArr = [ uv[0], uv[ndx + 1], uv[ndx + 2] ];
+
+                            } else if ( vcount === 4 ) {
+
+                                if ( ndx === 0 ) {
+
+                                    uvArr = [ uv[0], uv[1], uv[3] ];
+
+                                } else {
+
+                                    uvArr = [ uv[1].clone(), uv[2], uv[3].clone() ];
+
+                                }
+
+                            } else {
+
+                                uvArr = [ uv[0], uv[1], uv[2] ];
+
+                            }
+
+                            if ( geom.faceVertexUvs[k] === undefined ) {
+
+                                geom.faceVertexUvs[k] = [];
+
+                            }
+
+                            geom.faceVertexUvs[k].push( uvArr );
+
+                        }
+
+                    }
+
+                } else {
+
+                    console.log( 'dropped face with vcount ' + vcount + ' for geometry with id: ' + geom.id );
+
+                }
+
+                i += maxOffset * vcount;
+
+            }
+
+        }
+
+    };
+
+    function Polygons () {
+
+        this.material = "";
+        this.count = 0;
+        this.inputs = [];
+        this.vcount = null;
+        this.p = [];
+        this.geometry = new THREE.Geometry();
+
+    }
+
+    Polygons.prototype.setVertices = function ( vertices ) {
+
+        for ( var i = 0; i < this.inputs.length; i ++ ) {
+
+            if ( this.inputs[ i ].source === vertices.id ) {
+
+                this.inputs[ i ].source = vertices.input[ 'POSITION' ].source;
+
+            }
+
+        }
+
+    };
+
+    Polygons.prototype.parse = function ( element ) {
+
+        this.material = element.getAttribute( 'material' );
+        this.count = _attr_as_int( element, 'count', 0 );
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[ i ];
+
+            switch ( child.nodeName ) {
+
+                case 'input':
+
+                    this.inputs.push( ( new Input() ).parse( element.childNodes[ i ] ) );
+                    break;
+
+                case 'vcount':
+
+                    this.vcount = _ints( child.textContent );
+                    break;
+
+                case 'p':
+
+                    this.p.push( _ints( child.textContent ) );
+                    break;
+
+                case 'ph':
+
+                    console.warn( 'polygon holes not yet supported!' );
+                    break;
+
+                default:
+                    break;
+
+            }
+
+        }
+
+        return this;
+
+    };
+
+    function Polylist () {
+
+        Polygons.call( this );
+
+        this.vcount = [];
+
+    }
+
+    Polylist.prototype = Object.create( Polygons.prototype );
+    Polylist.prototype.constructor = Polylist;
+
+    function LineStrips() {
+
+        Polygons.call( this );
+
+        this.vcount = 1;
+
+    }
+
+    LineStrips.prototype = Object.create( Polygons.prototype );
+    LineStrips.prototype.constructor = LineStrips;
+
+    function Triangles () {
+
+        Polygons.call( this );
+
+        this.vcount = 3;
+
+    }
+
+    Triangles.prototype = Object.create( Polygons.prototype );
+    Triangles.prototype.constructor = Triangles;
+
+    function Accessor() {
+
+        this.source = "";
+        this.count = 0;
+        this.stride = 0;
+        this.params = [];
+
+    }
+
+    Accessor.prototype.parse = function ( element ) {
+
+        this.params = [];
+        this.source = element.getAttribute( 'source' );
+        this.count = _attr_as_int( element, 'count', 0 );
+        this.stride = _attr_as_int( element, 'stride', 0 );
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[ i ];
+
+            if ( child.nodeName === 'param' ) {
+
+                var param = {};
+                param[ 'name' ] = child.getAttribute( 'name' );
+                param[ 'type' ] = child.getAttribute( 'type' );
+                this.params.push( param );
+
+            }
+
+        }
+
+        return this;
+
+    };
+
+    function Vertices() {
+
+        this.input = {};
+
+    }
+
+    Vertices.prototype.parse = function ( element ) {
+
+        this.id = element.getAttribute('id');
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            if ( element.childNodes[i].nodeName === 'input' ) {
+
+                var input = ( new Input() ).parse( element.childNodes[ i ] );
+                this.input[ input.semantic ] = input;
+
+            }
+
+        }
+
+        return this;
+
+    };
+
+    function Input () {
+
+        this.semantic = "";
+        this.offset = 0;
+        this.source = "";
+        this.set = 0;
+
+    }
+
+    Input.prototype.parse = function ( element ) {
+
+        this.semantic = element.getAttribute('semantic');
+        this.source = element.getAttribute('source').replace(/^#/, '');
+        this.set = _attr_as_int(element, 'set', -1);
+        this.offset = _attr_as_int(element, 'offset', 0);
+
+        if ( this.semantic === 'TEXCOORD' && this.set < 0 ) {
+
+            this.set = 0;
+
+        }
+
+        return this;
+
+    };
+
+    function Source ( id ) {
+
+        this.id = id;
+        this.type = null;
+
+    }
+
+    Source.prototype.parse = function ( element ) {
+
+        this.id = element.getAttribute( 'id' );
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[i];
+
+            switch ( child.nodeName ) {
+
+                case 'bool_array':
+
+                    this.data = _bools( child.textContent );
+                    this.type = child.nodeName;
+                    break;
+
+                case 'float_array':
+
+                    this.data = _floats( child.textContent );
+                    this.type = child.nodeName;
+                    break;
+
+                case 'int_array':
+
+                    this.data = _ints( child.textContent );
+                    this.type = child.nodeName;
+                    break;
+
+                case 'IDREF_array':
+                case 'Name_array':
+
+                    this.data = _strings( child.textContent );
+                    this.type = child.nodeName;
+                    break;
+
+                case 'technique_common':
+
+                    for ( var j = 0; j < child.childNodes.length; j ++ ) {
+
+                        if ( child.childNodes[ j ].nodeName === 'accessor' ) {
+
+                            this.accessor = ( new Accessor() ).parse( child.childNodes[ j ] );
+                            break;
+
+                        }
+                    }
+                    break;
+
+                default:
+                    // console.log(child.nodeName);
+                    break;
+
+            }
+
+        }
+
+        return this;
+
+    };
+
+    Source.prototype.read = function () {
+
+        var result = [];
+
+        //for (var i = 0; i < this.accessor.params.length; i++) {
+
+        var param = this.accessor.params[ 0 ];
+
+            //console.log(param.name + " " + param.type);
+
+        switch ( param.type ) {
+
+            case 'IDREF':
+            case 'Name': case 'name':
+            case 'float':
+
+                return this.data;
+
+            case 'float4x4':
+
+                for ( var j = 0; j < this.data.length; j += 16 ) {
+
+                    var s = this.data.slice( j, j + 16 );
+                    var m = getConvertedMat4( s );
+                    result.push( m );
+                }
+
+                break;
+
+            default:
+
+                console.log( 'ColladaLoader: Source: Read dont know how to read ' + param.type + '.' );
+                break;
+
+        }
+
+        //}
+
+        return result;
+
+    };
+
+    function Material () {
+
+        this.id = "";
+        this.name = "";
+        this.instance_effect = null;
+
+    }
+
+    Material.prototype.parse = function ( element ) {
+
+        this.id = element.getAttribute( 'id' );
+        this.name = element.getAttribute( 'name' );
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            if ( element.childNodes[ i ].nodeName === 'instance_effect' ) {
+
+                this.instance_effect = ( new InstanceEffect() ).parse( element.childNodes[ i ] );
+                break;
+
+            }
+
+        }
+
+        return this;
+
+    };
+
+    function ColorOrTexture () {
+
+        this.color = new THREE.Color();
+        this.color.setRGB( Math.random(), Math.random(), Math.random() );
+        this.color.a = 1.0;
+
+        this.texture = null;
+        this.texcoord = null;
+        this.texOpts = null;
+
+    }
+
+    ColorOrTexture.prototype.isColor = function () {
+
+        return ( this.texture === null );
+
+    };
+
+    ColorOrTexture.prototype.isTexture = function () {
+
+        return ( this.texture != null );
+
+    };
+
+    ColorOrTexture.prototype.parse = function ( element ) {
+
+        if (element.nodeName === 'transparent') {
+
+            this.opaque = element.getAttribute('opaque');
+
+        }
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[ i ];
+            if ( child.nodeType != 1 ) continue;
+
+            switch ( child.nodeName ) {
+
+                case 'color':
+
+                    var rgba = _floats( child.textContent );
+                    this.color = new THREE.Color();
+                    this.color.setRGB( rgba[0], rgba[1], rgba[2] );
+                    this.color.a = rgba[3];
+                    break;
+
+                case 'texture':
+
+                    this.texture = child.getAttribute('texture');
+                    this.texcoord = child.getAttribute('texcoord');
+                    // Defaults from:
+                    // https://collada.org/mediawiki/index.php/Maya_texture_placement_MAYA_extension
+                    this.texOpts = {
+                        offsetU: 0,
+                        offsetV: 0,
+                        repeatU: 1,
+                        repeatV: 1,
+                        wrapU: 1,
+                        wrapV: 1
+                    };
+                    this.parseTexture( child );
+                    break;
+
+                default:
+                    break;
+
+            }
+
+        }
+
+        return this;
+
+    };
+
+    ColorOrTexture.prototype.parseTexture = function ( element ) {
+
+        if ( ! element.childNodes ) return this;
+
+        // This should be supported by Maya, 3dsMax, and MotionBuilder
+
+        if ( element.childNodes[1] && element.childNodes[1].nodeName === 'extra' ) {
+
+            element = element.childNodes[1];
+
+            if ( element.childNodes[1] && element.childNodes[1].nodeName === 'technique' ) {
+
+                element = element.childNodes[1];
+
+            }
+
+        }
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[ i ];
+
+            switch ( child.nodeName ) {
+
+                case 'offsetU':
+                case 'offsetV':
+                case 'repeatU':
+                case 'repeatV':
+
+                    this.texOpts[ child.nodeName ] = parseFloat( child.textContent );
+
+                    break;
+
+                case 'wrapU':
+                case 'wrapV':
+
+                    // some dae have a value of true which becomes NaN via parseInt
+
+                    if ( child.textContent.toUpperCase() === 'TRUE' ) {
+
+                        this.texOpts[ child.nodeName ] = 1;
+
+                    } else {
+
+                        this.texOpts[ child.nodeName ] = parseInt( child.textContent );
+
+                    }
+                    break;
+
+                default:
+
+                    this.texOpts[ child.nodeName ] = child.textContent;
+
+                    break;
+
+            }
+
+        }
+
+        return this;
+
+    };
+
+    function Shader ( type, effect ) {
+
+        this.type = type;
+        this.effect = effect;
+        this.material = null;
+
+    }
+
+    Shader.prototype.parse = function ( element ) {
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[ i ];
+            if ( child.nodeType != 1 ) continue;
+
+            switch ( child.nodeName ) {
+
+                case 'emission':
+                case 'diffuse':
+                case 'specular':
+                case 'transparent':
+
+                    this[ child.nodeName ] = ( new ColorOrTexture() ).parse( child );
+                    break;
+
+                case 'bump':
+
+                    // If 'bumptype' is 'heightfield', create a 'bump' property
+                    // Else if 'bumptype' is 'normalmap', create a 'normal' property
+                    // (Default to 'bump')
+                    var bumpType = child.getAttribute( 'bumptype' );
+                    if ( bumpType ) {
+                        if ( bumpType.toLowerCase() === "heightfield" ) {
+                            this[ 'bump' ] = ( new ColorOrTexture() ).parse( child );
+                        } else if ( bumpType.toLowerCase() === "normalmap" ) {
+                            this[ 'normal' ] = ( new ColorOrTexture() ).parse( child );
+                        } else {
+                            console.error( "Shader.prototype.parse: Invalid value for attribute 'bumptype' (" + bumpType + ") - valid bumptypes are 'HEIGHTFIELD' and 'NORMALMAP' - defaulting to 'HEIGHTFIELD'" );
+                            this[ 'bump' ] = ( new ColorOrTexture() ).parse( child );
+                        }
+                    } else {
+                        console.warn( "Shader.prototype.parse: Attribute 'bumptype' missing from bump node - defaulting to 'HEIGHTFIELD'" );
+                        this[ 'bump' ] = ( new ColorOrTexture() ).parse( child );
+                    }
+
+                    break;
+
+                case 'shininess':
+                case 'reflectivity':
+                case 'index_of_refraction':
+                case 'transparency':
+
+                    var f = child.querySelectorAll('float');
+
+                    if ( f.length > 0 )
+                        this[ child.nodeName ] = parseFloat( f[ 0 ].textContent );
+
+                    break;
+
+                default:
+                    break;
+
+            }
+
+        }
+
+        this.create();
+        return this;
+
+    };
+
+    Shader.prototype.create = function() {
+
+        var props = {};
+
+        var transparent = false;
+
+        if (this['transparency'] !== undefined && this['transparent'] !== undefined) {
+            // convert transparent color RBG to average value
+            var transparentColor = this['transparent'];
+            var transparencyLevel = (this.transparent.color.r + this.transparent.color.g + this.transparent.color.b) / 3 * this.transparency;
+
+            if (transparencyLevel > 0) {
+                transparent = true;
+                props[ 'transparent' ] = true;
+                props[ 'opacity' ] = 1 - transparencyLevel;
+
+            }
+
+        }
+
+        var keys = {
+            'diffuse':'map',
+            'ambient':'lightMap',
+            'specular':'specularMap',
+            'emission':'emissionMap',
+            'bump':'bumpMap',
+            'normal':'normalMap'
+            };
+
+        for ( var prop in this ) {
+
+            switch ( prop ) {
+
+                case 'ambient':
+                case 'emission':
+                case 'diffuse':
+                case 'specular':
+                case 'bump':
+                case 'normal':
+
+                    var cot = this[ prop ];
+
+                    if ( cot instanceof ColorOrTexture ) {
+
+                        if ( cot.isTexture() ) {
+
+                            var samplerId = cot.texture;
+                            var surfaceId = this.effect.sampler[samplerId];
+
+                            if ( surfaceId !== undefined && surfaceId.source !== undefined ) {
+
+                                var surface = this.effect.surface[surfaceId.source];
+
+                                if ( surface !== undefined ) {
+
+                                    var image = images[ surface.init_from ];
+
+                                    if ( image ) {
+
+                                        var url = baseUrl + image.init_from;
+
+                                        var texture;
+                                        var loader = THREE.Loader.Handlers.get( url );
+
+                                        if ( loader !== null ) {
+
+                                            texture = loader.load( url );
+
+                                        } else {
+
+                                            texture = new THREE.Texture();
+
+                                            loadTextureImage( texture, url );
+
+                                        }
+
+                                        texture.wrapS = cot.texOpts.wrapU ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping;
+                                        texture.wrapT = cot.texOpts.wrapV ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping;
+                                        texture.offset.x = cot.texOpts.offsetU;
+                                        texture.offset.y = cot.texOpts.offsetV;
+                                        texture.repeat.x = cot.texOpts.repeatU;
+                                        texture.repeat.y = cot.texOpts.repeatV;
+                                        props[keys[prop]] = texture;
+
+                                        // Texture with baked lighting?
+                                        if (prop === 'emission') props['emissive'] = 0xffffff;
+
+                                    }
+
+                                }
+
+                            }
+
+                        } else if ( prop === 'diffuse' || !transparent ) {
+
+                            if ( prop === 'emission' ) {
+
+                                props[ 'emissive' ] = cot.color.getHex();
+
+                            } else {
+
+                                props[ prop ] = cot.color.getHex();
+
+                            }
+
+                        }
+
+                    }
+
+                    break;
+
+                case 'shininess':
+
+                    props[ prop ] = this[ prop ];
+                    break;
+
+                case 'reflectivity':
+
+                    props[ prop ] = this[ prop ];
+                    if ( props[ prop ] > 0.0 ) props['envMap'] = options.defaultEnvMap;
+                    props['combine'] = THREE.MixOperation;	//mix regular shading with reflective component
+                    break;
+
+                case 'index_of_refraction':
+
+                    props[ 'refractionRatio' ] = this[ prop ]; //TODO: "index_of_refraction" becomes "refractionRatio" in shader, but I'm not sure if the two are actually comparable
+                    if ( this[ prop ] !== 1.0 ) props['envMap'] = options.defaultEnvMap;
+                    break;
+
+                case 'transparency':
+                    // gets figured out up top
+                    break;
+
+                default:
+                    break;
+
+            }
+
+        }
+
+        props[ 'shading' ] = preferredShading;
+        props[ 'side' ] = this.effect.doubleSided ? THREE.DoubleSide : THREE.FrontSide;
+
+        if ( props.diffuse !== undefined ) {
+
+            props.color = props.diffuse;
+            delete props.diffuse;
+
+        }
+
+        switch ( this.type ) {
+
+            case 'constant':
+
+                if (props.emissive != undefined) props.color = props.emissive;
+                this.material = new THREE.MeshBasicMaterial( props );
+                break;
+
+            case 'phong':
+            case 'blinn':
+
+                this.material = new THREE.MeshPhongMaterial( props );
+                break;
+
+            case 'lambert':
+            default:
+
+                this.material = new THREE.MeshLambertMaterial( props );
+                break;
+
+        }
+
+        return this.material;
+
+    };
+
+    function Surface ( effect ) {
+
+        this.effect = effect;
+        this.init_from = null;
+        this.format = null;
+
+    }
+
+    Surface.prototype.parse = function ( element ) {
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[ i ];
+            if ( child.nodeType != 1 ) continue;
+
+            switch ( child.nodeName ) {
+
+                case 'init_from':
+
+                    this.init_from = child.textContent;
+                    break;
+
+                case 'format':
+
+                    this.format = child.textContent;
+                    break;
+
+                default:
+
+                    console.log( "unhandled Surface prop: " + child.nodeName );
+                    break;
+
+            }
+
+        }
+
+        return this;
+
+    };
+
+    function Sampler2D ( effect ) {
+
+        this.effect = effect;
+        this.source = null;
+        this.wrap_s = null;
+        this.wrap_t = null;
+        this.minfilter = null;
+        this.magfilter = null;
+        this.mipfilter = null;
+
+    }
+
+    Sampler2D.prototype.parse = function ( element ) {
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[ i ];
+            if ( child.nodeType != 1 ) continue;
+
+            switch ( child.nodeName ) {
+
+                case 'source':
+
+                    this.source = child.textContent;
+                    break;
+
+                case 'minfilter':
+
+                    this.minfilter = child.textContent;
+                    break;
+
+                case 'magfilter':
+
+                    this.magfilter = child.textContent;
+                    break;
+
+                case 'mipfilter':
+
+                    this.mipfilter = child.textContent;
+                    break;
+
+                case 'wrap_s':
+
+                    this.wrap_s = child.textContent;
+                    break;
+
+                case 'wrap_t':
+
+                    this.wrap_t = child.textContent;
+                    break;
+
+                default:
+
+                    console.log( "unhandled Sampler2D prop: " + child.nodeName );
+                    break;
+
+            }
+
+        }
+
+        return this;
+
+    };
+
+    function Effect () {
+
+        this.id = "";
+        this.name = "";
+        this.shader = null;
+        this.surface = {};
+        this.sampler = {};
+
+    }
+
+    Effect.prototype.create = function () {
+
+        if ( this.shader === null ) {
+
+            return null;
+
+        }
+
+    };
+
+    Effect.prototype.parse = function ( element ) {
+
+        this.id = element.getAttribute( 'id' );
+        this.name = element.getAttribute( 'name' );
+
+        extractDoubleSided( this, element );
+
+        this.shader = null;
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[ i ];
+            if ( child.nodeType != 1 ) continue;
+
+            switch ( child.nodeName ) {
+
+                case 'profile_COMMON':
+
+                    this.parseTechnique( this.parseProfileCOMMON( child ) );
+                    break;
+
+                default:
+                    break;
+
+            }
+
+        }
+
+        return this;
+
+    };
+
+    Effect.prototype.parseNewparam = function ( element ) {
+
+        var sid = element.getAttribute( 'sid' );
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[ i ];
+            if ( child.nodeType != 1 ) continue;
+
+            switch ( child.nodeName ) {
+
+                case 'surface':
+
+                    this.surface[sid] = ( new Surface( this ) ).parse( child );
+                    break;
+
+                case 'sampler2D':
+
+                    this.sampler[sid] = ( new Sampler2D( this ) ).parse( child );
+                    break;
+
+                case 'extra':
+
+                    break;
+
+                default:
+
+                    console.log( child.nodeName );
+                    break;
+
+            }
+
+        }
+
+    };
+
+    Effect.prototype.parseProfileCOMMON = function ( element ) {
+
+        var technique;
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[ i ];
+
+            if ( child.nodeType != 1 ) continue;
+
+            switch ( child.nodeName ) {
+
+                case 'profile_COMMON':
+
+                    this.parseProfileCOMMON( child );
+                    break;
+
+                case 'technique':
+
+                    technique = child;
+                    break;
+
+                case 'newparam':
+
+                    this.parseNewparam( child );
+                    break;
+
+                case 'image':
+
+                    var _image = ( new _Image() ).parse( child );
+                    images[ _image.id ] = _image;
+                    break;
+
+                case 'extra':
+                    break;
+
+                default:
+
+                    console.log( child.nodeName );
+                    break;
+
+            }
+
+        }
+
+        return technique;
+
+    };
+
+    Effect.prototype.parseTechnique = function ( element ) {
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[i];
+            if ( child.nodeType != 1 ) continue;
+
+            switch ( child.nodeName ) {
+
+                case 'constant':
+                case 'lambert':
+                case 'blinn':
+                case 'phong':
+
+                    this.shader = ( new Shader( child.nodeName, this ) ).parse( child );
+                    break;
+                case 'extra':
+                    this.parseExtra(child);
+                    break;
+                default:
+                    break;
+
+            }
+
+        }
+
+    };
+
+    Effect.prototype.parseExtra = function ( element ) {
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[i];
+            if ( child.nodeType != 1 ) continue;
+
+            switch ( child.nodeName ) {
+
+                case 'technique':
+                    this.parseExtraTechnique( child );
+                    break;
+                default:
+                    break;
+
+            }
+
+        }
+
+    };
+
+    Effect.prototype.parseExtraTechnique = function ( element ) {
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[i];
+            if ( child.nodeType != 1 ) continue;
+
+            switch ( child.nodeName ) {
+
+                case 'bump':
+                    this.shader.parse( element );
+                    break;
+                default:
+                    break;
+
+            }
+
+        }
+
+    };
+
+    function InstanceEffect () {
+
+        this.url = "";
+
+    }
+
+    InstanceEffect.prototype.parse = function ( element ) {
+
+        this.url = element.getAttribute( 'url' ).replace( /^#/, '' );
+        return this;
+
+    };
+
+    function Animation() {
+
+        this.id = "";
+        this.name = "";
+        this.source = {};
+        this.sampler = [];
+        this.channel = [];
+
+    }
+
+    Animation.prototype.parse = function ( element ) {
+
+        this.id = element.getAttribute( 'id' );
+        this.name = element.getAttribute( 'name' );
+        this.source = {};
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[ i ];
+
+            if ( child.nodeType != 1 ) continue;
+
+            switch ( child.nodeName ) {
+
+                case 'animation':
+
+                    var anim = ( new Animation() ).parse( child );
+
+                    for ( var src in anim.source ) {
+
+                        this.source[ src ] = anim.source[ src ];
+
+                    }
+
+                    for ( var j = 0; j < anim.channel.length; j ++ ) {
+
+                        this.channel.push( anim.channel[ j ] );
+                        this.sampler.push( anim.sampler[ j ] );
+
+                    }
+
+                    break;
+
+                case 'source':
+
+                    var src = ( new Source() ).parse( child );
+                    this.source[ src.id ] = src;
+                    break;
+
+                case 'sampler':
+
+                    this.sampler.push( ( new Sampler( this ) ).parse( child ) );
+                    break;
+
+                case 'channel':
+
+                    this.channel.push( ( new Channel( this ) ).parse( child ) );
+                    break;
+
+                default:
+                    break;
+
+            }
+
+        }
+
+        return this;
+
+    };
+
+    function Channel( animation ) {
+
+        this.animation = animation;
+        this.source = "";
+        this.target = "";
+        this.fullSid = null;
+        this.sid = null;
+        this.dotSyntax = null;
+        this.arrSyntax = null;
+        this.arrIndices = null;
+        this.member = null;
+
+    }
+
+    Channel.prototype.parse = function ( element ) {
+
+        this.source = element.getAttribute( 'source' ).replace( /^#/, '' );
+        this.target = element.getAttribute( 'target' );
+
+        var parts = this.target.split( '/' );
+
+        var id = parts.shift();
+        var sid = parts.shift();
+
+        var dotSyntax = ( sid.indexOf(".") >= 0 );
+        var arrSyntax = ( sid.indexOf("(") >= 0 );
+
+        if ( dotSyntax ) {
+
+            parts = sid.split(".");
+            this.sid = parts.shift();
+            this.member = parts.shift();
+
+        } else if ( arrSyntax ) {
+
+            var arrIndices = sid.split("(");
+            this.sid = arrIndices.shift();
+
+            for (var j = 0; j < arrIndices.length; j ++ ) {
+
+                arrIndices[j] = parseInt( arrIndices[j].replace(/\)/, '') );
+
+            }
+
+            this.arrIndices = arrIndices;
+
+        } else {
+
+            this.sid = sid;
+
+        }
+
+        this.fullSid = sid;
+        this.dotSyntax = dotSyntax;
+        this.arrSyntax = arrSyntax;
+
+        return this;
+
+    };
+
+    function Sampler ( animation ) {
+
+        this.id = "";
+        this.animation = animation;
+        this.inputs = [];
+        this.input = null;
+        this.output = null;
+        this.strideOut = null;
+        this.interpolation = null;
+        this.startTime = null;
+        this.endTime = null;
+        this.duration = 0;
+
+    }
+
+    Sampler.prototype.parse = function ( element ) {
+
+        this.id = element.getAttribute( 'id' );
+        this.inputs = [];
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[ i ];
+            if ( child.nodeType != 1 ) continue;
+
+            switch ( child.nodeName ) {
+
+                case 'input':
+
+                    this.inputs.push( (new Input()).parse( child ) );
+                    break;
+
+                default:
+                    break;
+
+            }
+
+        }
+
+        return this;
+
+    };
+
+    Sampler.prototype.create = function () {
+
+        for ( var i = 0; i < this.inputs.length; i ++ ) {
+
+            var input = this.inputs[ i ];
+            var source = this.animation.source[ input.source ];
+
+            switch ( input.semantic ) {
+
+                case 'INPUT':
+
+                    this.input = source.read();
+                    break;
+
+                case 'OUTPUT':
+
+                    this.output = source.read();
+                    this.strideOut = source.accessor.stride;
+                    break;
+
+                case 'INTERPOLATION':
+
+                    this.interpolation = source.read();
+                    break;
+
+                case 'IN_TANGENT':
+
+                    break;
+
+                case 'OUT_TANGENT':
+
+                    break;
+
+                default:
+
+                    console.log(input.semantic);
+                    break;
+
+            }
+
+        }
+
+        this.startTime = 0;
+        this.endTime = 0;
+        this.duration = 0;
+
+        if ( this.input.length ) {
+
+            this.startTime = 100000000;
+            this.endTime = -100000000;
+
+            for ( var i = 0; i < this.input.length; i ++ ) {
+
+                this.startTime = Math.min( this.startTime, this.input[ i ] );
+                this.endTime = Math.max( this.endTime, this.input[ i ] );
+
+            }
+
+            this.duration = this.endTime - this.startTime;
+
+        }
+
+    };
+
+    Sampler.prototype.getData = function ( type, ndx, member ) {
+
+        var data;
+
+        if ( type === 'matrix' && this.strideOut === 16 ) {
+
+            data = this.output[ ndx ];
+
+        } else if ( this.strideOut > 1 ) {
+
+            data = [];
+            ndx *= this.strideOut;
+
+            for ( var i = 0; i < this.strideOut; ++ i ) {
+
+                data[ i ] = this.output[ ndx + i ];
+
+            }
+
+            if ( this.strideOut === 3 ) {
+
+                switch ( type ) {
+
+                    case 'rotate':
+                    case 'translate':
+
+                        fixCoords( data, -1 );
+                        break;
+
+                    case 'scale':
+
+                        fixCoords( data, 1 );
+                        break;
+
+                }
+
+            } else if ( this.strideOut === 4 && type === 'matrix' ) {
+
+                fixCoords( data, -1 );
+
+            }
+
+        } else {
+
+            data = this.output[ ndx ];
+
+            if ( member && type === 'translate' ) {
+                data = getConvertedTranslation( member, data );
+            }
+
+        }
+
+        return data;
+
+    };
+
+    function Key ( time ) {
+
+        this.targets = [];
+        this.time = time;
+
+    }
+
+    Key.prototype.addTarget = function ( fullSid, transform, member, data ) {
+
+        this.targets.push( {
+            sid: fullSid,
+            member: member,
+            transform: transform,
+            data: data
+        } );
+
+    };
+
+    Key.prototype.apply = function ( opt_sid ) {
+
+        for ( var i = 0; i < this.targets.length; ++ i ) {
+
+            var target = this.targets[ i ];
+
+            if ( !opt_sid || target.sid === opt_sid ) {
+
+                target.transform.update( target.data, target.member );
+
+            }
+
+        }
+
+    };
+
+    Key.prototype.getTarget = function ( fullSid ) {
+
+        for ( var i = 0; i < this.targets.length; ++ i ) {
+
+            if ( this.targets[ i ].sid === fullSid ) {
+
+                return this.targets[ i ];
+
+            }
+
+        }
+
+        return null;
+
+    };
+
+    Key.prototype.hasTarget = function ( fullSid ) {
+
+        for ( var i = 0; i < this.targets.length; ++ i ) {
+
+            if ( this.targets[ i ].sid === fullSid ) {
+
+                return true;
+
+            }
+
+        }
+
+        return false;
+
+    };
+
+    // TODO: Currently only doing linear interpolation. Should support full COLLADA spec.
+    Key.prototype.interpolate = function ( nextKey, time ) {
+
+        for ( var i = 0, l = this.targets.length; i < l; i ++ ) {
+
+            var target = this.targets[ i ],
+                nextTarget = nextKey.getTarget( target.sid ),
+                data;
+
+            if ( target.transform.type !== 'matrix' && nextTarget ) {
+
+                var scale = ( time - this.time ) / ( nextKey.time - this.time ),
+                    nextData = nextTarget.data,
+                    prevData = target.data;
+
+                if ( scale < 0 ) scale = 0;
+                if ( scale > 1 ) scale = 1;
+
+                if ( prevData.length ) {
+
+                    data = [];
+
+                    for ( var j = 0; j < prevData.length; ++ j ) {
+
+                        data[ j ] = prevData[ j ] + ( nextData[ j ] - prevData[ j ] ) * scale;
+
+                    }
+
+                } else {
+
+                    data = prevData + ( nextData - prevData ) * scale;
+
+                }
+
+            } else {
+
+                data = target.data;
+
+            }
+
+            target.transform.update( data, target.member );
+
+        }
+
+    };
+
+    // Camera
+    function Camera() {
+
+        this.id = "";
+        this.name = "";
+        this.technique = "";
+
+    }
+
+    Camera.prototype.parse = function ( element ) {
+
+        this.id = element.getAttribute( 'id' );
+        this.name = element.getAttribute( 'name' );
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[ i ];
+            if ( child.nodeType != 1 ) continue;
+
+            switch ( child.nodeName ) {
+
+                case 'optics':
+
+                    this.parseOptics( child );
+                    break;
+
+                default:
+                    break;
+
+            }
+
+        }
+
+        return this;
+
+    };
+
+    Camera.prototype.parseOptics = function ( element ) {
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            if ( element.childNodes[ i ].nodeName === 'technique_common' ) {
+
+                var technique = element.childNodes[ i ];
+
+                for ( var j = 0; j < technique.childNodes.length; j ++ ) {
+
+                    this.technique = technique.childNodes[ j ].nodeName;
+
+                    if ( this.technique === 'perspective' ) {
+
+                        var perspective = technique.childNodes[ j ];
+
+                        for ( var k = 0; k < perspective.childNodes.length; k ++ ) {
+
+                            var param = perspective.childNodes[ k ];
+
+                            switch ( param.nodeName ) {
+
+                                case 'yfov':
+                                    this.yfov = param.textContent;
+                                    break;
+                                case 'xfov':
+                                    this.xfov = param.textContent;
+                                    break;
+                                case 'znear':
+                                    this.znear = param.textContent;
+                                    break;
+                                case 'zfar':
+                                    this.zfar = param.textContent;
+                                    break;
+                                case 'aspect_ratio':
+                                    this.aspect_ratio = param.textContent;
+                                    break;
+
+                            }
+
+                        }
+
+                    } else if ( this.technique === 'orthographic' ) {
+
+                        var orthographic = technique.childNodes[ j ];
+
+                        for ( var k = 0; k < orthographic.childNodes.length; k ++ ) {
+
+                            var param = orthographic.childNodes[ k ];
+
+                            switch ( param.nodeName ) {
+
+                                case 'xmag':
+                                    this.xmag = param.textContent;
+                                    break;
+                                case 'ymag':
+                                    this.ymag = param.textContent;
+                                    break;
+                                case 'znear':
+                                    this.znear = param.textContent;
+                                    break;
+                                case 'zfar':
+                                    this.zfar = param.textContent;
+                                    break;
+                                case 'aspect_ratio':
+                                    this.aspect_ratio = param.textContent;
+                                    break;
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }
+
+        return this;
+
+    };
+
+    function InstanceCamera() {
+
+        this.url = "";
+
+    }
+
+    InstanceCamera.prototype.parse = function ( element ) {
+
+        this.url = element.getAttribute('url').replace(/^#/, '');
+
+        return this;
+
+    };
+
+    // Light
+
+    function Light() {
+
+        this.id = "";
+        this.name = "";
+        this.technique = "";
+
+    }
+
+    Light.prototype.parse = function ( element ) {
+
+        this.id = element.getAttribute( 'id' );
+        this.name = element.getAttribute( 'name' );
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[ i ];
+            if ( child.nodeType != 1 ) continue;
+
+            switch ( child.nodeName ) {
+
+                case 'technique_common':
+
+                    this.parseCommon( child );
+                    break;
+
+                case 'technique':
+
+                    this.parseTechnique( child );
+                    break;
+
+                default:
+                    break;
+
+            }
+
+        }
+
+        return this;
+
+    };
+
+    Light.prototype.parseCommon = function ( element ) {
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            switch ( element.childNodes[ i ].nodeName ) {
+
+                case 'directional':
+                case 'point':
+                case 'spot':
+                case 'ambient':
+
+                    this.technique = element.childNodes[ i ].nodeName;
+
+                    var light = element.childNodes[ i ];
+
+                    for ( var j = 0; j < light.childNodes.length; j ++ ) {
+
+                        var child = light.childNodes[j];
+
+                        switch ( child.nodeName ) {
+
+                            case 'color':
+
+                                var rgba = _floats( child.textContent );
+                                this.color = new THREE.Color(0);
+                                this.color.setRGB( rgba[0], rgba[1], rgba[2] );
+                                this.color.a = rgba[3];
+                                break;
+
+                            case 'falloff_angle':
+
+                                this.falloff_angle = parseFloat( child.textContent );
+                                break;
+
+                            case 'quadratic_attenuation':
+                                var f = parseFloat( child.textContent );
+                                this.distance = f ? Math.sqrt( 1 / f ) : 0;
+                        }
+
+                    }
+
+            }
+
+        }
+
+        return this;
+
+    };
+
+    Light.prototype.parseTechnique = function ( element ) {
+
+        this.profile = element.getAttribute( 'profile' );
+
+        for ( var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[ i ];
+
+            switch ( child.nodeName ) {
+
+                case 'intensity':
+
+                    this.intensity = parseFloat(child.textContent);
+                    break;
+
+            }
+
+        }
+
+        return this;
+
+    };
+
+    function InstanceLight() {
+
+        this.url = "";
+
+    }
+
+    InstanceLight.prototype.parse = function ( element ) {
+
+        this.url = element.getAttribute('url').replace(/^#/, '');
+
+        return this;
+
+    };
+
+    function KinematicsModel( ) {
+
+        this.id = '';
+        this.name = '';
+        this.joints = [];
+        this.links = [];
+
+    }
+
+    KinematicsModel.prototype.parse = function( element ) {
+
+        this.id = element.getAttribute('id');
+        this.name = element.getAttribute('name');
+        this.joints = [];
+        this.links = [];
+
+        for (var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[ i ];
+            if ( child.nodeType != 1 ) continue;
+
+            switch ( child.nodeName ) {
+
+                case 'technique_common':
+
+                    this.parseCommon(child);
+                    break;
+
+                default:
+                    break;
+
+            }
+
+        }
+
+        return this;
+
+    };
+
+    KinematicsModel.prototype.parseCommon = function( element ) {
+
+        for (var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[ i ];
+            if ( child.nodeType != 1 ) continue;
+
+            switch ( element.childNodes[ i ].nodeName ) {
+
+                case 'joint':
+                    this.joints.push( (new Joint()).parse(child) );
+                    break;
+
+                case 'link':
+                    this.links.push( (new Link()).parse(child) );
+                    break;
+
+                default:
+                    break;
+
+            }
+
+        }
+
+        return this;
+
+    };
+
+    function Joint( ) {
+
+        this.sid = '';
+        this.name = '';
+        this.axis = new THREE.Vector3();
+        this.limits = {
+            min: 0,
+            max: 0
+        };
+        this.type = '';
+        this.static = false;
+        this.zeroPosition = 0.0;
+        this.middlePosition = 0.0;
+
+    }
+
+    Joint.prototype.parse = function( element ) {
+
+        this.sid = element.getAttribute('sid');
+        this.name = element.getAttribute('name');
+        this.axis = new THREE.Vector3();
+        this.limits = {
+            min: 0,
+            max: 0
+        };
+        this.type = '';
+        this.static = false;
+        this.zeroPosition = 0.0;
+        this.middlePosition = 0.0;
+
+        var axisElement = element.querySelector('axis');
+        var _axis = _floats(axisElement.textContent);
+        this.axis = getConvertedVec3(_axis, 0);
+
+        var min = element.querySelector('limits min') ? parseFloat(element.querySelector('limits min').textContent) : -360;
+        var max = element.querySelector('limits max') ? parseFloat(element.querySelector('limits max').textContent) : 360;
+
+        this.limits = {
+            min: min,
+            max: max
+        };
+
+        var jointTypes = [ 'prismatic', 'revolute' ];
+        for (var i = 0; i < jointTypes.length; i ++ ) {
+
+            var type = jointTypes[ i ];
+
+            var jointElement = element.querySelector(type);
+
+            if ( jointElement ) {
+
+                this.type = type;
+
+            }
+
+        }
+
+        // if the min is equal to or somehow greater than the max, consider the joint static
+        if ( this.limits.min >= this.limits.max ) {
+
+            this.static = true;
+
+        }
+
+        this.middlePosition = (this.limits.min + this.limits.max) / 2.0;
+        return this;
+
+    };
+
+    function Link( ) {
+
+        this.sid = '';
+        this.name = '';
+        this.transforms = [];
+        this.attachments = [];
+
+    }
+
+    Link.prototype.parse = function( element ) {
+
+        this.sid = element.getAttribute('sid');
+        this.name = element.getAttribute('name');
+        this.transforms = [];
+        this.attachments = [];
+
+        for (var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[ i ];
+            if ( child.nodeType != 1 ) continue;
+
+            switch ( child.nodeName ) {
+
+                case 'attachment_full':
+                    this.attachments.push( (new Attachment()).parse(child) );
+                    break;
+
+                case 'rotate':
+                case 'translate':
+                case 'matrix':
+
+                    this.transforms.push( (new Transform()).parse(child) );
+                    break;
+
+                default:
+
+                    break;
+
+            }
+
+        }
+
+        return this;
+
+    };
+
+    function Attachment( ) {
+
+        this.joint = '';
+        this.transforms = [];
+        this.links = [];
+
+    }
+
+    Attachment.prototype.parse = function( element ) {
+
+        this.joint = element.getAttribute('joint').split('/').pop();
+        this.links = [];
+
+        for (var i = 0; i < element.childNodes.length; i ++ ) {
+
+            var child = element.childNodes[ i ];
+            if ( child.nodeType != 1 ) continue;
+
+            switch ( child.nodeName ) {
+
+                case 'link':
+                    this.links.push( (new Link()).parse(child) );
+                    break;
+
+                case 'rotate':
+                case 'translate':
+                case 'matrix':
+
+                    this.transforms.push( (new Transform()).parse(child) );
+                    break;
+
+                default:
+
+                    break;
+
+            }
+
+        }
+
+        return this;
+
+    };
+
+    function _source( element ) {
+
+        var id = element.getAttribute( 'id' );
+
+        if ( sources[ id ] != undefined ) {
+
+            return sources[ id ];
+
+        }
+
+        sources[ id ] = ( new Source(id )).parse( element );
+        return sources[ id ];
+
+    }
+
+    function _nsResolver( nsPrefix ) {
+
+        if ( nsPrefix === "dae" ) {
+
+            return "http://www.collada.org/2005/11/COLLADASchema";
+
+        }
+
+        return null;
+
+    }
+
+    function _bools( str ) {
+
+        var raw = _strings( str );
+        var data = [];
+
+        for ( var i = 0, l = raw.length; i < l; i ++ ) {
+
+            data.push( (raw[i] === 'true' || raw[i] === '1') ? true : false );
+
+        }
+
+        return data;
+
+    }
+
+    function _floats( str ) {
+
+        var raw = _strings(str);
+        var data = [];
+
+        for ( var i = 0, l = raw.length; i < l; i ++ ) {
+
+            data.push( parseFloat( raw[ i ] ) );
+
+        }
+
+        return data;
+
+    }
+
+    function _ints( str ) {
+
+        var raw = _strings( str );
+        var data = [];
+
+        for ( var i = 0, l = raw.length; i < l; i ++ ) {
+
+            data.push( parseInt( raw[ i ], 10 ) );
+
+        }
+
+        return data;
+
+    }
+
+    function _strings( str ) {
+
+        return ( str.length > 0 ) ? _trimString( str ).split( /\s+/ ) : [];
+
+    }
+
+    function _trimString( str ) {
+
+        return str.replace( /^\s+/, "" ).replace( /\s+$/, "" );
+
+    }
+
+    function _attr_as_float( element, name, defaultValue ) {
+
+        if ( element.hasAttribute( name ) ) {
+
+            return parseFloat( element.getAttribute( name ) );
+
+        } else {
+
+            return defaultValue;
+
+        }
+
+    }
+
+    function _attr_as_int( element, name, defaultValue ) {
+
+        if ( element.hasAttribute( name ) ) {
+
+            return parseInt( element.getAttribute( name ), 10) ;
+
+        } else {
+
+            return defaultValue;
+
+        }
+
+    }
+
+    function _attr_as_string( element, name, defaultValue ) {
+
+        if ( element.hasAttribute( name ) ) {
+
+            return element.getAttribute( name );
+
+        } else {
+
+            return defaultValue;
+
+        }
+
+    }
+
+    function _format_float( f, num ) {
+
+        if ( f === undefined ) {
+
+            var s = '0.';
+
+            while ( s.length < num + 2 ) {
+
+                s += '0';
+
+            }
+
+            return s;
+
+        }
+
+        num = num || 2;
+
+        var parts = f.toString().split( '.' );
+        parts[ 1 ] = parts.length > 1 ? parts[ 1 ].substr( 0, num ) : "0";
+
+        while ( parts[ 1 ].length < num ) {
+
+            parts[ 1 ] += '0';
+
+        }
+
+        return parts.join( '.' );
+
+    }
+
+    function loadTextureImage ( texture, url ) {
+
+        var loader = new THREE.ImageLoader();
+
+        loader.load( url, function ( image ) {
+
+            texture.image = image;
+            texture.needsUpdate = true;
+
+        } );
+
+    }
+
+    function extractDoubleSided( obj, element ) {
+
+        obj.doubleSided = false;
+
+        var node = element.querySelectorAll('extra double_sided')[0];
+
+        if ( node ) {
+
+            if ( node && parseInt( node.textContent, 10 ) === 1 ) {
+
+                obj.doubleSided = true;
+
+            }
+
+        }
+
+    }
+
+    // Up axis conversion
+
+    function setUpConversion() {
+
+        if ( options.convertUpAxis !== true || colladaUp === options.upAxis ) {
+
+            upConversion = null;
+
+        } else {
+
+            switch ( colladaUp ) {
+
+                case 'X':
+
+                    upConversion = options.upAxis === 'Y' ? 'XtoY' : 'XtoZ';
+                    break;
+
+                case 'Y':
+
+                    upConversion = options.upAxis === 'X' ? 'YtoX' : 'YtoZ';
+                    break;
+
+                case 'Z':
+
+                    upConversion = options.upAxis === 'X' ? 'ZtoX' : 'ZtoY';
+                    break;
+
+            }
+
+        }
+
+    }
+
+    function fixCoords( data, sign ) {
+
+        if ( options.convertUpAxis !== true || colladaUp === options.upAxis ) {
+
+            return;
+
+        }
+
+        switch ( upConversion ) {
+
+            case 'XtoY':
+
+                var tmp = data[ 0 ];
+                data[ 0 ] = sign * data[ 1 ];
+                data[ 1 ] = tmp;
+                break;
+
+            case 'XtoZ':
+
+                var tmp = data[ 2 ];
+                data[ 2 ] = data[ 1 ];
+                data[ 1 ] = data[ 0 ];
+                data[ 0 ] = tmp;
+                break;
+
+            case 'YtoX':
+
+                var tmp = data[ 0 ];
+                data[ 0 ] = data[ 1 ];
+                data[ 1 ] = sign * tmp;
+                break;
+
+            case 'YtoZ':
+
+                var tmp = data[ 1 ];
+                data[ 1 ] = sign * data[ 2 ];
+                data[ 2 ] = tmp;
+                break;
+
+            case 'ZtoX':
+
+                var tmp = data[ 0 ];
+                data[ 0 ] = data[ 1 ];
+                data[ 1 ] = data[ 2 ];
+                data[ 2 ] = tmp;
+                break;
+
+            case 'ZtoY':
+
+                var tmp = data[ 1 ];
+                data[ 1 ] = data[ 2 ];
+                data[ 2 ] = sign * tmp;
+                break;
+
+        }
+
+    }
+
+    function getConvertedTranslation( axis, data ) {
+
+        if ( options.convertUpAxis !== true || colladaUp === options.upAxis ) {
+
+            return data;
+
+        }
+
+        switch ( axis ) {
+            case 'X':
+                data = upConversion === 'XtoY' ? data * -1 : data;
+                break;
+            case 'Y':
+                data = upConversion === 'YtoZ' || upConversion === 'YtoX' ? data * -1 : data;
+                break;
+            case 'Z':
+                data = upConversion === 'ZtoY' ? data * -1 : data ;
+                break;
+            default:
+                break;
+        }
+
+        return data;
+    }
+
+    function getConvertedVec3( data, offset ) {
+
+        var arr = [ data[ offset ], data[ offset + 1 ], data[ offset + 2 ] ];
+        fixCoords( arr, -1 );
+        return new THREE.Vector3( arr[ 0 ], arr[ 1 ], arr[ 2 ] );
+
+    }
+
+    function getConvertedMat4( data ) {
+
+        if ( options.convertUpAxis ) {
+
+            // First fix rotation and scale
+
+            // Columns first
+            var arr = [ data[ 0 ], data[ 4 ], data[ 8 ] ];
+            fixCoords( arr, -1 );
+            data[ 0 ] = arr[ 0 ];
+            data[ 4 ] = arr[ 1 ];
+            data[ 8 ] = arr[ 2 ];
+            arr = [ data[ 1 ], data[ 5 ], data[ 9 ] ];
+            fixCoords( arr, -1 );
+            data[ 1 ] = arr[ 0 ];
+            data[ 5 ] = arr[ 1 ];
+            data[ 9 ] = arr[ 2 ];
+            arr = [ data[ 2 ], data[ 6 ], data[ 10 ] ];
+            fixCoords( arr, -1 );
+            data[ 2 ] = arr[ 0 ];
+            data[ 6 ] = arr[ 1 ];
+            data[ 10 ] = arr[ 2 ];
+            // Rows second
+            arr = [ data[ 0 ], data[ 1 ], data[ 2 ] ];
+            fixCoords( arr, -1 );
+            data[ 0 ] = arr[ 0 ];
+            data[ 1 ] = arr[ 1 ];
+            data[ 2 ] = arr[ 2 ];
+            arr = [ data[ 4 ], data[ 5 ], data[ 6 ] ];
+            fixCoords( arr, -1 );
+            data[ 4 ] = arr[ 0 ];
+            data[ 5 ] = arr[ 1 ];
+            data[ 6 ] = arr[ 2 ];
+            arr = [ data[ 8 ], data[ 9 ], data[ 10 ] ];
+            fixCoords( arr, -1 );
+            data[ 8 ] = arr[ 0 ];
+            data[ 9 ] = arr[ 1 ];
+            data[ 10 ] = arr[ 2 ];
+
+            // Now fix translation
+            arr = [ data[ 3 ], data[ 7 ], data[ 11 ] ];
+            fixCoords( arr, -1 );
+            data[ 3 ] = arr[ 0 ];
+            data[ 7 ] = arr[ 1 ];
+            data[ 11 ] = arr[ 2 ];
+
+        }
+
+        return new THREE.Matrix4().set(
+            data[0], data[1], data[2], data[3],
+            data[4], data[5], data[6], data[7],
+            data[8], data[9], data[10], data[11],
+            data[12], data[13], data[14], data[15]
+            );
+
+    }
+
+    function getConvertedIndex( index ) {
+
+        if ( index > -1 && index < 3 ) {
+
+            var members = [ 'X', 'Y', 'Z' ],
+                indices = { X: 0, Y: 1, Z: 2 };
+
+            index = getConvertedMember( members[ index ] );
+            index = indices[ index ];
+
+        }
+
+        return index;
+
+    }
+
+    function getConvertedMember( member ) {
+
+        if ( options.convertUpAxis ) {
+
+            switch ( member ) {
+
+                case 'X':
+
+                    switch ( upConversion ) {
+
+                        case 'XtoY':
+                        case 'XtoZ':
+                        case 'YtoX':
+
+                            member = 'Y';
+                            break;
+
+                        case 'ZtoX':
+
+                            member = 'Z';
+                            break;
+
+                    }
+
+                    break;
+
+                case 'Y':
+
+                    switch ( upConversion ) {
+
+                        case 'XtoY':
+                        case 'YtoX':
+                        case 'ZtoX':
+
+                            member = 'X';
+                            break;
+
+                        case 'XtoZ':
+                        case 'YtoZ':
+                        case 'ZtoY':
+
+                            member = 'Z';
+                            break;
+
+                    }
+
+                    break;
+
+                case 'Z':
+
+                    switch ( upConversion ) {
+
+                        case 'XtoZ':
+
+                            member = 'X';
+                            break;
+
+                        case 'YtoZ':
+                        case 'ZtoX':
+                        case 'ZtoY':
+
+                            member = 'Y';
+                            break;
+
+                    }
+
+                    break;
+
+            }
+
+        }
+
+        return member;
+
+    }
+
+    return {
+
+        load: load,
+        parse: parse,
+        setPreferredShading: setPreferredShading,
+        applySkin: applySkin,
+        geometries : geometries,
+        options: options
+
+    };
+
+};
+
+module.exports = ColladaLoader;
+
+},{"three":48}],44:[function(require,module,exports){
 /**
  * Loads a Wavefront .mtl file specifying materials
  *
@@ -535,7 +12371,7 @@ MTLLoader.MaterialCreator.prototype = {
 
 module.exports = MTLLoader;
 
-},{"three":2}],2:[function(require,module,exports){
+},{"three":45}],45:[function(require,module,exports){
 // File:src/Three.js
 
 /**
@@ -42298,7 +54134,7 @@ THREE.MorphBlendMesh.prototype.update = function ( delta ) {
 };
 
 
-},{}],3:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 'use strict';
 
 module.exports = function (THREE) {
@@ -42952,7 +54788,7 @@ module.exports = function (THREE) {
 
   };
 };
-},{}],4:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 /**
  * @author mrdoob / http://mrdoob.com/
  * Source: https://github.com/mrdoob/three.js/blob/master/examples/js/controls/PointerLockControls.js
@@ -43139,7 +54975,7 @@ module.exports = function ( camera ) {
   };
 };
 
-},{"three":5}],5:[function(require,module,exports){
+},{"three":48}],48:[function(require,module,exports){
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
 	typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -87380,15 +99216,292 @@ module.exports = function ( camera ) {
 
 })));
 
-},{}],6:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
+module.exports = toArray
+
+function toArray(list, index) {
+    var array = []
+
+    index = index || 0
+
+    for (var i = index || 0; i < list.length; i++) {
+        array[i - index] = list[i]
+    }
+
+    return array
+}
+
+},{}],50:[function(require,module,exports){
+'use strict';
+
+var alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_'.split('')
+  , length = 64
+  , map = {}
+  , seed = 0
+  , i = 0
+  , prev;
+
+/**
+ * Return a string representing the specified number.
+ *
+ * @param {Number} num The number to convert.
+ * @returns {String} The string representation of the number.
+ * @api public
+ */
+function encode(num) {
+  var encoded = '';
+
+  do {
+    encoded = alphabet[num % length] + encoded;
+    num = Math.floor(num / length);
+  } while (num > 0);
+
+  return encoded;
+}
+
+/**
+ * Return the integer value specified by the given string.
+ *
+ * @param {String} str The string to convert.
+ * @returns {Number} The integer value represented by the string.
+ * @api public
+ */
+function decode(str) {
+  var decoded = 0;
+
+  for (i = 0; i < str.length; i++) {
+    decoded = decoded * length + map[str.charAt(i)];
+  }
+
+  return decoded;
+}
+
+/**
+ * Yeast: A tiny growing id generator.
+ *
+ * @returns {String} A unique id.
+ * @api public
+ */
+function yeast() {
+  var now = encode(+new Date());
+
+  if (now !== prev) return seed = 0, prev = now;
+  return now +'.'+ encode(seed++);
+}
+
+//
+// Map each character to its index.
+//
+for (; i < length; i++) map[alphabet[i]] = i;
+
+//
+// Expose the `yeast`, `encode` and `decode` functions.
+//
+yeast.encode = encode;
+yeast.decode = decode;
+module.exports = yeast;
+
+},{}],51:[function(require,module,exports){
+'use strict';
+
+var THREE = require('three');
+
+var create = function create(options) {
+
+  options = options || {};
+  var avatar = {};
+
+  avatar.sizeRatio = options.sizeRatio || 1;
+  avatar.scale = options.scale || new THREE.Vector3(1, 1, 1);
+  avatar.fallbackImage = options.fallbackImage || 'avatar.png';
+  createCanvases(avatar);
+  avatar.mesh = createPlayerObject(avatar);
+  avatar.mesh.scale.set(avatar.sizeRatio, avatar.sizeRatio * 0.75, avatar.sizeRatio);
+
+  avatar.walkSpeed = 0.6;
+  avatar.startedWalking = 0.0;
+  avatar.stoppedWalking = 0.0;
+  avatar.walking = false;
+  avatar.acceleration = 0.5;
+
+  return avatar;
+};
+
+var createCanvases = function createCanvases(avatar) {
+  avatar.avatarBig = document.createElement('canvas');
+  avatar.avatarBigContext = avatar.avatarBig.getContext('2d');
+  avatar.avatarBig.width = 64 * avatar.sizeRatio;
+  avatar.avatarBig.height = 32 * avatar.sizeRatio;
+
+  avatar.avatar = document.createElement('canvas');
+  avatar.avatarContext = avatar.avatar.getContext('2d');
+  avatar.avatar.width = 64;
+  avatar.avatar.height = 32;
+};
+
+var createPlayerObject = function createPlayerObject(avatar) {
+  new THREE.Object3D();
+  var upperbody = avatar.upperbody = new THREE.Object3D();
+  new THREE.MeshBasicMaterial({ color: new THREE.Color('grey') });
+
+  var armMaterial = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/arm.png') });
+  var bodyMaterial = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/body.png') });
+  var bottomMaterial = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/bottom.png') });
+  var handMaterial = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/hand.png') });
+  var legMaterial = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/leg.png') });
+  var shoeMaterial = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/shoe.png') });
+  var shoulderMaterial = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/shoulder.png') });
+  var sideMaterial = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/side.png') });
+
+  var armMatFull = new THREE.MeshFaceMaterial([armMaterial, armMaterial, shoulderMaterial, handMaterial, armMaterial, armMaterial]);
+  var bodyMatFull = new THREE.MeshFaceMaterial([bodyMaterial, bodyMaterial, bottomMaterial, bottomMaterial, sideMaterial, sideMaterial]);
+  var legMatFull = new THREE.MeshFaceMaterial([legMaterial, legMaterial, shoeMaterial, shoeMaterial, legMaterial, legMaterial]);
+  // Left leg
+  var leftleggeo = new THREE.BoxGeometry(4, 12, 4);
+  for (var i = 0; i < 8; i += 1) {
+    leftleggeo.vertices[i].y -= 6;
+  }
+
+  var leftleg = avatar.leftLeg = new THREE.Mesh(leftleggeo, legMatFull);
+  leftleg.position.z = -2;
+  leftleg.position.y = -6;
+
+  // Right leg
+  var rightleggeo = new THREE.BoxGeometry(4, 12, 4);
+  for (var _i = 0; _i < 8; _i += 1) {
+    rightleggeo.vertices[_i].y -= 6;
+  }
+  var rightleg = avatar.rightLeg = new THREE.Mesh(rightleggeo, legMatFull);
+  rightleg.position.z = 2;
+  rightleg.position.y = -6;
+
+  // Body
+  var bodygeo = new THREE.BoxGeometry(4, 12, 8);
+  var bodymesh = avatar.body = new THREE.Mesh(bodygeo, bodyMatFull);
+  upperbody.add(bodymesh);
+
+  // Left arm
+  var leftarmgeo = new THREE.BoxGeometry(4, 12, 4);
+  for (var _i2 = 0; _i2 < 8; _i2 += 1) {
+    leftarmgeo.vertices[_i2].y -= 4;
+  }
+  var leftarm = avatar.leftArm = new THREE.Mesh(leftarmgeo, armMatFull);
+  leftarm.position.z = -6;
+  leftarm.position.y = 4;
+  leftarm.rotation.x = Math.PI / 32;
+  upperbody.add(leftarm);
+
+  // Right arm
+  var rightarmgeo = new THREE.BoxGeometry(4, 12, 4);
+  for (var _i3 = 0; _i3 < 8; _i3 += 1) {
+    rightarmgeo.vertices[_i3].y -= 4;
+  }
+  var rightarm = avatar.rightArm = new THREE.Mesh(rightarmgeo, armMatFull);
+  rightarm.position.z = 6;
+  rightarm.position.y = 4;
+  rightarm.rotation.x = -Math.PI / 32;
+
+  upperbody.add(rightarm);
+
+  var head = createHead();
+  head.position.y += 10;
+
+  var playerModel = avatar.playerModel = new THREE.Object3D();
+
+  playerModel.add(leftleg);
+  playerModel.add(rightleg);
+  playerModel.add(upperbody);
+  playerModel.add(head);
+
+  var playerRotation = new THREE.Object3D();
+  playerRotation.rotation.y = Math.PI / 2;
+  playerRotation.position.y = 12;
+  playerRotation.add(playerModel);
+
+  playerModel.position.y = -12;
+
+  var playerGroup = new THREE.Object3D();
+
+  playerGroup.add(playerRotation);
+  playerGroup.scale.set(avatar.scale);
+
+  return playerGroup;
+};
+
+var createHead = function createHead() {
+  var geometry = new THREE.BoxGeometry(4, 7, 7);
+
+  var plainMaterial = new THREE.MeshBasicMaterial({ color: 'lightgrey' });
+
+  var materialArray = [new THREE.MeshBasicMaterial({ color: 'white', map: THREE.ImageUtils.loadTexture('images/trump-face.jpg') }), plainMaterial, plainMaterial, plainMaterial, plainMaterial, plainMaterial];
+
+  var material = new THREE.MeshFaceMaterial(materialArray);
+
+  var head = new THREE.Mesh(geometry, material);
+
+  return head;
+};
+
+var render = function render(avatar) {
+  var time = Date.now() / 1000;
+  if (avatar.walking && time < avatar.startedWalking + avatar.acceleration) {
+    avatar.walkSpeed = (time - avatar.startedWalking) / avatar.acceleration;
+  }
+  if (!avatar.walking) {
+    if (time < avatar.stoppedWalking + avatar.acceleration) avatar.walkSpeed = -1 / avatar.acceleration * (time - avatar.stoppedWalking) + 1;else if (avatar.walkSpeed > 0.02) avatar.walkSpeed *= 0.95;else {
+      avatar.walkSpeed = 0;
+    }
+  }
+
+  avatar.rightArm.rotation.z = 2 * Math.cos(0.6662 * time * 10 + Math.PI) * avatar.walkSpeed;
+  avatar.rightArm.rotation.x = 1 * (Math.cos(0.2812 * time * 10) - 1) * avatar.walkSpeed;
+  avatar.leftArm.rotation.z = 2 * Math.cos(0.6662 * time * 10) * avatar.walkSpeed;
+  avatar.leftArm.rotation.x = 1 * (Math.cos(0.2312 * time * 10) + 1) * avatar.walkSpeed;
+
+  avatar.rightLeg.rotation.z = 1.4 * Math.cos(0.6662 * time * 10) * avatar.walkSpeed;
+  avatar.leftLeg.rotation.z = 1.4 * Math.cos(0.6662 * time * 10 + Math.PI) * avatar.walkSpeed;
+};
+
+var startWalking = function startWalking(avatar) {
+
+  var now = Date.now() / 1000;
+  avatar.walking = true;
+  if (avatar.stoppedWalking + avatar.acceleration > now) {
+    avatar.startedWalking = now - (avatar.stoppedWalking + avatar.acceleration - now);
+  } else {
+    avatar.startedWalking = Date.now() / 1000;
+  }
+};
+
+var stopWalking = function stopWalking(avatar) {
+  var now = Date.now() / 1000;
+  avatar.walking = false;
+  if (avatar.startedWalking + avatar.acceleration > now) {
+    avatar.stoppedWalking = now - (avatar.startedWalking + avatar.acceleration - now);
+  } else {
+    avatar.stoppedWalking = Date.now() / 1000;
+  }
+};
+
+module.exports = {
+  create: create,
+  startWalking: startWalking,
+  stopWalking: stopWalking,
+  render: render
+};
+
+},{"three":48}],52:[function(require,module,exports){
 'use strict';
 
 // const controls = require('./controls');
+var sockets = require('./sockets');
 var init = require('./init/init');
 var getRenderer = require('./init/getRenderer');
 var letsMove = require('./letsMove');
 var pointLockers = require('./pointLockers');
 var blocker = require('./blocker');
+var otherPlayers = require('./otherPlayers');
+var moveOtherPlayer = require('./moveOtherPlayer');
 
 var start = function start(options) {
   var camera = options.camera,
@@ -87413,7 +99526,13 @@ var start = function start(options) {
       var time = performance.now();
       letsMove(objects, raycaster, prevTime, time);
       //
-      // const player = pointLockers();
+      var player = pointLockers();
+      sockets.emitPlayerPosition(player.position, player.rotation);
+      var players = otherPlayers.get();
+
+      Object.keys(players).forEach(function (id) {
+        moveOtherPlayer(id, players[id]);
+      });
 
       prevTime = time;
     }
@@ -87430,7 +99549,196 @@ module.exports = {
   start: start
 };
 
-},{"./blocker":7,"./init/getRenderer":14,"./init/init":15,"./letsMove":16,"./pointLockers":17}],7:[function(require,module,exports){
+},{"./blocker":54,"./init/getRenderer":61,"./init/init":62,"./letsMove":63,"./moveOtherPlayer":64,"./otherPlayers":65,"./pointLockers":66,"./sockets":67}],53:[function(require,module,exports){
+'use strict';
+
+var THREE = require('three');
+
+var create = function create(options) {
+
+  options = options || {};
+  var avatar = {};
+
+  avatar.sizeRatio = options.sizeRatio || 1;
+  avatar.scale = options.scale || new THREE.Vector3(1, 1, 1);
+  avatar.fallbackImage = options.fallbackImage || 'avatar.png';
+  createCanvases(avatar);
+  avatar.mesh = createPlayerObject(avatar);
+  avatar.mesh.scale.set(avatar.sizeRatio, avatar.sizeRatio * 0.75, avatar.sizeRatio);
+
+  avatar.walkSpeed = 0.6;
+  avatar.startedWalking = 0.0;
+  avatar.stoppedWalking = 0.0;
+  avatar.walking = false;
+  avatar.acceleration = 0.5;
+
+  return avatar;
+};
+
+var createCanvases = function createCanvases(avatar) {
+  avatar.avatarBig = document.createElement('canvas');
+  avatar.avatarBigContext = avatar.avatarBig.getContext('2d');
+  avatar.avatarBig.width = 64 * avatar.sizeRatio;
+  avatar.avatarBig.height = 32 * avatar.sizeRatio;
+
+  avatar.avatar = document.createElement('canvas');
+  avatar.avatarContext = avatar.avatar.getContext('2d');
+  avatar.avatar.width = 64;
+  avatar.avatar.height = 32;
+};
+
+var createPlayerObject = function createPlayerObject(avatar) {
+  new THREE.Object3D();
+  var upperbody = avatar.upperbody = new THREE.Object3D();
+  new THREE.MeshBasicMaterial({ color: new THREE.Color('grey') });
+
+  var armMaterial = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/arm.png') });
+  var bodyMaterial = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/body.png') });
+  var bottomMaterial = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/bottom.png') });
+  var handMaterial = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/hand.png') });
+  var legMaterial = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/leg.png') });
+  var shoeMaterial = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/shoe.png') });
+  var shoulderMaterial = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/shoulder.png') });
+  var sideMaterial = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/side.png') });
+
+  var armMatFull = new THREE.MeshFaceMaterial([armMaterial, armMaterial, shoulderMaterial, handMaterial, armMaterial, armMaterial]);
+  var bodyMatFull = new THREE.MeshFaceMaterial([bodyMaterial, bodyMaterial, bottomMaterial, bottomMaterial, sideMaterial, sideMaterial]);
+  var legMatFull = new THREE.MeshFaceMaterial([legMaterial, legMaterial, shoeMaterial, shoeMaterial, legMaterial, legMaterial]);
+  // Left leg
+  var leftleggeo = new THREE.BoxGeometry(4, 12, 4);
+  for (var i = 0; i < 8; i += 1) {
+    leftleggeo.vertices[i].y -= 6;
+  }
+
+  var leftleg = avatar.leftLeg = new THREE.Mesh(leftleggeo, legMatFull);
+  leftleg.position.z = -2;
+  leftleg.position.y = -6;
+
+  // Right leg
+  var rightleggeo = new THREE.BoxGeometry(4, 12, 4);
+  for (var _i = 0; _i < 8; _i += 1) {
+    rightleggeo.vertices[_i].y -= 6;
+  }
+  var rightleg = avatar.rightLeg = new THREE.Mesh(rightleggeo, legMatFull);
+  rightleg.position.z = 2;
+  rightleg.position.y = -6;
+
+  // Body
+  var bodygeo = new THREE.BoxGeometry(4, 12, 8);
+  var bodymesh = avatar.body = new THREE.Mesh(bodygeo, bodyMatFull);
+  upperbody.add(bodymesh);
+
+  // Left arm
+  var leftarmgeo = new THREE.BoxGeometry(4, 12, 4);
+  for (var _i2 = 0; _i2 < 8; _i2 += 1) {
+    leftarmgeo.vertices[_i2].y -= 4;
+  }
+  var leftarm = avatar.leftArm = new THREE.Mesh(leftarmgeo, armMatFull);
+  leftarm.position.z = -6;
+  leftarm.position.y = 4;
+  leftarm.rotation.x = Math.PI / 32;
+  upperbody.add(leftarm);
+
+  // Right arm
+  var rightarmgeo = new THREE.BoxGeometry(4, 12, 4);
+  for (var _i3 = 0; _i3 < 8; _i3 += 1) {
+    rightarmgeo.vertices[_i3].y -= 4;
+  }
+  var rightarm = avatar.rightArm = new THREE.Mesh(rightarmgeo, armMatFull);
+  rightarm.position.z = 6;
+  rightarm.position.y = 4;
+  rightarm.rotation.x = -Math.PI / 32;
+
+  upperbody.add(rightarm);
+
+  var head = createHead();
+  head.position.y += 10;
+
+  var playerModel = avatar.playerModel = new THREE.Object3D();
+
+  playerModel.add(leftleg);
+  playerModel.add(rightleg);
+  playerModel.add(upperbody);
+  playerModel.add(head);
+
+  var playerRotation = new THREE.Object3D();
+  playerRotation.rotation.y = Math.PI / 2;
+  playerRotation.position.y = 12;
+  playerRotation.add(playerModel);
+
+  playerModel.position.y = -12;
+
+  var playerGroup = new THREE.Object3D();
+
+  playerGroup.add(playerRotation);
+  playerGroup.scale.set(avatar.scale);
+
+  return playerGroup;
+};
+
+var createHead = function createHead() {
+  var geometry = new THREE.BoxGeometry(4, 7, 7);
+
+  var plainMaterial = new THREE.MeshBasicMaterial({ color: 'lightgrey' });
+
+  var materialArray = [new THREE.MeshBasicMaterial({ color: 'white', map: THREE.ImageUtils.loadTexture('images/trump-face.jpg') }), plainMaterial, plainMaterial, plainMaterial, plainMaterial, plainMaterial];
+
+  var material = new THREE.MeshFaceMaterial(materialArray);
+
+  var head = new THREE.Mesh(geometry, material);
+
+  return head;
+};
+
+var render = function render(avatar) {
+  var time = Date.now() / 1000;
+  if (avatar.walking && time < avatar.startedWalking + avatar.acceleration) {
+    avatar.walkSpeed = (time - avatar.startedWalking) / avatar.acceleration;
+  }
+  if (!avatar.walking) {
+    if (time < avatar.stoppedWalking + avatar.acceleration) avatar.walkSpeed = -1 / avatar.acceleration * (time - avatar.stoppedWalking) + 1;else if (avatar.walkSpeed > 0.02) avatar.walkSpeed *= 0.95;else {
+      avatar.walkSpeed = 0;
+    }
+  }
+
+  avatar.rightArm.rotation.z = 2 * Math.cos(0.6662 * time * 10 + Math.PI) * avatar.walkSpeed;
+  avatar.rightArm.rotation.x = 1 * (Math.cos(0.2812 * time * 10) - 1) * avatar.walkSpeed;
+  avatar.leftArm.rotation.z = 2 * Math.cos(0.6662 * time * 10) * avatar.walkSpeed;
+  avatar.leftArm.rotation.x = 1 * (Math.cos(0.2312 * time * 10) + 1) * avatar.walkSpeed;
+
+  avatar.rightLeg.rotation.z = 1.4 * Math.cos(0.6662 * time * 10) * avatar.walkSpeed;
+  avatar.leftLeg.rotation.z = 1.4 * Math.cos(0.6662 * time * 10 + Math.PI) * avatar.walkSpeed;
+};
+
+var startWalking = function startWalking(avatar) {
+
+  var now = Date.now() / 1000;
+  avatar.walking = true;
+  if (avatar.stoppedWalking + avatar.acceleration > now) {
+    avatar.startedWalking = now - (avatar.stoppedWalking + avatar.acceleration - now);
+  } else {
+    avatar.startedWalking = Date.now() / 1000;
+  }
+};
+
+var stopWalking = function stopWalking(avatar) {
+  var now = Date.now() / 1000;
+  avatar.walking = false;
+  if (avatar.startedWalking + avatar.acceleration > now) {
+    avatar.stoppedWalking = now - (avatar.startedWalking + avatar.acceleration - now);
+  } else {
+    avatar.stoppedWalking = Date.now() / 1000;
+  }
+};
+
+module.exports = {
+  create: create,
+  startWalking: startWalking,
+  stopWalking: stopWalking,
+  render: render
+};
+
+},{"three":48}],54:[function(require,module,exports){
 'use strict';
 
 // sets up screen blocker (the darkened screen with instructions you see when you press esc)
@@ -87479,7 +99787,7 @@ module.exports = function (controls) {
 
 module.exports.enabled = true;
 
-},{}],8:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -87617,7 +99925,7 @@ module.exports = {
 //
 // module.exports = controls;
 
-},{"three":5}],9:[function(require,module,exports){
+},{"three":48}],56:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -87716,12 +100024,32 @@ var getObj5 = function getObj5() {
   return obj5;
 };
 
+var getObj6 = function getObj6() {
+  var textureLoader = new THREE.TextureLoader();
+  var crateTexture = textureLoader.load("images/crate/crate0_diffuse.png");
+  var crateBumpMap = textureLoader.load("images/crate/crate0_bump.png");
+  var crateNormalMap = textureLoader.load("images/crate/crate0_normal.png");
+  var obj6 = new THREE.Mesh(new THREE.BoxGeometry(40, 40, 40), new THREE.MeshPhongMaterial({
+    color: 0xffffff,
+    map: crateTexture,
+    bumpMap: crateBumpMap,
+    normalMap: crateNormalMap,
+    wireframe: false
+  }));
+
+  obj6.position.set(10, -5, -15);
+  obj6.receiveShadow = true;
+  obj6.castShadow = true;
+  return obj6;
+};
+
 module.exports = {
   getObj1: getObj1,
   getObj2: getObj2,
   getObj3: getObj3,
   getObj4: getObj4,
-  getObj5: getObj5
+  getObj5: getObj5,
+  getObj6: getObj6
 };
 
 //objects
@@ -87737,7 +100065,7 @@ module.exports = {
 //
 // })
 
-},{"three":5,"three-mtl-loader":1,"three-obj-loader":3,"three-pointerlock":4}],10:[function(require,module,exports){
+},{"three":48,"three-mtl-loader":44,"three-obj-loader":46,"three-pointerlock":47}],57:[function(require,module,exports){
 'use strict';
 
 var init = require('./init/init');
@@ -87745,7 +100073,7 @@ var animate = require('./animate');
 
 animate.start(init());
 
-},{"./animate":6,"./init/init":15}],11:[function(require,module,exports){
+},{"./animate":52,"./init/init":62}],58:[function(require,module,exports){
 "use strict";
 
 var _scene = void 0;
@@ -87758,7 +100086,7 @@ module.exports.init = function (scene) {
   _scene = scene;
 };
 
-},{}],12:[function(require,module,exports){
+},{}],59:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -87794,7 +100122,7 @@ var getFloor = function getFloor() {
 
 module.exports = getFloor;
 
-},{"three":5}],13:[function(require,module,exports){
+},{"three":48}],60:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -87811,7 +100139,7 @@ var getLight = function getLight() {
 
 module.exports = getLight;
 
-},{"three":5}],14:[function(require,module,exports){
+},{"three":48}],61:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -87827,7 +100155,7 @@ var getRenderer = function getRenderer() {
 
 module.exports = getRenderer;
 
-},{"three":5}],15:[function(require,module,exports){
+},{"three":48}],62:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -87841,6 +100169,7 @@ var getLight = require('./getLight');
 var getFloor = require('./getFloor');
 var cubes = require('../cubes');
 var blocker = require('../blocker');
+var ColladaLoader = require('three-collada-loader');
 // const OBJLoader = require('three-obj-loader');
 // OBJLoader(THREE);
 // const MTLLoader = require('three-mtl-loader');
@@ -87877,8 +100206,17 @@ var init = function init() {
   var obj3 = cubes.getObj3();
   var obj4 = cubes.getObj4();
   var obj5 = cubes.getObj5();
+  var obj6 = cubes.getObj6();
 
-  scene.add(obj1, obj2, obj3, obj4, obj5);
+  scene.add(obj1, obj2, obj3, obj4, obj5, obj6);
+
+  // const loader = new ColladaLoader();
+  // const colladaL = loader.load('images/camp_futbol.dae', function(collada) {
+  // //   // Use data here
+  // return collada.scene;
+  // });
+  //
+  // scene.add(collada.scene)
 
   //objects
   // const loader = new MTLLoader();
@@ -87928,7 +100266,7 @@ var init = function init() {
 
 module.exports = init;
 
-},{"../blocker":7,"../controls":8,"../cubes":9,"../getScene":11,"../letsMove":16,"../pointLockers":17,"./getFloor":12,"./getLight":13,"./getRenderer":14,"three":5,"three-pointerlock":4}],16:[function(require,module,exports){
+},{"../blocker":54,"../controls":55,"../cubes":56,"../getScene":58,"../letsMove":63,"../pointLockers":66,"./getFloor":59,"./getLight":60,"./getRenderer":61,"three":48,"three-collada-loader":43,"three-pointerlock":47}],63:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -87994,7 +100332,66 @@ var stopIfSlow = function stopIfSlow(velocity) {
   return Math.abs(velocity) < 0.1 ? 0 : velocity;
 };
 
-},{"./controls":8,"./pointLockers":17,"three":5}],17:[function(require,module,exports){
+},{"./controls":55,"./pointLockers":66,"three":48}],64:[function(require,module,exports){
+'use strict';
+
+var Avatar = require('./avatar');
+var otherPlayers = require('./otherPlayers');
+
+module.exports = function (id, _ref) {
+  var position = _ref.position,
+      rotation = _ref.rotation;
+
+  var avatar = otherPlayers.get()[id].avatar;
+  var player = avatar.mesh;
+  var x = position.x,
+      y = position.y,
+      z = position.z;
+
+
+  var playerHasStopped = Math.abs(player.position.x - x) < 0.1 && Math.abs(player.position.y - y) < 0.1 && Math.abs(player.position.z - z) < 0.1;
+
+  var playerHasStartedMoving = Math.abs(player.position.x - x) > 0.1 || Math.abs(player.position.y - y) > 0.1 || Math.abs(player.position.z - z) > 0.1;
+
+  if (avatar.walking && playerHasStopped) {
+    Avatar.stopWalking(avatar);
+  } else if (!avatar.walking && playerHasStartedMoving) {
+    Avatar.startWalking(avatar);
+  }
+
+  player.position.set(x, y, z);
+
+  if (rotation) {
+    player.rotation.y = rotation.y;
+  }
+
+  Avatar.render(avatar);
+};
+
+},{"./avatar":53,"./otherPlayers":65}],65:[function(require,module,exports){
+"use strict";
+
+// keys are socket ids and values are player data objects
+// eg. SK37fc7CN1j_ntQCAAAA: { position: {x: 2, y: 10, z:8}, avatar:...}
+var otherPlayers = {};
+
+var get = function get() {
+  return otherPlayers;
+};
+var set = function set(_otherPlayers) {
+  otherPlayers = _otherPlayers;
+};
+var addPlayer = function addPlayer(id, player) {
+  otherPlayers[id] = player;
+};
+
+module.exports = {
+  get: get,
+  set: set,
+  addPlayer: addPlayer
+};
+
+},{}],66:[function(require,module,exports){
 "use strict";
 
 var _pointerLockControls = void 0;
@@ -88007,4 +100404,99 @@ module.exports.init = function (pointerLockControls) {
   _pointerLockControls = pointerLockControls;
 };
 
-},{}]},{},[10]);
+},{}],67:[function(require,module,exports){
+'use strict';
+
+// handles socket communication with server for updating your player location
+// and getting other player locations
+var io = require('socket.io-client');
+var Avatar = require('./Avatar');
+var getScene = require('./getScene');
+var otherPlayers = require('./otherPlayers');
+
+var socket = io('http://localhost:1080');
+
+socket.on('player data', function (playerData) {
+
+  delete playerData[socket.id];
+  otherPlayers.set(playerData);
+
+  Object.keys(otherPlayers.get()).forEach(function (id) {
+    var avatar = Avatar.create();
+
+    getScene().add(avatar.mesh);
+    avatar.name = id;
+
+    otherPlayers.get()[id].avatar = avatar;
+    var _playerData$id$positi = playerData[id].position,
+        x = _playerData$id$positi.x,
+        y = _playerData$id$positi.y,
+        z = _playerData$id$positi.z;
+
+    avatar.mesh.position.set(x, y, z);
+  });
+});
+
+socket.on('new player', function (_ref) {
+  var id = _ref.id;
+
+
+  var avatar = Avatar.create();
+  getScene().add(avatar.mesh);
+
+  avatar.name = id;
+  // high y value to hide bug where extra avatar appears in starting spot
+  otherPlayers.addPlayer(id, { position: { x: 0, y: 100, z: 0 }, rotation: {}, avatar: avatar });
+});
+
+socket.on('other player position', function (_ref2) {
+  var id = _ref2.id,
+      position = _ref2.position,
+      rotation = _ref2.rotation;
+
+  var player = otherPlayers.get()[id];
+  player.position = position;
+  player.rotation = rotation;
+});
+
+socket.on('other player disconnected', function (_ref3) {
+  var id = _ref3.id;
+
+  console.log('other player disconnected');
+  var players = otherPlayers.get();
+
+  var avatar = players[id].avatar;
+  getScene().remove(avatar.mesh);
+  delete players[id];
+});
+
+var lastPosition = { x: null, y: null, z: null };
+var lastRotation = { x: null, y: null, z: null };
+
+var emitPlayerPosition = function emitPlayerPosition(position, rotation) {
+  rotation = { x: rotation.x, y: rotation.y, z: rotation.z }; // line looks strange but needed to deal with setters
+  if (positionsDifferent(position, lastPosition) || positionsDifferent(rotation, lastRotation)) {
+    socket.emit('position', { position: position, rotation: rotation });
+    lastPosition.x = position.x;
+    lastPosition.y = position.y;
+    lastPosition.z = position.z;
+    lastRotation.x = rotation.x;
+    lastRotation.y = rotation.y;
+    lastRotation.z = rotation.z;
+  }
+};
+//
+// const emitShotFired = ({position, rotation}) => {
+//   rotation = {x: rotation.x, y:rotation.y, z:rotation.z}; // line looks strange but needed to deal with setters
+//   socket.emit('shot fired', {position, rotation});
+// };
+
+var positionsDifferent = function positionsDifferent(p1, p2) {
+  return !p1 || !p2 || p1.x !== p2.x || p1.y !== p2.y || p1.z !== p2.z;
+};
+
+module.exports = {
+  emitPlayerPosition: emitPlayerPosition
+};
+
+},{"./Avatar":51,"./getScene":58,"./otherPlayers":65,"socket.io-client":34}]},{},[57]);

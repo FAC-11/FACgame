@@ -1,7 +1,8 @@
+const sockets = require('./sockets');
 const express = require('express');
 
 const app = express();
-
+sockets(app);
 
 app.get('', (req, res) => {
   res.redirect('/index.html');

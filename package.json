@@ -20,6 +20,7 @@
   "homepage": "https://github.com/FAC-11/FACgame#readme",
   "dependencies": {
     "express": "^4.15.4",
+    "http": "0.0.0",
     "http-server": "^0.10.0",
     "install": "^0.10.1",
     "npm": "^5.4.0",
@@ -27,6 +28,7 @@
     "socket.io": "^2.0.3",
     "socket.io-client": "^2.0.3",
     "three": "^0.87.1",
+    "three-collada-loader": "0.0.1",
     "three-mtl-loader": "^1.0.1",
     "three-obj-loader": "^1.1.2",
     "three-pointerlock": "0.0.2"

@@ -5,6 +5,7 @@ OBJLoader(THREE);
 const MTLLoader = require('three-mtl-loader');
 
 
+
 const getObj1 = () => {
   const textureLoader = new THREE.TextureLoader();
   const crateTexture = textureLoader.load("images/crate/crate0_diffuse.png");
@@ -112,26 +113,52 @@ const getObj5 = () => {
   return obj5;
 }
 
+const getObj6 = () => {
+  const textureLoader = new THREE.TextureLoader();
+  const crateTexture = textureLoader.load("images/crate/crate0_diffuse.png");
+  const crateBumpMap = textureLoader.load("images/crate/crate0_bump.png");
+  const crateNormalMap = textureLoader.load("images/crate/crate0_normal.png");
+  const obj6 = new THREE.Mesh(
+    new THREE.BoxGeometry(40, 40, 40),
+    new THREE.MeshPhongMaterial({
+      color: 0xffffff,
+      map: crateTexture,
+      bumpMap: crateBumpMap,
+      normalMap: crateNormalMap,
+      wireframe: false
+    })
+  );
+
+  obj6.position.set(10, -5, -15);
+  obj6.receiveShadow = true;
+  obj6.castShadow = true;
+  return obj6;
+}
+
+
 module.exports = {
   getObj1,
   getObj2,
   getObj3,
   getObj4,
-  getObj5
+  getObj5,
+  getObj6,
 };
 
 
 
 
+
+
 //objects
-    // const loader = new MTLLoader();
-    // loader.load('images/Oak_Green_01.mtl', function(materials) {
-    //   materials.preload();
-    //   const objLoader = new THREE.OBJLoader();
-    //   objLoader.setMaterials(materials);
-    //
-    //   objLoader.load('images/Oak_Green_01.obj', function(tree) {
-    //     scene.add(tree)
-    //   })
-    //
-    // })
+// const loader = new MTLLoader();
+// loader.load('images/Oak_Green_01.mtl', function(materials) {
+//   materials.preload();
+//   const objLoader = new THREE.OBJLoader();
+//   objLoader.setMaterials(materials);
+//
+//   objLoader.load('images/Oak_Green_01.obj', function(tree) {
+//     scene.add(tree)
+//   })
+//
+// })

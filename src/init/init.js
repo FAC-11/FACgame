@@ -9,6 +9,7 @@ const getLight = require('./getLight');
 const getFloor = require('./getFloor');
 const cubes = require('../cubes');
 const blocker = require('../blocker');
+const ColladaLoader = require('three-collada-loader');
 // const OBJLoader = require('three-obj-loader');
 // OBJLoader(THREE);
 // const MTLLoader = require('three-mtl-loader');
@@ -45,10 +46,17 @@ const init = () => {
   const obj3 = cubes.getObj3();
   const obj4 = cubes.getObj4();
   const obj5 = cubes.getObj5();
+  const obj6 = cubes.getObj6();
 
-  scene.add(obj1, obj2, obj3, obj4, obj5);
+  scene.add(obj1, obj2, obj3, obj4, obj5, obj6);
 
-
+  // const loader = new ColladaLoader();
+  // const colladaL = loader.load('images/camp_futbol.dae', function(collada) {
+  // //   // Use data here
+  // return collada.scene;
+  // });
+  //
+  // scene.add(collada.scene)
 
   //objects
   // const loader = new MTLLoader();
