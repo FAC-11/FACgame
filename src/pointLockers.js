@@ -5,5 +5,4 @@ module.exports = () =>
 
 module.exports.init = (pointerLockControls) => {
   _pointerLockControls = pointerLockControls;
-
 };

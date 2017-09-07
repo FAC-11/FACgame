@@ -3,12 +3,28 @@ const pointLockers = require('./pointLockers');
 
 // const shoot = require('./shoot.js');
 
-const {movements} = require('./controls');
+const {
+  movements,
+} = require('./controls');
 
-let bullets = [] ;
+const bullets = [];
 const velocity = new THREE.Vector3();
 
-module.exports = function(camera,scene,objects, raycaster, prevTime, time, pointerLockControls){
+module.exports = function (
+  camera,
+  scene,
+  objects,
+  raycaster,
+  prevTime,
+  time,
+  pointerLockControls,
+  world,
+  timeStep,
+) {
+  world.step(timeStep);
+  scene.children[1].position.copy(world.bodies[0].position);
+  scene.children[1].quaternion.copy(world.bodies[0].quaternion);
+
 
   raycaster.ray.origin.copy(pointLockers().position);
   raycaster.ray.origin.y -= 10;
@@ -19,57 +35,66 @@ module.exports = function(camera,scene,objects, raycaster, prevTime, time, point
   velocity.z -= velocity.z * 10.0 * delta;
   velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
 
-for (var index= 0; index < bullets.length ; index++) {
-  if (bullets[index] === undefined) {
-    continue;
+  for (let index = 0; index < bullets.length; index++) {
+    if (bullets[index] === undefined) {
+      continue;
+    }
+    if (bullets[index].alive == false) {
+      bullets.splice(index, 1);
+      continue;
+    }
+    bullets[index].position.add(bullets[index].velocity);
   }
-  if (bullets[index].alive == false) {
-  bullets.splice(index,1);
-  continue;
-  }
-  bullets[index].position.add(bullets[index].velocity);
-}
 
-  if (movements.shooting){
+  if (movements.shooting) {
     // shoot.bullet(scene);
-    var bullet = new THREE.Mesh(
+    const bullet = new THREE.Mesh(
       new THREE.SphereGeometry(0.5, 8, 8),
-      new THREE.MeshBasicMaterial());
+      new THREE.MeshBasicMaterial(),
+    );
 
-      bullet.position.set(
-        raycaster.ray.origin.x,
-        raycaster.ray.origin.y,
-        raycaster.ray.origin.z
-      );
-console.log('pointlocker', pointerLockControls.getObject());
-      bullet.velocity = new THREE.Vector3(
-        -Math.sin(pointerLockControls.getObject().rotation._y),
-        0,
-        -Math.cos(pointerLockControls.getObject().rotation._y),
+    // const shape = new CANNON.Sphere(new CANNON.Vec3(0.5));
+    // const body = new CANNON.Body({
+    //   mass: 1,
+    // });
+    // body.addShape(shape);
+    // body.angularVelocity.set(0, 50, 0);
+    // body.angularDamping = 0.5;
+    // body.position.set(
+    //   raycaster.ray.origin.x,
+    //   raycaster.ray.origin.y,
+    //   raycaster.ray.origin.z,
+    // );
+    // world.addBody(body);
+
+    bullet.position.set(
+      raycaster.ray.origin.x,
+      raycaster.ray.origin.y,
+      raycaster.ray.origin.z,
+    );
+    bullet.velocity = new THREE.Vector3(
+      -Math.sin(pointerLockControls.getObject().rotation._y),
+      0, -Math.cos(pointerLockControls.getObject().rotation._y),
 
 
-      );
+    );
 
-      bullet.alive = true;
-      setTimeout(function() {
-        bullet.alive = false;
-        scene.remove(bullet);
-      }, 1000);
-      bullets.push(bullet);
-      scene.add(bullet);
+    bullet.alive = true;
+    setTimeout(() => {
+      bullet.alive = false;
+      scene.remove(bullet);
+    }, 1000);
+    bullets.push(bullet);
+    scene.add(bullet);
   }
 
-  if (movements.forward)
-    velocity.z -= 2000.0 * delta;
+  if (movements.forward) { velocity.z -= 2000.0 * delta; }
 
-  if (movements.backward)
-    velocity.z += 1000.0 * delta;
+  if (movements.backward) { velocity.z += 1000.0 * delta; }
 
-  if (movements.left)
-    velocity.x -= 1000.0 * delta;
+  if (movements.left) { velocity.x -= 1000.0 * delta; }
 
-  if (movements.right)
-    velocity.x += 1000.0 * delta;
+  if (movements.right) { velocity.x += 1000.0 * delta; }
 
   if (isOnObject === true) {
     velocity.y = Math.max(0, velocity.y);
@@ -81,7 +106,7 @@ console.log('pointlocker', pointerLockControls.getObject());
     }
   }
 
-  if (movements.jumping){
+  if (movements.jumping) {
     velocity.y = 350;
     movements.jumping = false;
     movements.canJump = false;
@@ -103,7 +128,7 @@ console.log('pointlocker', pointerLockControls.getObject());
 
 // this is to stop lots of tiny movements from being sent to server once
 // player has stopped moving but continues to slightly slide
-const stopIfSlow = (velocity) =>
-  Math.abs(velocity) < 0.1
-    ? 0
-    : velocity;
+const stopIfSlow = velocity =>
+  (Math.abs(velocity) < 0.1 ?
+    0 :
+    velocity);

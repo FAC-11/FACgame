@@ -1,5 +1,5 @@
 const THREE = require('three');
-//const init = require('./init/init');
+// const init = require('./init/init');
 const bullet = require('./init/init');
 
 const init = () => {
@@ -51,18 +51,16 @@ const init = () => {
         movements.right = false;
         break;
       case 17:
-        console.log('ctrl working up');
         movements.shooting = false;
         break;
     }
   };
 
-  //document.addEventListener( 'mousemove', onMouseMove, false );
+  // document.addEventListener( 'mousemove', onMouseMove, false );
   document.addEventListener('keydown', onKeyDown, false);
   document.addEventListener('keyup', onKeyUp, false);
   // document.addEventListener('click', shoot, false);
-
-}
+};
 const movements = {
   forward: false,
   backward: false,
@@ -70,11 +68,11 @@ const movements = {
   right: false,
   jumping: false,
   canJump: true,
-  shooting: false
+  shooting: false,
 };
 module.exports = {
   init,
-  movements
+  movements,
 };
 
 
@@ -126,7 +124,7 @@ module.exports = {
 //     keyboard[event.keyCode] = false;
 //   }
 
-//document.addEventListener('mousemove', mouseMove, false);
+// document.addEventListener('mousemove', mouseMove, false);
 // document.addEventListener('keydown', keyDown, false);
 // document.addEventListener('keyup', keyUp, false);
 //
