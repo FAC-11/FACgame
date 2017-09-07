@@ -49,10 +49,10 @@ const init = () => {
     mass: 1,
   });
   body.addShape(shape);
-  body.angularVelocity.set(0, 10, 0);
+  body.angularVelocity.set(0, 50, 0);
   body.angularDamping = 0.5;
+  body.position.set(0, 50, 0);
   world.addBody(body);
-
   // const camera = new THREE.PerspectiveCamera(75, -50, 1, 1000);
   const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
   // let's create the scene
@@ -116,7 +116,7 @@ const init = () => {
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
   }
-  console.log(objects);
+  console.log(scene.children[1]);
   return {
     camera,
     scene,

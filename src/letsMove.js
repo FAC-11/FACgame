@@ -22,8 +22,8 @@ module.exports = function (
   timeStep,
 ) {
   world.step(timeStep);
-  // objects.obj1.Mesh.position.copy(world.body.position);
-  // objects.obj1.Mesh.quaternion.copy(world.body.quaternion);
+  scene.children[1].position.copy(world.bodies[0].position);
+  scene.children[1].quaternion.copy(world.bodies[0].quaternion);
 
 
   raycaster.ray.origin.copy(pointLockers().position);
@@ -52,6 +52,20 @@ module.exports = function (
       new THREE.SphereGeometry(0.5, 8, 8),
       new THREE.MeshBasicMaterial(),
     );
+
+    // const shape = new CANNON.Sphere(new CANNON.Vec3(0.5));
+    // const body = new CANNON.Body({
+    //   mass: 1,
+    // });
+    // body.addShape(shape);
+    // body.angularVelocity.set(0, 50, 0);
+    // body.angularDamping = 0.5;
+    // body.position.set(
+    //   raycaster.ray.origin.x,
+    //   raycaster.ray.origin.y,
+    //   raycaster.ray.origin.z,
+    // );
+    // world.addBody(body);
 
     bullet.position.set(
       raycaster.ray.origin.x,

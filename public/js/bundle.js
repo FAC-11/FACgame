@@ -101912,10 +101912,10 @@ module.exports = function ( camera ) {
 'use strict';
 
 // const controls = require('./controls');
-var init = require('./init/init');
-var getRenderer = require('./init/getRenderer');
+// const init = require('./init/init');
+// const getRenderer = require('./init/getRenderer');
 var letsMove = require('./letsMove');
-var pointLockers = require('./pointLockers');
+// const pointLockers = require('./pointLockers');
 var blocker = require('./blocker');
 
 var start = function start(options) {
@@ -101940,11 +101940,8 @@ var start = function start(options) {
   var animate = function animate() {
     requestAnimationFrame(animate);
     if (!blocker.enabled) {
-
       var time = performance.now();
-      console.log(world);
       letsMove(camera, scene, objects, raycaster, prevTime, time, pointerLockControls, world, timeStep);
-      //
       // const player = pointLockers();
 
       prevTime = time;
@@ -101952,7 +101949,7 @@ var start = function start(options) {
 
     // mesh.rotation.x += 0.1;
     // mesh.rotation.y += 0.1;
-    //controls(keyboard, camera, player);
+    // controls(keyboard, camera, player);
     renderer.render(scene, camera);
   };
   animate();
@@ -101962,7 +101959,7 @@ module.exports = {
   start: start
 };
 
-},{"./blocker":64,"./init/getRenderer":71,"./init/init":72,"./letsMove":73,"./pointLockers":74}],64:[function(require,module,exports){
+},{"./blocker":64,"./letsMove":73}],64:[function(require,module,exports){
 'use strict';
 
 // sets up screen blocker (the darkened screen with instructions you see when you press esc)
@@ -102015,7 +102012,7 @@ module.exports.enabled = true;
 'use strict';
 
 var THREE = require('three');
-//const init = require('./init/init');
+// const init = require('./init/init');
 var bullet = require('./init/init');
 
 var init = function init() {
@@ -102076,13 +102073,12 @@ var init = function init() {
         movements.right = false;
         break;
       case 17:
-        console.log('ctrl working up');
         movements.shooting = false;
         break;
     }
   };
 
-  //document.addEventListener( 'mousemove', onMouseMove, false );
+  // document.addEventListener( 'mousemove', onMouseMove, false );
   document.addEventListener('keydown', onKeyDown, false);
   document.addEventListener('keyup', onKeyUp, false);
   // document.addEventListener('click', shoot, false);
@@ -102149,7 +102145,7 @@ module.exports = {
 //     keyboard[event.keyCode] = false;
 //   }
 
-//document.addEventListener('mousemove', mouseMove, false);
+// document.addEventListener('mousemove', mouseMove, false);
 // document.addEventListener('keydown', keyDown, false);
 // document.addEventListener('keyup', keyUp, false);
 //
@@ -102164,14 +102160,15 @@ module.exports = {
 var THREE = require('three');
 var PointerLockControls = require('three-pointerlock');
 var OBJLoader = require('three-obj-loader');
+
 OBJLoader(THREE);
 var MTLLoader = require('three-mtl-loader');
 
 var getObj1 = function getObj1() {
   var textureLoader = new THREE.TextureLoader();
-  var crateTexture = textureLoader.load("images/crate/crate0_diffuse.png");
-  var crateBumpMap = textureLoader.load("images/crate/crate0_bump.png");
-  var crateNormalMap = textureLoader.load("images/crate/crate0_normal.png");
+  var crateTexture = textureLoader.load('images/crate/crate0_diffuse.png');
+  var crateBumpMap = textureLoader.load('images/crate/crate0_bump.png');
+  var crateNormalMap = textureLoader.load('images/crate/crate0_normal.png');
   var obj1 = new THREE.Mesh(new THREE.BoxGeometry(40, 40, 40), new THREE.MeshPhongMaterial({
     color: 0xffffff,
     map: crateTexture,
@@ -102187,9 +102184,9 @@ var getObj1 = function getObj1() {
 
 var getObj2 = function getObj2() {
   var textureLoader = new THREE.TextureLoader();
-  var crateTexture = textureLoader.load("images/crate/crate0_diffuse.png");
-  var crateBumpMap = textureLoader.load("images/crate/crate0_bump.png");
-  var crateNormalMap = textureLoader.load("images/crate/crate0_normal.png");
+  var crateTexture = textureLoader.load('images/crate/crate0_diffuse.png');
+  var crateBumpMap = textureLoader.load('images/crate/crate0_bump.png');
+  var crateNormalMap = textureLoader.load('images/crate/crate0_normal.png');
   var obj2 = new THREE.Mesh(new THREE.BoxGeometry(40, 40, 40), new THREE.MeshPhongMaterial({
     color: 0xffffff,
     map: crateTexture,
@@ -102205,9 +102202,9 @@ var getObj2 = function getObj2() {
 
 var getObj3 = function getObj3() {
   var textureLoader = new THREE.TextureLoader();
-  var crateTexture = textureLoader.load("images/crate/crate0_diffuse.png");
-  var crateBumpMap = textureLoader.load("images/crate/crate0_bump.png");
-  var crateNormalMap = textureLoader.load("images/crate/crate0_normal.png");
+  var crateTexture = textureLoader.load('images/crate/crate0_diffuse.png');
+  var crateBumpMap = textureLoader.load('images/crate/crate0_bump.png');
+  var crateNormalMap = textureLoader.load('images/crate/crate0_normal.png');
   var obj3 = new THREE.Mesh(new THREE.BoxGeometry(40, 40, 40), new THREE.MeshPhongMaterial({
     color: 0xffffff,
     map: crateTexture,
@@ -102223,9 +102220,9 @@ var getObj3 = function getObj3() {
 
 var getObj4 = function getObj4() {
   var textureLoader = new THREE.TextureLoader();
-  var crateTexture = textureLoader.load("images/crate/crate0_diffuse.png");
-  var crateBumpMap = textureLoader.load("images/crate/crate0_bump.png");
-  var crateNormalMap = textureLoader.load("images/crate/crate0_normal.png");
+  var crateTexture = textureLoader.load('images/crate/crate0_diffuse.png');
+  var crateBumpMap = textureLoader.load('images/crate/crate0_bump.png');
+  var crateNormalMap = textureLoader.load('images/crate/crate0_normal.png');
   var obj4 = new THREE.Mesh(new THREE.BoxGeometry(40, 40, 40), new THREE.MeshPhongMaterial({
     color: 0xffffff,
     map: crateTexture,
@@ -102240,9 +102237,9 @@ var getObj4 = function getObj4() {
 };
 var getObj5 = function getObj5() {
   var textureLoader = new THREE.TextureLoader();
-  var crateTexture = textureLoader.load("images/crate/crate0_diffuse.png");
-  var crateBumpMap = textureLoader.load("images/crate/crate0_bump.png");
-  var crateNormalMap = textureLoader.load("images/crate/crate0_normal.png");
+  var crateTexture = textureLoader.load('images/crate/crate0_diffuse.png');
+  var crateBumpMap = textureLoader.load('images/crate/crate0_bump.png');
+  var crateNormalMap = textureLoader.load('images/crate/crate0_normal.png');
   var obj5 = new THREE.Mesh(new THREE.BoxGeometry(40, 40, 40), new THREE.MeshPhongMaterial({
     color: 0xffffff,
     map: crateTexture,
@@ -102265,7 +102262,7 @@ module.exports = {
   getObj5: getObj5
 };
 
-//objects
+// objects
 // const loader = new MTLLoader();
 // loader.load('images/Oak_Green_01.mtl', function(materials) {
 //   materials.preload();
@@ -102376,7 +102373,6 @@ var CANNON = require('cannon');
 var PointerLockControls = require('three-pointerlock');
 var getScene = require('../getScene');
 var pointerLocks = require('../pointLockers');
-var letsMove = require('../letsMove');
 var controls = require('../controls');
 var getRenderer = require('./getRenderer');
 var getLight = require('./getLight');
@@ -102416,23 +102412,21 @@ var init = function init() {
   world.broadphase = new CANNON.NaiveBroadphase();
   world.solver.iterations = 10;
   var shape = new CANNON.Box(new CANNON.Vec3(1, 1, 1));
-  var mass = 1;
   var body = new CANNON.Body({
     mass: 1
   });
   body.addShape(shape);
-  body.angularVelocity.set(0, 10, 0);
+  body.angularVelocity.set(0, 50, 0);
   body.angularDamping = 0.5;
+  body.position.set(0, 50, 0);
   world.addBody(body);
-  console.log('this is my world', world);
-
   // const camera = new THREE.PerspectiveCamera(75, -50, 1, 1000);
   var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
-  //let's create the scene
+  // let's create the scene
   var scene = new THREE.Scene();
-  //and our camera
+  // and our camera
 
-  //camera.position.set(0, 0, -5);
+  // camera.position.set(0, 0, -5);
   // camera.lookAt(0, 500, 0); // direction camera is looking
   getScene.init(scene);
   var pointerLockControls = new PointerLockControls(camera);
@@ -102487,6 +102481,7 @@ var init = function init() {
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
   }
+  console.log(scene.children[1]);
   return {
     camera: camera,
     scene: scene,
@@ -102501,7 +102496,7 @@ var init = function init() {
 
 module.exports = init;
 
-},{"../blocker":64,"../controls":65,"../cubes":66,"../getScene":68,"../letsMove":73,"../pointLockers":74,"./getFloor":69,"./getLight":70,"./getRenderer":71,"cannon":2,"three":62,"three-pointerlock":61}],73:[function(require,module,exports){
+},{"../blocker":64,"../controls":65,"../cubes":66,"../getScene":68,"../pointLockers":74,"./getFloor":69,"./getLight":70,"./getRenderer":71,"cannon":2,"three":62,"three-pointerlock":61}],73:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -102516,11 +102511,9 @@ var bullets = [];
 var velocity = new THREE.Vector3();
 
 module.exports = function (camera, scene, objects, raycaster, prevTime, time, pointerLockControls, world, timeStep) {
-  console.log(objects);
   world.step(timeStep);
-  // objects.obj1.Mesh.position.copy(world.body.position);
-  // objects.obj1.Mesh.quaternion.copy(world.body.quaternion);
-
+  scene.children[1].position.copy(world.bodies[0].position);
+  scene.children[1].quaternion.copy(world.bodies[0].quaternion);
 
   raycaster.ray.origin.copy(pointLockers().position);
   raycaster.ray.origin.y -= 10;
@@ -102545,6 +102538,20 @@ module.exports = function (camera, scene, objects, raycaster, prevTime, time, po
   if (movements.shooting) {
     // shoot.bullet(scene);
     var bullet = new THREE.Mesh(new THREE.SphereGeometry(0.5, 8, 8), new THREE.MeshBasicMaterial());
+
+    // const shape = new CANNON.Sphere(new CANNON.Vec3(0.5));
+    // const body = new CANNON.Body({
+    //   mass: 1,
+    // });
+    // body.addShape(shape);
+    // body.angularVelocity.set(0, 50, 0);
+    // body.angularDamping = 0.5;
+    // body.position.set(
+    //   raycaster.ray.origin.x,
+    //   raycaster.ray.origin.y,
+    //   raycaster.ray.origin.z,
+    // );
+    // world.addBody(body);
 
     bullet.position.set(raycaster.ray.origin.x, raycaster.ray.origin.y, raycaster.ray.origin.z);
     bullet.velocity = new THREE.Vector3(-Math.sin(pointerLockControls.getObject().rotation._y), 0, -Math.cos(pointerLockControls.getObject().rotation._y));
