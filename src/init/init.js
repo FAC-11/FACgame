@@ -9,6 +9,7 @@ const getLight = require('./getLight');
 const getFloor = require('./getFloor');
 const cubes = require('../cubes');
 const blocker = require('../blocker');
+
 // const OBJLoader = require('three-obj-loader');
 // OBJLoader(THREE);
 // const MTLLoader = require('three-mtl-loader');
@@ -19,6 +20,18 @@ const blocker = require('../blocker');
 //   speed: 0.2,
 //   turnSpeed: Math.PI * 0.02
 // };
+
+const bullet = () => {
+var bullet = new THREE.Mesh(
+  new THREE.SphereGeometry(5, 8, 8),
+  new THREE.MeshBasicMaterial());
+  bullet.alive = true;
+  setTimeout(function() {
+    bullet.alive = false;
+    scene.remove(bullet);
+  }, 1000);
+  scene.add(bullet);
+}
 
 // create the scene
 
@@ -93,7 +106,8 @@ const init = () => {
     scene,
     renderer,
     raycaster,
-    objects
+    objects,
+    pointerLockControls
   };
 }
 
