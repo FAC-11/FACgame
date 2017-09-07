@@ -1,8 +1,8 @@
 // const controls = require('./controls');
-const init = require('./init/init');
-const getRenderer = require('./init/getRenderer');
+// const init = require('./init/init');
+// const getRenderer = require('./init/getRenderer');
 const letsMove = require('./letsMove');
-const pointLockers = require('./pointLockers');
+// const pointLockers = require('./pointLockers');
 const blocker = require('./blocker');
 
 const start = (options) => {
@@ -28,11 +28,18 @@ const start = (options) => {
   const animate = () => {
     requestAnimationFrame(animate);
     if (!blocker.enabled) {
-
       const time = performance.now();
-      console.log(world);
-      letsMove(camera,scene,objects, raycaster, prevTime, time, pointerLockControls, world, timeStep);
-      //
+      letsMove(
+        camera,
+        scene,
+        objects,
+        raycaster,
+        prevTime,
+        time,
+        pointerLockControls,
+        world,
+        timeStep,
+      );
       // const player = pointLockers();
 
       prevTime = time;
@@ -40,15 +47,13 @@ const start = (options) => {
 
     // mesh.rotation.x += 0.1;
     // mesh.rotation.y += 0.1;
-    //controls(keyboard, camera, player);
+    // controls(keyboard, camera, player);
     renderer.render(scene, camera);
-
   };
   animate();
-
 };
 
 
 module.exports = {
-  start
+  start,
 };

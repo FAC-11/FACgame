@@ -1,15 +1,15 @@
 // sets up screen blocker (the darkened screen with instructions you see when you press esc)
-module.exports = function(controls){
-  var blocker = document.getElementById('blocker');
-  var instructions = document.getElementById('instructions');
+module.exports = function (controls) {
+  const blocker = document.getElementById('blocker');
+  const instructions = document.getElementById('instructions');
   // http://www.html5rocks.com/en/tutorials/pointerlock/intro/
-  var havePointerLock = ('pointerLockElement' in document)
+  const havePointerLock = ('pointerLockElement' in document)
     || ('mozPointerLockElement' in document)
     || ('webkitPointerLockElement' in document);
 
   if (havePointerLock) {
-    var element = document.body;
-    var pointerlockchange = function() {
+    const element = document.body;
+    const pointerlockchange = function () {
       if (document.pointerLockElement === element
         || document.mozPointerLockElement === element
         || document.webkitPointerLockElement === element) {
@@ -24,7 +24,7 @@ module.exports = function(controls){
         instructions.style.display = '';
       }
     };
-    var pointerlockerror = function() {
+    const pointerlockerror = function () {
       instructions.style.display = '';
     };
     // Hook pointer lock state change events
@@ -35,7 +35,7 @@ module.exports = function(controls){
     document.addEventListener('mozpointerlockerror', pointerlockerror, false);
     document.addEventListener('webkitpointerlockerror', pointerlockerror, false);
 
-    instructions.addEventListener('click', function() {
+    instructions.addEventListener('click', () => {
       instructions.style.display = 'none';
       // Ask the browser to lock the pointer
       element.requestPointerLock = element.requestPointerLock

@@ -102504,8 +102504,6 @@ module.exports = init;
 },{"../blocker":64,"../controls":65,"../cubes":66,"../getScene":68,"../letsMove":73,"../pointLockers":74,"./getFloor":69,"./getLight":70,"./getRenderer":71,"cannon":2,"three":62,"three-pointerlock":61}],73:[function(require,module,exports){
 'use strict';
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
 var THREE = require('three');
 var pointLockers = require('./pointLockers');
 
@@ -102518,12 +102516,11 @@ var bullets = [];
 var velocity = new THREE.Vector3();
 
 module.exports = function (camera, scene, objects, raycaster, prevTime, time, pointerLockControls, world, timeStep) {
-
-  console.log(typeof world === 'undefined' ? 'undefined' : _typeof(world));
-  console.log(world);
+  console.log(objects);
   world.step(timeStep);
-  objects.obj1.Mesh.position.copy(world.body.position);
-  objects.obj1.Mesh.quaternion.copy(world.body.quaternion);
+  // objects.obj1.Mesh.position.copy(world.body.position);
+  // objects.obj1.Mesh.quaternion.copy(world.body.quaternion);
+
 
   raycaster.ray.origin.copy(pointLockers().position);
   raycaster.ray.origin.y -= 10;
@@ -102550,7 +102547,6 @@ module.exports = function (camera, scene, objects, raycaster, prevTime, time, po
     var bullet = new THREE.Mesh(new THREE.SphereGeometry(0.5, 8, 8), new THREE.MeshBasicMaterial());
 
     bullet.position.set(raycaster.ray.origin.x, raycaster.ray.origin.y, raycaster.ray.origin.z);
-    console.log('pointlocker', pointerLockControls.getObject());
     bullet.velocity = new THREE.Vector3(-Math.sin(pointerLockControls.getObject().rotation._y), 0, -Math.cos(pointerLockControls.getObject().rotation._y));
 
     bullet.alive = true;
@@ -102562,13 +102558,21 @@ module.exports = function (camera, scene, objects, raycaster, prevTime, time, po
     scene.add(bullet);
   }
 
-  if (movements.forward) velocity.z -= 2000.0 * delta;
+  if (movements.forward) {
+    velocity.z -= 2000.0 * delta;
+  }
 
-  if (movements.backward) velocity.z += 1000.0 * delta;
+  if (movements.backward) {
+    velocity.z += 1000.0 * delta;
+  }
 
-  if (movements.left) velocity.x -= 1000.0 * delta;
+  if (movements.left) {
+    velocity.x -= 1000.0 * delta;
+  }
 
-  if (movements.right) velocity.x += 1000.0 * delta;
+  if (movements.right) {
+    velocity.x += 1000.0 * delta;
+  }
 
   if (isOnObject === true) {
     velocity.y = Math.max(0, velocity.y);
