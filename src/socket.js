@@ -89,12 +89,6 @@ const emitBulletPosition = (position, rotation) => {
     lastRotation.z = rotation.z;
   }
 };
-
-
-const emitBulletPosition = ({position, rotation}) => {
-  rotation = {x: rotation.x, y:rotation.y, z:rotation.z}; // line looks strange but needed to deal with setters
-  socket.emit('shot fired', {position, rotation});
-};
 //
 
 
