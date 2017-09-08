@@ -29,7 +29,7 @@ const start = (options) => {
       const player = pointLockers();
       //to send the players positions and the bullets
       socket.emitPlayerPosition(player.position, player.rotation);
-      socket.emitBulletPosition(bullet.position, bullet.rotation);
+  //    socket.emitBulletPosition(bullet.position, bullet.rotation);
       const players = otherPlayers.get();
 
       Object.keys(players).forEach((id) => {

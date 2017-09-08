@@ -13,15 +13,16 @@ const socket = io('http://localhost:1080');
 socket.on('player data', (playerData) => {
 
   //function on js that will delete the data of the player
-  delete playerData[socket.id];
+  console.log('player data', playerData);
+   delete playerData[socket.id];
+console.log('player data after', playerData);
   otherPlayers.set(playerData);
 
 //create a new object with each new other player;
 //this will create an avatar with an id for each player;
   Object.keys(otherPlayers.get()).forEach((id) => {
     const avatar = Avatar.create();
-    //add the avatar to the scene
-    getScene().add(avatar.mesh);
+
     //avatar name will be the id of the other player;
     avatar.name = id;
 
@@ -77,25 +78,25 @@ const emitPlayerPosition = (position, rotation) => {
   }
 };
 
-const emitBulletPosition = (position, rotation) => {
-  rotation = {x: rotation.x, y:rotation.y, z:rotation.z}; // line looks strange but needed to deal with setters
-  if (positionsDifferent(position, lastPosition) || positionsDifferent(rotation, lastRotation)) {
-    socket.emit('shot fired', {position, rotation});
-    lastPosition.x = position.x;
-    lastPosition.y = position.y;
-    lastPosition.z = position.z;
-    lastRotation.x = rotation.x;
-    lastRotation.y = rotation.y;
-    lastRotation.z = rotation.z;
-  }
-};
-//
+// const emitBulletPosition = (position, rotation) => {
+//   rotation = {x: rotation.x, y:rotation.y, z:rotation.z}; // line looks strange but needed to deal with setters
+//   if (positionsDifferent(position, lastPosition) || positionsDifferent(rotation, lastRotation)) {
+//     socket.emit('shot fired', {position, rotation});
+//     lastPosition.x = position.x;
+//     lastPosition.y = position.y;
+//     lastPosition.z = position.z;
+//     lastRotation.x = rotation.x;
+//     lastRotation.y = rotation.y;
+//     lastRotation.z = rotation.z;
+//   }
+// };
+// //
 
 
 const positionsDifferent = (p1, p2) =>
  !p1 || !p2 || p1.x !== p2.x || p1.y !== p2.y || p1.z !== p2.z;
 
 module.exports = {
-  emitPlayerPosition,
-  emitBulletPosition
+  emitPlayerPosition
+  //emitBulletPosition
 };

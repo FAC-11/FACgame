@@ -93828,7 +93828,7 @@ var start = function start(options) {
       var player = pointLockers();
       //to send the players positions and the bullets
       socket.emitPlayerPosition(player.position, player.rotation);
-      socket.emitBulletPosition(bullet.position, bullet.rotation);
+      //    socket.emitBulletPosition(bullet.position, bullet.rotation);
       var players = otherPlayers.get();
 
       Object.keys(players).forEach(function (id) {
@@ -94754,15 +94754,16 @@ var socket = io('http://localhost:1080');
 socket.on('player data', function (playerData) {
 
   //function on js that will delete the data of the player
+  console.log('player data', playerData);
   delete playerData[socket.id];
+  console.log('player data after', playerData);
   otherPlayers.set(playerData);
 
   //create a new object with each new other player;
   //this will create an avatar with an id for each player;
   Object.keys(otherPlayers.get()).forEach(function (id) {
     var avatar = Avatar.create();
-    //add the avatar to the scene
-    getScene().add(avatar.mesh);
+
     //avatar name will be the id of the other player;
     avatar.name = id;
 
@@ -94830,19 +94831,19 @@ var emitPlayerPosition = function emitPlayerPosition(position, rotation) {
   }
 };
 
-var emitBulletPosition = function emitBulletPosition(position, rotation) {
-  rotation = { x: rotation.x, y: rotation.y, z: rotation.z }; // line looks strange but needed to deal with setters
-  if (positionsDifferent(position, lastPosition) || positionsDifferent(rotation, lastRotation)) {
-    socket.emit('shot fired', { position: position, rotation: rotation });
-    lastPosition.x = position.x;
-    lastPosition.y = position.y;
-    lastPosition.z = position.z;
-    lastRotation.x = rotation.x;
-    lastRotation.y = rotation.y;
-    lastRotation.z = rotation.z;
-  }
-};
-//
+// const emitBulletPosition = (position, rotation) => {
+//   rotation = {x: rotation.x, y:rotation.y, z:rotation.z}; // line looks strange but needed to deal with setters
+//   if (positionsDifferent(position, lastPosition) || positionsDifferent(rotation, lastRotation)) {
+//     socket.emit('shot fired', {position, rotation});
+//     lastPosition.x = position.x;
+//     lastPosition.y = position.y;
+//     lastPosition.z = position.z;
+//     lastRotation.x = rotation.x;
+//     lastRotation.y = rotation.y;
+//     lastRotation.z = rotation.z;
+//   }
+// };
+// //
 
 
 var positionsDifferent = function positionsDifferent(p1, p2) {
@@ -94850,8 +94851,8 @@ var positionsDifferent = function positionsDifferent(p1, p2) {
 };
 
 module.exports = {
-  emitPlayerPosition: emitPlayerPosition,
-  emitBulletPosition: emitBulletPosition
+  emitPlayerPosition: emitPlayerPosition
+  //emitBulletPosition
 };
 
 },{"./avatar":51,"./getScene":56,"./otherPlayers":63,"socket.io-client":34}]},{},[55]);
