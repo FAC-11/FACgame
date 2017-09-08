@@ -46,7 +46,7 @@ module.exports = function (
       bullets.splice(index, 1);
       continue;
     }
-    bullets[index].position.add(bullets[index].velocity);
+    // bullets[index].position.add(bullets[index].velocity);
   }
 
   if (movements.shooting) {
@@ -73,12 +73,13 @@ module.exports = function (
     bullet.quaternion.copy(world.bodies[world.bodies.length-1].quaternion);
 
 
-    world.bodies[world.bodies.length-1] = new CANNON.Vec3(
+    bullet.velocity = new CANNON.Vec3(
       -Math.sin(pointerLockControls.getObject().rotation._y),
       0,
       -Math.cos(pointerLockControls.getObject().rotation._y),
     );
 
+console.log('thing',world.bodies[world.bodies.length-1] );
     bullet.alive = true;
     setTimeout(() => {
       bullet.alive = false;

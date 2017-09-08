@@ -21,18 +21,7 @@ const blocker = require('../blocker');
 //   turnSpeed: Math.PI * 0.02
 // };
 
-const bullet = () => {
-  const bullet = new THREE.Mesh(
-    new THREE.SphereGeometry(5, 8, 8),
-    new THREE.MeshBasicMaterial(),
-  );
-  bullet.alive = true;
-  setTimeout(() => {
-    bullet.alive = false;
-    scene.remove(bullet);
-  }, 1000);
-  scene.add(bullet);
-};
+
 
 // create the scene
 
