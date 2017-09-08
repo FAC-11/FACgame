@@ -44,6 +44,7 @@ module.exports = function (
     if (bullets[index].alive == false) {
       cannonBullets.splice(index, 1);
       bullets.splice(index, 1);
+      world.remove(cannonBullets[index]);
       continue;
     }
     // bullets[index].position.add(bullets[index].velocity);
@@ -54,14 +55,15 @@ module.exports = function (
   if (movements.shooting) {
     // shoot.bullet(scene);
     const bullet = new THREE.Mesh(
-      new THREE.SphereGeometry(0.5, 8, 8),
+      new THREE.SphereGeometry(1.3, 8, 8),
       new THREE.MeshBasicMaterial(),
     );
 
-    const shape = new CANNON.Sphere(new CANNON.Vec3(0.5));
+    const shape = new CANNON.Sphere(new CANNON.Vec3(1.3));
     const body = new CANNON.Body({
-      mass: 1,
+      mass: 5,
     });
+    body.linearDamping = 0;
     body.addShape(shape);
     body.position.set(
       raycaster.ray.origin.x,
@@ -87,12 +89,14 @@ module.exports = function (
     setTimeout(() => {
       bullet.alive = false;
       scene.remove(bullet);
-      world.remove(world.bodies[world.bodies.length - 1]);
     }, 3000);
     cannonBullets.push(world.bodies[world.bodies.length - 1]);
     bullets.push(bullet);
     scene.add(bullet);
     cannonBullets[cannonBullets.length - 1].velocity = bullet.velocity;
+    cannonBullets[cannonBullets.length - 1].velocity.x *= 150;
+    cannonBullets[cannonBullets.length - 1].velocity.y += 10;
+    cannonBullets[cannonBullets.length - 1].velocity.z *= 150;
   }
 
   if (movements.forward) { velocity.z -= 2000.0 * delta; }

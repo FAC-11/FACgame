@@ -27,7 +27,7 @@ const init = () => {
           movements.canJump = false;
         }
         break;
-      case 17:
+      case 70:
         movements.shooting = true;
         break;
     }
@@ -50,7 +50,7 @@ const init = () => {
       case 68: // d
         movements.right = false;
         break;
-      case 17:
+      case 70:
         movements.shooting = false;
         break;
     }

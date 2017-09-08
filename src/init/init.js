@@ -29,9 +29,10 @@ const init = () => {
 
   // Cannon init
   const world = new CANNON.World();
-  world.gravity.set(0, -9.82, 0);
+  world.gravity.set(0, -20, 0);
   world.broadphase = new CANNON.NaiveBroadphase();
   world.solver.iterations = 10;
+  world.solver = new CANNON.SplitSolver(new CANNON.GSSolver());
   // shape is shape of geometry/wireframe
   const shape = new CANNON.Box(new CANNON.Vec3(10, 10, 10));
   // body is it being effected by forces.
@@ -45,6 +46,7 @@ const init = () => {
   world.addBody(body);
 
   const groundShape = new CANNON.Plane();
+  groundShape.collisionResponse = true;
   const groundBody = new CANNON.Body({ mass: 0 });
   groundBody.addShape(groundShape);
   groundBody.position.set(0, -14, 0);
