@@ -93824,11 +93824,12 @@ var start = function start(options) {
 
       var time = performance.now();
       letsMove(camera, scene, objects, raycaster, prevTime, time, pointerLockControls);
-      //
+
       var player = pointLockers();
+      //  socket.emitState(getLocalState());
       //to send the players positions and the bullets
-      socket.emitPlayerPosition(player.position, player.rotation);
-      //    socket.emitBulletPosition(bullet.position, bullet.rotation);
+      //    socket.emitPlayerPosition(player.position, player.rotation);
+      //   socket.emitBulletPosition(bullet.position, bullet.rotation);
       var players = otherPlayers.get();
 
       Object.keys(players).forEach(function (id) {
@@ -94573,14 +94574,22 @@ module.exports = init;
 
 var THREE = require('three');
 var pointLockers = require('./pointLockers');
-
+var socket = require('./socket');
 // const shoot = require('./shoot.js');
 
 var _require = require('./controls'),
     movements = _require.movements;
 
-var bullets = [];
 var velocity = new THREE.Vector3();
+
+var bullets = [];
+
+function guid() {
+  function s4() {
+    return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+  }
+  return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
+}
 
 module.exports = function (camera, scene, objects, raycaster, prevTime, time, pointerLockControls) {
 
@@ -94592,6 +94601,7 @@ module.exports = function (camera, scene, objects, raycaster, prevTime, time, po
   velocity.x -= velocity.x * 10.0 * delta;
   velocity.z -= velocity.z * 10.0 * delta;
   velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
+
 
   for (var index = 0; index < bullets.length; index++) {
     if (bullets[index] === undefined) {
@@ -94609,17 +94619,24 @@ module.exports = function (camera, scene, objects, raycaster, prevTime, time, po
     var bullet = new THREE.Mesh(new THREE.SphereGeometry(0.5, 8, 8), new THREE.MeshBasicMaterial());
 
     bullet.position.set(raycaster.ray.origin.x, raycaster.ray.origin.y, raycaster.ray.origin.z);
-    console.log('pointlocker', pointerLockControls.getObject());
+
     bullet.velocity = new THREE.Vector3(-Math.sin(pointerLockControls.getObject().rotation._y), 0, -Math.cos(pointerLockControls.getObject().rotation._y));
 
     bullet.alive = true;
+    bullet.randomid = guid();
+    //  console.log(bullet.randomid, bullet.velocity, bullet.rotation);
+    socket.emitBulletPosition(bullet.randomid, bullet.velocity);
+
     setTimeout(function () {
       bullet.alive = false;
-      scene.remove(bullet);
+      scene.remove(bullet);2;
     }, 1000);
     bullets.push(bullet);
     scene.add(bullet);
   }
+
+  //});
+
 
   if (movements.forward) velocity.z -= 2000.0 * delta;
 
@@ -94665,7 +94682,7 @@ var stopIfSlow = function stopIfSlow(velocity) {
   return Math.abs(velocity) < 0.1 ? 0 : velocity;
 };
 
-},{"./controls":53,"./pointLockers":64,"three":47}],62:[function(require,module,exports){
+},{"./controls":53,"./pointLockers":64,"./socket":65,"three":47}],62:[function(require,module,exports){
 'use strict';
 
 var Avatar = require('./avatar');
@@ -94747,6 +94764,10 @@ var Avatar = require('./avatar');
 var getScene = require('./getScene');
 var otherPlayers = require('./otherPlayers');
 
+var _require = require('./controls'),
+    movements = _require.movements;
+
+var letsMove = require('./letsMove');
 //we connect the socket to the same port as the server-socket;
 
 var socket = io('http://localhost:1080');
@@ -94754,9 +94775,9 @@ var socket = io('http://localhost:1080');
 socket.on('player data', function (playerData) {
 
   //function on js that will delete the data of the player
-  console.log('player data', playerData);
+
   delete playerData[socket.id];
-  console.log('player data after', playerData);
+
   otherPlayers.set(playerData);
 
   //create a new object with each new other player;
@@ -94792,7 +94813,7 @@ socket.on('new player', function (_ref) {
   otherPlayers.addPlayer(id, { position: { x: 0, y: 100, z: 0 }, rotation: {}, avatar: avatar });
 });
 
-//send the player position
+//attach the id to position and rotation of player and send it to the other players
 socket.on('other player position', function (_ref2) {
   var id = _ref2.id,
       position = _ref2.position,
@@ -94831,28 +94852,17 @@ var emitPlayerPosition = function emitPlayerPosition(position, rotation) {
   }
 };
 
-// const emitBulletPosition = (position, rotation) => {
-//   rotation = {x: rotation.x, y:rotation.y, z:rotation.z}; // line looks strange but needed to deal with setters
-//   if (positionsDifferent(position, lastPosition) || positionsDifferent(rotation, lastRotation)) {
-//     socket.emit('shot fired', {position, rotation});
-//     lastPosition.x = position.x;
-//     lastPosition.y = position.y;
-//     lastPosition.z = position.z;
-//     lastRotation.x = rotation.x;
-//     lastRotation.y = rotation.y;
-//     lastRotation.z = rotation.z;
-//   }
-// };
-// //
-
+var emitBulletPosition = function emitBulletPosition(randomid, velocity, rotation) {
+  socket.emit('bullet is fired', { randomid: randomid, velocity: velocity, rotation: rotation });
+};
 
 var positionsDifferent = function positionsDifferent(p1, p2) {
   return !p1 || !p2 || p1.x !== p2.x || p1.y !== p2.y || p1.z !== p2.z;
 };
 
 module.exports = {
-  emitPlayerPosition: emitPlayerPosition
-  //emitBulletPosition
+  emitPlayerPosition: emitPlayerPosition,
+  emitBulletPosition: emitBulletPosition
 };
 
-},{"./avatar":51,"./getScene":56,"./otherPlayers":63,"socket.io-client":34}]},{},[55]);
+},{"./avatar":51,"./controls":53,"./getScene":56,"./letsMove":61,"./otherPlayers":63,"socket.io-client":34}]},{},[55]);

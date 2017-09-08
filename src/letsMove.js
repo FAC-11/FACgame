@@ -1,12 +1,22 @@
 const THREE = require('three');
 const pointLockers = require('./pointLockers');
-
+const socket = require('./socket');
 // const shoot = require('./shoot.js');
 
 const {movements} = require('./controls');
+const velocity = new THREE.Vector3();
 
 let bullets = [] ;
-const velocity = new THREE.Vector3();
+
+function guid() {
+  function s4() {
+    return Math.floor((1 + Math.random()) * 0x10000)
+      .toString(16)
+      .substring(1);
+    }
+  return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+  s4() + '-' + s4() + s4() + s4();
+}
 
 module.exports = function(camera,scene,objects, raycaster, prevTime, time, pointerLockControls){
 
@@ -19,45 +29,53 @@ module.exports = function(camera,scene,objects, raycaster, prevTime, time, point
   velocity.z -= velocity.z * 10.0 * delta;
   velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
 
-for (var index= 0; index < bullets.length ; index++) {
-  if (bullets[index] === undefined) {
-    continue;
-  }
-  if (bullets[index].alive == false) {
-  bullets.splice(index,1);
-  continue;
-  }
-  bullets[index].position.add(bullets[index].velocity);
-}
 
-  if (movements.shooting){
-    // shoot.bullet(scene);
-    var bullet = new THREE.Mesh(
-      new THREE.SphereGeometry(0.5, 8, 8),
-      new THREE.MeshBasicMaterial());
+    for (var index= 0; index < bullets.length ; index++) {
+      if (bullets[index] === undefined) {
+        continue;
+      }
+      if (bullets[index].alive == false) {
+      bullets.splice(index,1);
+      continue;
+      }
+      bullets[index].position.add(bullets[index].velocity);
+    }
 
-      bullet.position.set(
-        raycaster.ray.origin.x,
-        raycaster.ray.origin.y,
-        raycaster.ray.origin.z
-      );
-console.log('pointlocker', pointerLockControls.getObject());
-      bullet.velocity = new THREE.Vector3(
-        -Math.sin(pointerLockControls.getObject().rotation._y),
-        0,
-        -Math.cos(pointerLockControls.getObject().rotation._y),
+      if (movements.shooting){
+        // shoot.bullet(scene);
+        var bullet = new THREE.Mesh(
+          new THREE.SphereGeometry(0.5, 8, 8),
+          new THREE.MeshBasicMaterial());
+
+          bullet.position.set(
+            raycaster.ray.origin.x,
+            raycaster.ray.origin.y,
+            raycaster.ray.origin.z
+          );
+
+          bullet.velocity = new THREE.Vector3(
+            -Math.sin(pointerLockControls.getObject().rotation._y),
+            0,
+            -Math.cos(pointerLockControls.getObject().rotation._y),
+          );
+
+          bullet.alive = true;
+            bullet.randomid = guid();
+          //  console.log(bullet.randomid, bullet.velocity, bullet.rotation);
+            socket.emitBulletPosition(bullet.randomid, bullet.velocity);
+
+          setTimeout(function() {
+            bullet.alive = false;
+            scene.remove(bullet);2
+          }, 1000);
+          bullets.push(bullet);
+          scene.add(bullet);
+
+      }
 
 
-      );
+        //});
 
-      bullet.alive = true;
-      setTimeout(function() {
-        bullet.alive = false;
-        scene.remove(bullet);
-      }, 1000);
-      bullets.push(bullet);
-      scene.add(bullet);
-  }
 
   if (movements.forward)
     velocity.z -= 2000.0 * delta;
@@ -99,6 +117,7 @@ console.log('pointlocker', pointerLockControls.getObject());
     pointLockers().position.y = 10;
     movements.canJump = true;
   }
+
 };
 
 // this is to stop lots of tiny movements from being sent to server once

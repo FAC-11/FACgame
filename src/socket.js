@@ -5,7 +5,8 @@ const Avatar = require('./avatar');
 const getScene = require('./getScene');
 const otherPlayers = require('./otherPlayers');
 
-
+const {movements} = require('./controls');
+const letsMove = require('./letsMove');
 //we connect the socket to the same port as the server-socket;
 
 const socket = io('http://localhost:1080');
@@ -13,9 +14,9 @@ const socket = io('http://localhost:1080');
 socket.on('player data', (playerData) => {
 
   //function on js that will delete the data of the player
-  console.log('player data', playerData);
+
    delete playerData[socket.id];
-console.log('player data after', playerData);
+
   otherPlayers.set(playerData);
 
 //create a new object with each new other player;
@@ -45,7 +46,7 @@ socket.on('new player', ({id}) => {
   otherPlayers.addPlayer(id, {position:{x: 0, y: 100, z:0}, rotation:{}, avatar});
 });
 
-//send the player position
+//attach the id to position and rotation of player and send it to the other players
 socket.on('other player position', ({id, position, rotation}) => {
   const player = otherPlayers.get()[id];
   player.position = position;
@@ -78,25 +79,17 @@ const emitPlayerPosition = (position, rotation) => {
   }
 };
 
-// const emitBulletPosition = (position, rotation) => {
-//   rotation = {x: rotation.x, y:rotation.y, z:rotation.z}; // line looks strange but needed to deal with setters
-//   if (positionsDifferent(position, lastPosition) || positionsDifferent(rotation, lastRotation)) {
-//     socket.emit('shot fired', {position, rotation});
-//     lastPosition.x = position.x;
-//     lastPosition.y = position.y;
-//     lastPosition.z = position.z;
-//     lastRotation.x = rotation.x;
-//     lastRotation.y = rotation.y;
-//     lastRotation.z = rotation.z;
-//   }
-// };
-// //
+
+const emitBulletPosition = (randomid, velocity, rotation) => {
+    socket.emit('bullet is fired', {randomid, velocity, rotation});
+  }
+
 
 
 const positionsDifferent = (p1, p2) =>
  !p1 || !p2 || p1.x !== p2.x || p1.y !== p2.y || p1.z !== p2.z;
 
 module.exports = {
-  emitPlayerPosition
-  //emitBulletPosition
+  emitPlayerPosition,
+  emitBulletPosition
 };

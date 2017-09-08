@@ -25,11 +25,12 @@ const start = (options) => {
 
       const time = performance.now();
       letsMove(camera,scene,objects, raycaster, prevTime, time, pointerLockControls);
-      //
+
       const player = pointLockers();
+    //  socket.emitState(getLocalState());
       //to send the players positions and the bullets
-      socket.emitPlayerPosition(player.position, player.rotation);
-  //    socket.emitBulletPosition(bullet.position, bullet.rotation);
+  //    socket.emitPlayerPosition(player.position, player.rotation);
+  //   socket.emitBulletPosition(bullet.position, bullet.rotation);
       const players = otherPlayers.get();
 
       Object.keys(players).forEach((id) => {

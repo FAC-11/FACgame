@@ -1,6 +1,7 @@
 const socketIo = require('socket.io');
 const http = require('http');
 const playerData = require('./playerData');
+const bulletData = require('./bulletData');
 
 module.exports = (app) => {
 
@@ -51,6 +52,14 @@ module.exports = (app) => {
         rotation
       });
     });
+  // socket.emit('bullet is fired', bulletData.getId());
+      socket.on('bullet is fired', ({randomid, velocity}) => {
+
+     socket.broadcast.emit('bullet is fired', {randomid, velocity});
+     console.log(randomid, velocity);
+     });
+
+
 
     socket.on('disconnect', () => {
       playerData.remove(id);
@@ -59,6 +68,7 @@ module.exports = (app) => {
       });
       console.log('player has left the room');
     });
+
 
   });
 
