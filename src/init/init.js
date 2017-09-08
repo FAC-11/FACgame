@@ -22,11 +22,9 @@ const blocker = require('../blocker');
 // };
 
 
-
 // create the scene
 
 const init = () => {
-
   const timeStep = 1 / 60;
 
   // Cannon init
@@ -46,13 +44,12 @@ const init = () => {
   body.position.set(0, 50, 0);
   world.addBody(body);
 
-  var groundShape = new CANNON.Plane();
-             var groundBody = new CANNON.Body({ mass: 0 });
-             groundBody.addShape(groundShape);
-             groundBody.position.set(0,-14,0);
-             groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1,0,0),-Math.PI/2);
-             world.add(groundBody);
-
+  const groundShape = new CANNON.Plane();
+  const groundBody = new CANNON.Body({ mass: 0 });
+  groundBody.addShape(groundShape);
+  groundBody.position.set(0, -14, 0);
+  groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
+  world.add(groundBody);
 
 
   // const camera = new THREE.PerspectiveCamera(75, -50, 1, 1000);

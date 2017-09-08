@@ -8,6 +8,7 @@ const {
 } = require('./controls');
 
 const bullets = [];
+const cannonBullets = [];
 const velocity = new THREE.Vector3();
 
 module.exports = function (
@@ -27,8 +28,6 @@ module.exports = function (
   scene.children[1].quaternion.copy(world.bodies[0].quaternion);
 
 
-
-
   raycaster.ray.origin.copy(pointLockers().position);
   raycaster.ray.origin.y -= 10;
   const intersections = raycaster.intersectObjects(objects);
@@ -43,10 +42,13 @@ module.exports = function (
       continue;
     }
     if (bullets[index].alive == false) {
+      cannonBullets.splice(index, 1);
       bullets.splice(index, 1);
       continue;
     }
     // bullets[index].position.add(bullets[index].velocity);
+    bullets[index].position.copy(cannonBullets[index].position);
+    bullets[index].quaternion.copy(cannonBullets[index].quaternion);
   }
 
   if (movements.shooting) {
@@ -69,8 +71,9 @@ module.exports = function (
     world.addBody(body);
 
 
-    bullet.position.copy(world.bodies[world.bodies.length-1].position);
-    bullet.quaternion.copy(world.bodies[world.bodies.length-1].quaternion);
+    // bullet.position.copy(world.bodies[world.bodies.length - 1].position);
+    // bullet.quaternion.copy(world.bodies[world.bodies.length - 1].quaternion);
+    // console.log(cannonBullets[cannonBullets.length - 1]);
 
 
     bullet.velocity = new CANNON.Vec3(
@@ -79,15 +82,17 @@ module.exports = function (
       -Math.cos(pointerLockControls.getObject().rotation._y),
     );
 
-console.log('thing',world.bodies[world.bodies.length-1] );
+    console.log('thing', world.bodies[world.bodies.length - 1]);
     bullet.alive = true;
     setTimeout(() => {
       bullet.alive = false;
       scene.remove(bullet);
-      world.remove(world.bodies[world.bodies.length-1]);
+      world.remove(world.bodies[world.bodies.length - 1]);
     }, 3000);
+    cannonBullets.push(world.bodies[world.bodies.length - 1]);
     bullets.push(bullet);
     scene.add(bullet);
+    cannonBullets[cannonBullets.length - 1].velocity = bullet.velocity;
   }
 
   if (movements.forward) { velocity.z -= 2000.0 * delta; }
