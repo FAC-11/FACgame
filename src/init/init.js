@@ -37,6 +37,7 @@ const bullet = () => {
 // create the scene
 
 const init = () => {
+
   const timeStep = 1 / 60;
 
   // Cannon init
@@ -44,7 +45,9 @@ const init = () => {
   world.gravity.set(0, -9.82, 0);
   world.broadphase = new CANNON.NaiveBroadphase();
   world.solver.iterations = 10;
-  const shape = new CANNON.Box(new CANNON.Vec3(1, 1, 1));
+  // shape is shape of geometry/wireframe
+  const shape = new CANNON.Box(new CANNON.Vec3(10, 10, 10));
+  // body is it being effected by forces.
   const body = new CANNON.Body({
     mass: 1,
   });
@@ -53,6 +56,16 @@ const init = () => {
   body.angularDamping = 0.5;
   body.position.set(0, 50, 0);
   world.addBody(body);
+
+  var groundShape = new CANNON.Plane();
+             var groundBody = new CANNON.Body({ mass: 0 });
+             groundBody.addShape(groundShape);
+             groundBody.position.set(0,-14,0);
+             groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1,0,0),-Math.PI/2);
+             world.add(groundBody);
+
+
+
   // const camera = new THREE.PerspectiveCamera(75, -50, 1, 1000);
   const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
   // let's create the scene
@@ -117,7 +130,7 @@ const init = () => {
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
   }
-  console.log(scene.children[1]);
+
   return {
     camera,
     scene,
