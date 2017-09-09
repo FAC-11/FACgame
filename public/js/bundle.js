@@ -93806,6 +93806,7 @@ var pointLockers = require('./pointLockers');
 var blocker = require('./blocker');
 var otherPlayers = require('./otherPlayers');
 var moveOtherPlayer = require('./moveOtherPlayer');
+// const testobject = require('./testobject');
 
 var start = function start(options) {
   var camera = options.camera,
@@ -93828,8 +93829,11 @@ var start = function start(options) {
       var player = pointLockers();
       //  socket.emitState(getLocalState());
       //to send the players positions and the bullets
-      //    socket.emitPlayerPosition(player.position, player.rotation);
-      //   socket.emitBulletPosition(bullet.position, bullet.rotation);
+      //  const bullet = testobject.getObj6();
+      //  bullet.velocity = { x: -0.17509277691430628, y: 0, z: -0.9845519384331316 };
+      socket.emitPlayerPosition(player.position, player.rotation);
+      //socket.emitBullet(bullet.velocity);
+
       var players = otherPlayers.get();
 
       Object.keys(players).forEach(function (id) {
@@ -94332,24 +94336,12 @@ var getObj5 = function getObj5() {
   return obj5;
 };
 
-var getObj6 = function getObj6() {
-
-  var obj6 = new THREE.Mesh(new THREE.BoxBufferGeometry(10, 60, 10), new THREE.MeshBasicMaterial({
-    color: 0xffff00,
-    wireframe: false
-  }));
-
-  obj6.position.set(10, -5, -30);
-  return obj6;
-};
-
 module.exports = {
   getObj1: getObj1,
   getObj2: getObj2,
   getObj3: getObj3,
   getObj4: getObj4,
-  getObj5: getObj5,
-  getObj6: getObj6
+  getObj5: getObj5
 };
 
 //objects
@@ -94516,9 +94508,8 @@ var init = function init() {
   var obj3 = cubes.getObj3();
   var obj4 = cubes.getObj4();
   var obj5 = cubes.getObj5();
-  var obj6 = cubes.getObj6();
 
-  scene.add(obj1, obj2, obj3, obj4, obj5, obj6);
+  scene.add(obj1, obj2, obj3, obj4, obj5);
 
   //objects
   // const loader = new MTLLoader();
@@ -94624,8 +94615,6 @@ module.exports = function (camera, scene, objects, raycaster, prevTime, time, po
 
     bullet.alive = true;
     bullet.randomid = guid();
-    //  console.log(bullet.randomid, bullet.velocity, bullet.rotation);
-    socket.emitBulletPosition(bullet.randomid, bullet.velocity);
 
     setTimeout(function () {
       bullet.alive = false;
@@ -94633,6 +94622,9 @@ module.exports = function (camera, scene, objects, raycaster, prevTime, time, po
     }, 1000);
     bullets.push(bullet);
     scene.add(bullet);
+
+    //  console.log(bullet.randomid, bullet.velocity, bullet.rotation);
+    socket.emitBulletPosition(bullet.randomid, bullet.velocity);
   }
 
   //});

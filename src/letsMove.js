@@ -61,8 +61,7 @@ module.exports = function(camera,scene,objects, raycaster, prevTime, time, point
 
           bullet.alive = true;
             bullet.randomid = guid();
-          //  console.log(bullet.randomid, bullet.velocity, bullet.rotation);
-            socket.emitBulletPosition(bullet.randomid, bullet.velocity);
+
 
           setTimeout(function() {
             bullet.alive = false;
@@ -70,7 +69,9 @@ module.exports = function(camera,scene,objects, raycaster, prevTime, time, point
           }, 1000);
           bullets.push(bullet);
           scene.add(bullet);
-
+          
+          //  console.log(bullet.randomid, bullet.velocity, bullet.rotation);
+            socket.emitBulletPosition(bullet.randomid, bullet.velocity);
       }
 
 

@@ -112,27 +112,14 @@ const getObj5 = () => {
   return obj5;
 }
 
-const getObj6 = () => {
 
-  const obj6 = new THREE.Mesh(
-    new THREE.BoxBufferGeometry(10, 60, 10),
-    new THREE.MeshBasicMaterial({
-      color: 0xffff00,
-      wireframe: false
-    })
-  );
-
-  obj6.position.set(10, -5, -30);
-  return obj6;
-}
 
 module.exports = {
   getObj1,
   getObj2,
   getObj3,
   getObj4,
-  getObj5,
-  getObj6
+  getObj5
 };
 
 

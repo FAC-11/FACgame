@@ -6,6 +6,7 @@ const pointLockers = require('./pointLockers');
 const blocker = require('./blocker');
 const otherPlayers = require('./otherPlayers');
 const moveOtherPlayer = require('./moveOtherPlayer');
+// const testobject = require('./testobject');
 
 const start = (options) => {
   const {
@@ -29,8 +30,11 @@ const start = (options) => {
       const player = pointLockers();
     //  socket.emitState(getLocalState());
       //to send the players positions and the bullets
-  //    socket.emitPlayerPosition(player.position, player.rotation);
-  //   socket.emitBulletPosition(bullet.position, bullet.rotation);
+    //  const bullet = testobject.getObj6();
+    //  bullet.velocity = { x: -0.17509277691430628, y: 0, z: -0.9845519384331316 };
+      socket.emitPlayerPosition(player.position, player.rotation);
+      //socket.emitBullet(bullet.velocity);
+
       const players = otherPlayers.get();
 
       Object.keys(players).forEach((id) => {
