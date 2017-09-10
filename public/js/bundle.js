@@ -93852,7 +93852,7 @@ module.exports = {
   start: start
 };
 
-},{"./blocker":52,"./init/getRenderer":59,"./init/init":60,"./letsMove":61,"./moveOtherPlayer":62,"./otherPlayers":63,"./pointLockers":64,"./socket":65}],51:[function(require,module,exports){
+},{"./blocker":52,"./init/getRenderer":61,"./init/init":62,"./letsMove":63,"./moveOtherPlayer":64,"./otherPlayers":66,"./pointLockers":67,"./socket":68}],51:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -94237,7 +94237,7 @@ module.exports = {
 //
 // module.exports = controls;
 
-},{"./init/init":60,"three":47}],54:[function(require,module,exports){
+},{"./init/init":62,"three":47}],54:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -94365,7 +94365,67 @@ var animate = require('./animate');
 
 animate.start(init());
 
-},{"./animate":50,"./init/init":60}],56:[function(require,module,exports){
+},{"./animate":50,"./init/init":62}],56:[function(require,module,exports){
+'use strict';
+
+var THREE = require('three');
+var pointLockers = require('./pointLockers');
+var getScene = require('./getScene');
+// const shoot = require('./shoot.js');
+
+var _require = require('./controls'),
+    movements = _require.movements;
+
+var getRaycaster = require('./getRaycaster');
+
+var velocity = new THREE.Vector3();
+
+function guid() {
+  function s4() {
+    return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+  }
+  return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
+}
+
+var getBullet = function getBullet() {
+  var bullet = new THREE.Mesh(new THREE.SphereGeometry(0.5, 8, 8), new THREE.MeshBasicMaterial());
+
+  var scene = getScene();
+
+  var raycaster = getRaycaster();
+  bullet.position.set(raycaster.ray.origin.x, raycaster.ray.origin.y, raycaster.ray.origin.z);
+
+  var player = pointLockers();
+
+  bullet.velocity = new THREE.Vector3(-Math.sin(player.rotation._y), 0, -Math.cos(player.rotation._y));
+
+  bullet.alive = true;
+  bullet.randomid = guid();
+
+  setTimeout(function () {
+    bullet.alive = false;
+    scene.remove(bullet);2;
+  }, 1000);
+
+  return bullet;
+};
+
+module.exports = getBullet;
+
+},{"./controls":53,"./getRaycaster":57,"./getScene":58,"./pointLockers":67,"three":47}],57:[function(require,module,exports){
+"use strict";
+
+var _raycaster = void 0;
+
+module.exports = function () {
+  return _raycaster;
+};
+
+module.exports.init = function (raycaster) {
+  _raycaster = raycaster;
+};
+
+},{}],58:[function(require,module,exports){
 "use strict";
 
 var _scene = void 0;
@@ -94378,7 +94438,7 @@ module.exports.init = function (scene) {
   _scene = scene;
 };
 
-},{}],57:[function(require,module,exports){
+},{}],59:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -94414,7 +94474,7 @@ var getFloor = function getFloor() {
 
 module.exports = getFloor;
 
-},{"three":47}],58:[function(require,module,exports){
+},{"three":47}],60:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -94431,7 +94491,7 @@ var getLight = function getLight() {
 
 module.exports = getLight;
 
-},{"three":47}],59:[function(require,module,exports){
+},{"three":47}],61:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -94447,7 +94507,7 @@ var getRenderer = function getRenderer() {
 
 module.exports = getRenderer;
 
-},{"three":47}],60:[function(require,module,exports){
+},{"three":47}],62:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -94461,7 +94521,7 @@ var getLight = require('./getLight');
 var getFloor = require('./getFloor');
 var cubes = require('../cubes');
 var blocker = require('../blocker');
-
+var getRaycaster = require('../getRaycaster');
 // const OBJLoader = require('three-obj-loader');
 // OBJLoader(THREE);
 // const MTLLoader = require('three-mtl-loader');
@@ -94502,6 +94562,7 @@ var init = function init() {
   pointerLocks.init(pointerLockControls);
 
   var raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, -1, 0), 0, 10);
+  getRaycaster.init(raycaster);
   // create cubes
   var obj1 = cubes.getObj1();
   var obj2 = cubes.getObj2();
@@ -94560,7 +94621,7 @@ var init = function init() {
 
 module.exports = init;
 
-},{"../blocker":52,"../controls":53,"../cubes":54,"../getScene":56,"../letsMove":61,"../pointLockers":64,"./getFloor":57,"./getLight":58,"./getRenderer":59,"three":47,"three-pointerlock":46}],61:[function(require,module,exports){
+},{"../blocker":52,"../controls":53,"../cubes":54,"../getRaycaster":57,"../getScene":58,"../letsMove":63,"../pointLockers":67,"./getFloor":59,"./getLight":60,"./getRenderer":61,"three":47,"three-pointerlock":46}],63:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -94572,15 +94633,8 @@ var _require = require('./controls'),
     movements = _require.movements;
 
 var velocity = new THREE.Vector3();
-
+var getBullet = require('./getBullet');
 var bullets = [];
-
-function guid() {
-  function s4() {
-    return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
-  }
-  return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
-}
 
 module.exports = function (camera, scene, objects, raycaster, prevTime, time, pointerLockControls) {
 
@@ -94606,29 +94660,11 @@ module.exports = function (camera, scene, objects, raycaster, prevTime, time, po
   }
 
   if (movements.shooting) {
-    // shoot.bullet(scene);
-    var bullet = new THREE.Mesh(new THREE.SphereGeometry(0.5, 8, 8), new THREE.MeshBasicMaterial());
-
-    bullet.position.set(raycaster.ray.origin.x, raycaster.ray.origin.y, raycaster.ray.origin.z);
-
-    bullet.velocity = new THREE.Vector3(-Math.sin(pointerLockControls.getObject().rotation._y), 0, -Math.cos(pointerLockControls.getObject().rotation._y));
-
-    bullet.alive = true;
-    bullet.randomid = guid();
-
-    setTimeout(function () {
-      bullet.alive = false;
-      scene.remove(bullet);2;
-    }, 1000);
+    var bullet = getBullet();
     bullets.push(bullet);
     scene.add(bullet);
-
-    //  console.log(bullet.randomid, bullet.velocity, bullet.rotation);
     socket.emitBulletPosition(bullet.randomid, bullet.velocity);
   }
-
-  //});
-
 
   if (movements.forward) velocity.z -= 2000.0 * delta;
 
@@ -94674,7 +94710,7 @@ var stopIfSlow = function stopIfSlow(velocity) {
   return Math.abs(velocity) < 0.1 ? 0 : velocity;
 };
 
-},{"./controls":53,"./pointLockers":64,"./socket":65,"three":47}],62:[function(require,module,exports){
+},{"./controls":53,"./getBullet":56,"./pointLockers":67,"./socket":68,"three":47}],64:[function(require,module,exports){
 'use strict';
 
 var Avatar = require('./avatar');
@@ -94710,7 +94746,25 @@ module.exports = function (id, _ref) {
   Avatar.render(avatar);
 };
 
-},{"./avatar":51,"./otherPlayers":63}],63:[function(require,module,exports){
+},{"./avatar":51,"./otherPlayers":66}],65:[function(require,module,exports){
+"use strict";
+
+var otherBullets = {};
+
+var get = function get() {
+  return otherBullets;
+};
+
+var addBullets = function addBullets(id, bullet) {
+  otherBullets[id] = otherBullets;
+};
+
+module.exports = {
+  get: get,
+  addBullets: addBullets
+};
+
+},{}],66:[function(require,module,exports){
 "use strict";
 
 // keys are socket ids and values are player data objects
@@ -94733,7 +94787,7 @@ module.exports = {
   addPlayer: addPlayer
 };
 
-},{}],64:[function(require,module,exports){
+},{}],67:[function(require,module,exports){
 "use strict";
 
 var _pointerLockControls = void 0;
@@ -94746,7 +94800,7 @@ module.exports.init = function (pointerLockControls) {
   _pointerLockControls = pointerLockControls;
 };
 
-},{}],65:[function(require,module,exports){
+},{}],68:[function(require,module,exports){
 'use strict';
 
 // handles socket communication with server for updating your player location
@@ -94755,11 +94809,13 @@ var io = require('socket.io-client');
 var Avatar = require('./avatar');
 var getScene = require('./getScene');
 var otherPlayers = require('./otherPlayers');
+var getBullet = require('./getBullet');
 
 var _require = require('./controls'),
     movements = _require.movements;
 
 var letsMove = require('./letsMove');
+var otherBullets = require('./otherBullets');
 //we connect the socket to the same port as the server-socket;
 
 var socket = io('http://localhost:1080');
@@ -94844,8 +94900,22 @@ var emitPlayerPosition = function emitPlayerPosition(position, rotation) {
   }
 };
 
-var emitBulletPosition = function emitBulletPosition(randomid, velocity, rotation) {
-  socket.emit('bullet is fired', { randomid: randomid, velocity: velocity, rotation: rotation });
+socket.on('bullet is fired', function (_ref4) {
+  var randomid = _ref4.randomid,
+      velocity = _ref4.velocity;
+
+  var bullet = getBullet();
+  getScene().add(bullet);
+
+  otherBullets.addBullets(bullet.randomid, bullet.velocity, bullet.mesh);
+  console.log('bullet', bullet);
+  console.log('bullet is fired', { randomid: randomid, velocity: velocity });
+  // bullet.position = position;
+  // bullet.rotation = rotation;
+});
+
+var emitBulletPosition = function emitBulletPosition(randomid, velocity) {
+  socket.emit('bullet is fired', { randomid: randomid, velocity: velocity });
 };
 
 var positionsDifferent = function positionsDifferent(p1, p2) {
@@ -94857,4 +94927,4 @@ module.exports = {
   emitBulletPosition: emitBulletPosition
 };
 
-},{"./avatar":51,"./controls":53,"./getScene":56,"./letsMove":61,"./otherPlayers":63,"socket.io-client":34}]},{},[55]);
+},{"./avatar":51,"./controls":53,"./getBullet":56,"./getScene":58,"./letsMove":63,"./otherBullets":65,"./otherPlayers":66,"socket.io-client":34}]},{},[55]);

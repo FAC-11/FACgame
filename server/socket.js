@@ -1,7 +1,7 @@
 const socketIo = require('socket.io');
 const http = require('http');
 const playerData = require('./playerData');
-const bulletData = require('./bulletData');
+// const bulletData = require('./bulletData');
 
 module.exports = (app) => {
 
@@ -52,12 +52,19 @@ module.exports = (app) => {
         rotation
       });
     });
-  // socket.emit('bullet is fired', bulletData.getId());
-      socket.on('bullet is fired', ({randomid, velocity}) => {
 
-     socket.broadcast.emit('bullet is fired', {randomid, velocity});
-     console.log(randomid, velocity);
-     });
+  //     socket.emit('bullet is fired', bulletData.getId());
+  // // socket.emit('bullet is fired', bulletData.getId());
+  //     bulletData.set(id, getBulletDefaults());
+  //     socket.broadcast.emit('bullet is fired', {id});
+
+  // socket.emit('bullet is fired', bulletData.getId());
+  //
+  socket.on('bullet is fired', ({randomid, velocity}) => {
+  //
+    socket.broadcast.emit('bullet is fired', {randomid, velocity});
+      console.log('server-socket', randomid, velocity);
+    });
 
 
 
@@ -87,3 +94,11 @@ const getPlayerDefaults = () => ({
   },
   health: 100
 });
+
+// const getBulletDefaults = () => ({
+//   randomid: 'defd56d7-808e-79c0-7efd-dd2b2e2dc8d9',
+//   velocity: {
+//     x: 0.12250618072906018,
+//     y: 0,
+//     z: -0.9924677504499473 }
+//   });

@@ -5,18 +5,10 @@ const socket = require('./socket');
 
 const {movements} = require('./controls');
 const velocity = new THREE.Vector3();
-
+const getBullet = require('./getBullet');
 let bullets = [] ;
 
-function guid() {
-  function s4() {
-    return Math.floor((1 + Math.random()) * 0x10000)
-      .toString(16)
-      .substring(1);
-    }
-  return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
-  s4() + '-' + s4() + s4() + s4();
-}
+
 
 module.exports = function(camera,scene,objects, raycaster, prevTime, time, pointerLockControls){
 
@@ -42,40 +34,14 @@ module.exports = function(camera,scene,objects, raycaster, prevTime, time, point
     }
 
       if (movements.shooting){
-        // shoot.bullet(scene);
-        var bullet = new THREE.Mesh(
-          new THREE.SphereGeometry(0.5, 8, 8),
-          new THREE.MeshBasicMaterial());
-
-          bullet.position.set(
-            raycaster.ray.origin.x,
-            raycaster.ray.origin.y,
-            raycaster.ray.origin.z
-          );
-
-          bullet.velocity = new THREE.Vector3(
-            -Math.sin(pointerLockControls.getObject().rotation._y),
-            0,
-            -Math.cos(pointerLockControls.getObject().rotation._y),
-          );
-
-          bullet.alive = true;
-            bullet.randomid = guid();
-
-
-          setTimeout(function() {
-            bullet.alive = false;
-            scene.remove(bullet);2
-          }, 1000);
-          bullets.push(bullet);
-          scene.add(bullet);
-          
-          //  console.log(bullet.randomid, bullet.velocity, bullet.rotation);
-            socket.emitBulletPosition(bullet.randomid, bullet.velocity);
+        const bullet = getBullet();
+        bullets.push(bullet);
+        scene.add(bullet);
+          socket.emitBulletPosition(bullet.randomid, bullet.velocity);
       }
 
 
-        //});
+
 
 
   if (movements.forward)

@@ -4,7 +4,7 @@ const getId = (id) => {
   return id ? bulletData[id] : bulletData;
 }
 
-const set = (id, bulletData) =>{
+const set = (id, data) =>{
   return bulletData[id] = data;
 }
 

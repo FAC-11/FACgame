@@ -4,9 +4,10 @@ const io = require('socket.io-client');
 const Avatar = require('./avatar');
 const getScene = require('./getScene');
 const otherPlayers = require('./otherPlayers');
-
+const getBullet = require('./getBullet');
 const {movements} = require('./controls');
 const letsMove = require('./letsMove');
+const otherBullets = require('./otherBullets');
 //we connect the socket to the same port as the server-socket;
 
 const socket = io('http://localhost:1080');
@@ -79,10 +80,21 @@ const emitPlayerPosition = (position, rotation) => {
   }
 };
 
+socket.on('bullet is fired', ({randomid, velocity}) => {
+   const bullet = getBullet();
+    getScene().add(bullet);
+  
+   otherBullets.addBullets(bullet.randomid, bullet.velocity, bullet.mesh);
+  console.log('bullet', bullet);
+  console.log('bullet is fired', {randomid, velocity});
+  // bullet.position = position;
+  // bullet.rotation = rotation;
+});
 
-const emitBulletPosition = (randomid, velocity, rotation) => {
-    socket.emit('bullet is fired', {randomid, velocity, rotation});
+const emitBulletPosition = (randomid, velocity) => {
+    socket.emit('bullet is fired', {randomid, velocity});
   }
+
 
 
 
