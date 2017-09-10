@@ -24,6 +24,7 @@ socket.on('player data', (playerData) => {
 //this will create an avatar with an id for each player;
   Object.keys(otherPlayers.get()).forEach((id) => {
     const avatar = Avatar.create();
+    getScene().add(avatar.mesh);
 
     //avatar name will be the id of the other player;
     avatar.name = id;
@@ -31,6 +32,7 @@ socket.on('player data', (playerData) => {
     otherPlayers.get()[id].avatar = avatar;
     const {x, y, z} = playerData[id].position;
     avatar.mesh.position.set(x, y, z);
+    console.log('otherplayers', otherPlayers);
   });
 });
 
@@ -45,6 +47,7 @@ socket.on('new player', ({id}) => {
   // high y value to hide bug where extra avatar appears in starting spot
   //add player with id, position and avatar
   otherPlayers.addPlayer(id, {position:{x: 0, y: 100, z:0}, rotation:{}, avatar});
+
 });
 
 //attach the id to position and rotation of player and send it to the other players
@@ -80,19 +83,40 @@ const emitPlayerPosition = (position, rotation) => {
   }
 };
 
-socket.on('bullet is fired', ({randomid, velocity}) => {
-   const bullet = getBullet();
-    getScene().add(bullet);
-  
-   otherBullets.addBullets(bullet.randomid, bullet.velocity, bullet.mesh);
-  console.log('bullet', bullet);
-  console.log('bullet is fired', {randomid, velocity});
+socket.on('bullet is fired', ({randomid, velocity, position}) => {
+  const bullet = getBullet();
+  Object.keys(otherBullets.get()).forEach((randomid) => {
+
+     getScene().add(bullet.mesh);
+  })
+
+
+// if (!otherBullets[bullet.randomid]){
+
+   otherBullets.addBullets(bullet.randomid, {randomid: bullet.randomid, velocity: bullet.velocity, position: bullet.position, mesh: bullet.mesh});
+      const mesh = getBullet().mesh;
+      // we added the setTimeout function to deal with an error appearing in the client browser
+      //"THREE.Object3D.add: object not an instance of THREE.Object3D." but it does not seem tohelp
+   setTimeout( () => { getScene().add(mesh); }, 10000);
+
+   console.log(otherBullets);
+   console.log('bullet', bullet);
+   console.log('bullet is fired', {randomid, velocity, position});
   // bullet.position = position;
   // bullet.rotation = rotation;
 });
 
-const emitBulletPosition = (randomid, velocity) => {
-    socket.emit('bullet is fired', {randomid, velocity});
+socket.on('other bullet position', ({randomid, velocity, position}) => {
+  const bullet = otherBullets.get()[randomid];
+  bullet.velocity = velocity;
+  bullet.position = position;
+  bullet.position.add(velocity);
+})
+
+
+
+const emitBulletPosition = (randomid, velocity, position) => {
+    socket.emit('bullet is fired', {randomid, velocity, position});
   }
 
 

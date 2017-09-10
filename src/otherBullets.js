@@ -2,8 +2,8 @@ let otherBullets = {};
 
 const get = () => otherBullets;
 
-const addBullets = (id, bullet) => {
-  otherBullets[id] = otherBullets;
+const addBullets = (randomid, bullet) => {
+  otherBullets[randomid] = otherBullets;
 
 };
 

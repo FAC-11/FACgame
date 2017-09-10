@@ -49,7 +49,7 @@ const player = pointLockers();
 
   setTimeout(function() {
     bullet.alive = false;
-    scene.remove(bullet);2
+    scene.remove(bullet);
   }, 1000);
 
   return bullet;

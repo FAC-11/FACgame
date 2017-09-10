@@ -37,7 +37,7 @@ module.exports = function(camera,scene,objects, raycaster, prevTime, time, point
         const bullet = getBullet();
         bullets.push(bullet);
         scene.add(bullet);
-          socket.emitBulletPosition(bullet.randomid, bullet.velocity);
+
       }
 
 

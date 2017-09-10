@@ -1,13 +1,13 @@
 const socketIo = require('socket.io');
 const http = require('http');
 const playerData = require('./playerData');
-// const bulletData = require('./bulletData');
+ const bulletData = require('./bulletData');
 
 module.exports = (app) => {
 
   const server = http.Server(app);
   const io = socketIo(server, {
-    pingInterval: 5000,
+    pingInterval: 10000,
     pingTimeout: 10000
   });
 
@@ -60,16 +60,26 @@ module.exports = (app) => {
 
   // socket.emit('bullet is fired', bulletData.getId());
   //
-  socket.on('bullet is fired', ({randomid, velocity}) => {
+  socket.on('bullet is fired', ({randomid, velocity, position}) => {
   //
-    socket.broadcast.emit('bullet is fired', {randomid, velocity});
-      console.log('server-socket', randomid, velocity);
+    socket.broadcast.emit('bullet is fired', {randomid, velocity, position});
+      console.log('server-socket', randomid, velocity, position);
     });
 
+    socket.on('bullet position', ({randomid, velocity, position}) => {
+
+      if (!bulletData.getId(randomid)) {
+        bulletData.set(randomid, {velocity, position});
+      }
+      socket.broadcast.emit('other bullet position', {
+        randomid, velocity, position
+  });
+});
 
 
     socket.on('disconnect', () => {
       playerData.remove(id);
+    //  getScene().remove(avatar.mesh); // need to come back here and link the avatar.mesh with the right id
       socket.broadcast.emit('other player disconnected', {
         id
       });

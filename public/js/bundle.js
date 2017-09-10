@@ -93806,6 +93806,10 @@ var pointLockers = require('./pointLockers');
 var blocker = require('./blocker');
 var otherPlayers = require('./otherPlayers');
 var moveOtherPlayer = require('./moveOtherPlayer');
+var getBullet = require('./getBullet');
+
+var _require = require('./controls'),
+    movements = _require.movements;
 // const testobject = require('./testobject');
 
 var start = function start(options) {
@@ -93832,8 +93836,11 @@ var start = function start(options) {
       //  const bullet = testobject.getObj6();
       //  bullet.velocity = { x: -0.17509277691430628, y: 0, z: -0.9845519384331316 };
       socket.emitPlayerPosition(player.position, player.rotation);
-      //socket.emitBullet(bullet.velocity);
 
+      if (movements.shooting) {
+        var bullet = getBullet();
+        socket.emitBulletPosition(bullet.randomid, bullet.velocity, bullet.position);
+      }
       var players = otherPlayers.get();
 
       Object.keys(players).forEach(function (id) {
@@ -93852,7 +93859,7 @@ module.exports = {
   start: start
 };
 
-},{"./blocker":52,"./init/getRenderer":61,"./init/init":62,"./letsMove":63,"./moveOtherPlayer":64,"./otherPlayers":66,"./pointLockers":67,"./socket":68}],51:[function(require,module,exports){
+},{"./blocker":52,"./controls":53,"./getBullet":56,"./init/getRenderer":61,"./init/init":62,"./letsMove":63,"./moveOtherPlayer":64,"./otherPlayers":66,"./pointLockers":67,"./socket":68}],51:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -94404,7 +94411,7 @@ var getBullet = function getBullet() {
 
   setTimeout(function () {
     bullet.alive = false;
-    scene.remove(bullet);2;
+    scene.remove(bullet);
   }, 1000);
 
   return bullet;
@@ -94663,7 +94670,6 @@ module.exports = function (camera, scene, objects, raycaster, prevTime, time, po
     var bullet = getBullet();
     bullets.push(bullet);
     scene.add(bullet);
-    socket.emitBulletPosition(bullet.randomid, bullet.velocity);
   }
 
   if (movements.forward) velocity.z -= 2000.0 * delta;
@@ -94755,8 +94761,8 @@ var get = function get() {
   return otherBullets;
 };
 
-var addBullets = function addBullets(id, bullet) {
-  otherBullets[id] = otherBullets;
+var addBullets = function addBullets(randomid, bullet) {
+  otherBullets[randomid] = otherBullets;
 };
 
 module.exports = {
@@ -94832,6 +94838,7 @@ socket.on('player data', function (playerData) {
   //this will create an avatar with an id for each player;
   Object.keys(otherPlayers.get()).forEach(function (id) {
     var avatar = Avatar.create();
+    getScene().add(avatar.mesh);
 
     //avatar name will be the id of the other player;
     avatar.name = id;
@@ -94843,6 +94850,7 @@ socket.on('player data', function (playerData) {
         z = _playerData$id$positi.z;
 
     avatar.mesh.position.set(x, y, z);
+    console.log('otherplayers', otherPlayers);
   });
 });
 
@@ -94902,20 +94910,45 @@ var emitPlayerPosition = function emitPlayerPosition(position, rotation) {
 
 socket.on('bullet is fired', function (_ref4) {
   var randomid = _ref4.randomid,
-      velocity = _ref4.velocity;
+      velocity = _ref4.velocity,
+      position = _ref4.position;
 
   var bullet = getBullet();
-  getScene().add(bullet);
+  Object.keys(otherBullets.get()).forEach(function (randomid) {
 
-  otherBullets.addBullets(bullet.randomid, bullet.velocity, bullet.mesh);
+    getScene().add(bullet.mesh);
+  });
+
+  // if (!otherBullets[bullet.randomid]){
+
+  otherBullets.addBullets(bullet.randomid, { randomid: bullet.randomid, velocity: bullet.velocity, position: bullet.position, mesh: bullet.mesh });
+  var mesh = getBullet().mesh;
+  // we added the setTimeout function to deal with an error appearing in the client browser
+  //"THREE.Object3D.add: object not an instance of THREE.Object3D." but it does not seem tohelp
+  setTimeout(function () {
+    getScene().add(mesh);
+  }, 10000);
+
+  console.log(otherBullets);
   console.log('bullet', bullet);
-  console.log('bullet is fired', { randomid: randomid, velocity: velocity });
+  console.log('bullet is fired', { randomid: randomid, velocity: velocity, position: position });
   // bullet.position = position;
   // bullet.rotation = rotation;
 });
 
-var emitBulletPosition = function emitBulletPosition(randomid, velocity) {
-  socket.emit('bullet is fired', { randomid: randomid, velocity: velocity });
+socket.on('other bullet position', function (_ref5) {
+  var randomid = _ref5.randomid,
+      velocity = _ref5.velocity,
+      position = _ref5.position;
+
+  var bullet = otherBullets.get()[randomid];
+  bullet.velocity = velocity;
+  bullet.position = position;
+  bullet.position.add(velocity);
+});
+
+var emitBulletPosition = function emitBulletPosition(randomid, velocity, position) {
+  socket.emit('bullet is fired', { randomid: randomid, velocity: velocity, position: position });
 };
 
 var positionsDifferent = function positionsDifferent(p1, p2) {
