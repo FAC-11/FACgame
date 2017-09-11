@@ -25,6 +25,13 @@ const blocker = require('../blocker');
 // create the scene
 
 const init = () => {
+
+// attempt to create a HUD but need to know how to render in the DOM.
+  const hud = document.createElement("div");
+  hud.innerHTML = '<p>Health: <span id="health"></span><br />Score: <span id="score">0</span></p>'
+  document.body.appendChild(hud);
+
+
   const timeStep = 1 / 60;
 
   // Cannon init
@@ -32,6 +39,11 @@ const init = () => {
   world.gravity.set(0, -20, 0);
   world.broadphase = new CANNON.NaiveBroadphase();
   world.solver.iterations = 10;
+
+  // quaternians and performance
+  world.quatNormalizeSkip = 0;
+  world.quatNormalizeFast = false;
+
   world.solver = new CANNON.SplitSolver(new CANNON.GSSolver());
   // shape is shape of geometry/wireframe
   const shape = new CANNON.Box(new CANNON.Vec3(10, 10, 10));
@@ -43,15 +55,23 @@ const init = () => {
   body.angularVelocity.set(0, 50, 0);
   body.angularDamping = 0.5;
   body.position.set(0, 50, 0);
+
+
+
+  // Create a slippery material (friction coefficient = 0.0)
+  var physicsMaterial = new CANNON.Material("slipperyMaterial");
+  var physicsContactMaterial = new CANNON.ContactMaterial(physicsMaterial,
+      physicsMaterial,
+      0.0, // friction coefficient
+      0.3  // restitution
+      );
+  // We must add the contact materials to the world
+  world.addContactMaterial(physicsContactMaterial);
+
+
   world.addBody(body);
 
-  const groundShape = new CANNON.Plane();
-  groundShape.collisionResponse = true;
-  const groundBody = new CANNON.Body({ mass: 0 });
-  groundBody.addShape(groundShape);
-  groundBody.position.set(0, -14, 0);
-  groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
-  world.add(groundBody);
+
 
 
   // const camera = new THREE.PerspectiveCamera(75, -50, 1, 1000);
@@ -77,8 +97,15 @@ const init = () => {
   const obj4 = cubes.getObj4();
   const obj5 = cubes.getObj5();
   const obj6 = cubes.getObj6();
+  // create health pack
+  const health = cubes.getObj7();
 
-  scene.add(obj1, obj2, obj3, obj4, obj5, obj6);
+
+
+
+
+
+  scene.add(obj1, obj2, obj3, obj4, obj5, obj6, health);
 
 
   // objects
@@ -104,8 +131,10 @@ const init = () => {
   // let's get the floor
 
   const floor = getFloor();
-  scene.add(floor);
-  const objects = [floor];
+  world.add(floor.groundBody);
+  scene.add(floor.floor);
+
+  const objects = [floor.floor];
 
   const renderer = getRenderer();
   document.body.appendChild(renderer.domElement);
@@ -128,6 +157,7 @@ const init = () => {
     pointerLockControls,
     world,
     timeStep,
+    health
   };
 };
 

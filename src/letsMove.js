@@ -10,6 +10,13 @@ const {
 const bullets = [];
 const cannonBullets = [];
 const velocity = new THREE.Vector3();
+var lastHealthPickup = 0;
+var life=30;
+
+
+function distance(x1, y1, x2, y2) {
+	return Math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
+}
 
 module.exports = function (
   camera,
@@ -21,8 +28,40 @@ module.exports = function (
   pointerLockControls,
   world,
   timeStep,
+  health
 ) {
+
+const date = Date.now() - lastHealthPickup ;
+
   world.step(timeStep);
+
+  //make health bar rotate
+  // health.rotation.x += 0.004;
+	health.rotation.y += 0.008;
+
+if (!document.getElementById("health").textContent) {
+  document.getElementById("health").textContent = life;
+} ;
+
+// console.log('datenow', Date.now());
+
+
+
+
+  if (date > 10000 ) {
+    health.material.wireframe = false;
+  }
+
+  if (distance(pointLockers().position.x, pointLockers().position.z, health.position.x, health.position.z) < 15 && life != 100 && date > 10000 ) {
+    life = Math.min(life + 50, 100);
+    document.getElementById("health").textContent = life ;
+    lastHealthPickup = Date.now();
+    health.material.wireframe = true;
+    // health.position.x = -300;
+    console.log('last health', lastHealthPickup);
+  }
+  console.log('date', date);
+
 
   scene.children[1].position.copy(world.bodies[0].position);
   scene.children[1].quaternion.copy(world.bodies[0].quaternion);

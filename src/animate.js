@@ -14,6 +14,7 @@ const start = (options) => {
     pointerLockControls,
     world,
     timeStep,
+    health,
   } = options;
 
   let prevTime = performance.now();
@@ -32,6 +33,7 @@ const start = (options) => {
         pointerLockControls,
         world,
         timeStep,
+        health,
       );
       prevTime = time;
     }

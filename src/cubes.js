@@ -125,6 +125,25 @@ const getObj6 = () => {
   return obj6;
 };
 
+const getObj7 = () => {
+  const textureLoader = new THREE.TextureLoader();
+  const crateTexture = textureLoader.load('images/crate/healthpack.png');
+  const obj7 = new THREE.Mesh(
+    new THREE.BoxGeometry(10, 10, 10),
+    new THREE.MeshPhongMaterial({
+      color: 0xffffff,
+      map: crateTexture,
+      wireframe: false,
+    }),
+  );
+  obj7.position.set(60, -5, 2);
+  obj7.receiveShadow = false;
+  obj7.castShadow = true;
+  return obj7;
+};
+
+
+
 module.exports = {
   getObj1,
   getObj2,
@@ -132,6 +151,7 @@ module.exports = {
   getObj4,
   getObj5,
   getObj6,
+  getObj7
 };
 
 
