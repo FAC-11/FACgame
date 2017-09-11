@@ -1,8 +1,5 @@
-const socket = require('./socket');
-const init = require('./init/init');
-const getRenderer = require('./init/getRenderer');
 const letsMove = require('./letsMove');
-const pointLockers = require('./pointLockers');
+// const pointLockers = require('./pointLockers');
 const blocker = require('./blocker');
 const otherPlayers = require('./otherPlayers');
 const moveOtherPlayer = require('./moveOtherPlayer');
@@ -17,7 +14,10 @@ const start = (options) => {
     renderer,
     objects,
     raycaster,
-    pointerLockControls
+    pointerLockControls,
+    world,
+    timeStep,
+    health,
   } = options;
 
   let prevTime = performance.now();
@@ -25,9 +25,10 @@ const start = (options) => {
   const animate = () => {
     requestAnimationFrame(animate);
     if (!blocker.enabled) {
-
       const time = performance.now();
-      letsMove(camera,scene,objects, raycaster, prevTime, time, pointerLockControls);
+      letsMove(camera,scene,objects, raycaster, prevTime, time, pointerLockControls,world,
+      timeStep,
+      health);
 
       const player = pointLockers();
     //  socket.emitState(getLocalState());
@@ -52,13 +53,11 @@ const start = (options) => {
     }
 
     renderer.render(scene, camera);
-
   };
   animate();
-
 };
 
 
 module.exports = {
-  start
+  start,
 };

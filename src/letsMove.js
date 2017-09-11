@@ -1,17 +1,71 @@
 const THREE = require('three');
 const pointLockers = require('./pointLockers');
 const socket = require('./socket');
+const CANNON = require('cannon');
 // const shoot = require('./shoot.js');
 const otherBullets = require('./otherBullets');
-
-const {movements} = require('./controls');
-const velocity = new THREE.Vector3();
 const getBullet = require('./getBullet');
-let bullets = [] ;
+
+const {movements,} = require('./controls');
+
+let bullets = [];
+const velocity = new THREE.Vector3();
+var lastHealthPickup = 0;
+var life=30;
+
+
+function distance(x1, y1, x2, y2) {
+	return Math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
+}
+
+module.exports = function (
+  camera,
+  scene,
+  objects,
+  raycaster,
+  prevTime,
+  time,
+  pointerLockControls,
+  world,
+  timeStep,
+  health
+) {
+
+const date = Date.now() - lastHealthPickup ;
+
+  world.step(timeStep);
+
+  //make health bar rotate
+  // health.rotation.x += 0.004;
+	health.rotation.y += 0.008;
+
+if (!document.getElementById("health").textContent) {
+  document.getElementById("health").textContent = life;
+} ;
+
+// console.log('datenow', Date.now());
 
 
 
-module.exports = function(camera,scene,objects, raycaster, prevTime, time, pointerLockControls){
+
+  if (date > 10000 ) {
+    health.material.wireframe = false;
+  }
+
+  if (distance(pointLockers().position.x, pointLockers().position.z, health.position.x, health.position.z) < 15 && life != 100 && date > 10000 ) {
+    life = Math.min(life + 50, 100);
+    document.getElementById("health").textContent = life ;
+    lastHealthPickup = Date.now();
+    health.material.wireframe = true;
+    // health.position.x = -300;
+    console.log('last health', lastHealthPickup);
+  }
+  console.log('date', date);
+
+
+  scene.children[1].position.copy(world.bodies[0].position);
+  scene.children[1].quaternion.copy(world.bodies[0].quaternion);
+
 
   raycaster.ray.origin.copy(pointLockers().position);
   raycaster.ray.origin.y -= 10;
@@ -43,7 +97,6 @@ module.exports = function(camera,scene,objects, raycaster, prevTime, time, point
 
     Object.keys(otherBullets.get()).forEach(function(id){
       const bullet = otherBullets.get()[id];
-      console.log('bullet-render', bullet);
       if (bullet === undefined) {
         return;
       }
@@ -55,17 +108,13 @@ module.exports = function(camera,scene,objects, raycaster, prevTime, time, point
     })
 
 
-  if (movements.forward)
-    velocity.z -= 2000.0 * delta;
+  if (movements.forward) { velocity.z -= 2000.0 * delta; }
 
-  if (movements.backward)
-    velocity.z += 1000.0 * delta;
+  if (movements.backward) { velocity.z += 1000.0 * delta; }
 
-  if (movements.left)
-    velocity.x -= 1000.0 * delta;
+  if (movements.left) { velocity.x -= 1000.0 * delta; }
 
-  if (movements.right)
-    velocity.x += 1000.0 * delta;
+  if (movements.right) { velocity.x += 1000.0 * delta; }
 
   if (isOnObject === true) {
     velocity.y = Math.max(0, velocity.y);
@@ -77,7 +126,7 @@ module.exports = function(camera,scene,objects, raycaster, prevTime, time, point
     }
   }
 
-  if (movements.jumping){
+  if (movements.jumping) {
     velocity.y = 350;
     movements.jumping = false;
     movements.canJump = false;
@@ -100,7 +149,7 @@ module.exports = function(camera,scene,objects, raycaster, prevTime, time, point
 
 // this is to stop lots of tiny movements from being sent to server once
 // player has stopped moving but continues to slightly slide
-const stopIfSlow = (velocity) =>
-  Math.abs(velocity) < 0.1
-    ? 0
-    : velocity;
+const stopIfSlow = velocity =>
+  (Math.abs(velocity) < 0.1 ?
+    0 :
+    velocity);
