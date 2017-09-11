@@ -10,7 +10,9 @@ const letsMove = require('./letsMove');
 const otherBullets = require('./otherBullets');
 // we connect the socket to the same port as the server-socket;
 
-const socket = io('http://localhost:1080');
+const socket = io('http://localhost:1080/game');
+
+
 
 socket.on('player data', (playerData) => {
   // function on js that will delete the data of the player

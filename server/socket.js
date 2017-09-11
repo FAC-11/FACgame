@@ -4,6 +4,7 @@ const playerData = require('./playerData');
 const bulletData = require('./bulletData');
 
 module.exports = (app) => {
+
   const server = http.Server(app);
   const io = socketIo(server, {
     pingInterval: 10000,
@@ -13,8 +14,9 @@ module.exports = (app) => {
 
   server.listen(1080);
 
+  const nsp = io.of('/game');
 
-  io.on('connection', (socket) => {
+  nsp.on('connection', (socket) => {
     console.log('socket is connected successfully', socket.id);
 
     // socket.emit -send the player data to the server
@@ -54,7 +56,7 @@ module.exports = (app) => {
 
 
   socket.on('bullet is fired', ({randomid, velocity, position}) => {
-  //
+  
     socket.broadcast.emit('bullet is fired', {randomid, velocity, position});
 
     });
