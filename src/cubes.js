@@ -3,7 +3,6 @@ const PointerLockControls = require('three-pointerlock');
 const OBJLoader = require('three-obj-loader');
 
 OBJLoader(THREE);
-const MTLLoader = require('three-mtl-loader');
 
 
 const getObj1 = () => {
@@ -129,6 +128,26 @@ const getObj7 = () => {
   return obj7;
 };
 
+// prepare loader and load the model
+const getGun = () => {
+  const oLoader = new THREE.OBJLoader();
+  oLoader.load('images/Railgun .obj', (object, materials) => {
+    // var material = new THREE.MeshFaceMaterial(materials);
+    const material2 = new THREE.MeshPhongMaterial();
+    object.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+      // apply custom material
+        child.material = material2;
+        // enable casting shadows
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+    object.position.set(0, 0, 0);
+    object.scale.set(0.1, 0.1, 0.1);
+    return object;
+  });
+};
 
 module.exports = {
   getObj1,
@@ -137,4 +156,5 @@ module.exports = {
   getObj4,
   getObj5,
   getObj7,
+  getGun,
 };

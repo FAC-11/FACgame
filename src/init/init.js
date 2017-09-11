@@ -83,9 +83,12 @@ const init = () => {
   const obj5 = cubes.getObj5();
   // create health pack
   const health = cubes.getObj7();
+  // create gun objects
+  const gun = cubes.getGun();
+  console.log(gun);
 
 
-  scene.add(obj1, obj2, obj3, obj4, obj5, health);
+  scene.add(obj1, obj2, obj3, obj4, obj5, health, gun);
 
 
   // lighting
