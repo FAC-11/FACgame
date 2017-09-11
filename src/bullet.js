@@ -5,7 +5,7 @@ const pointLockers = require('./pointLockers');
 const getScene = require('./getScene');
 // const shoot = require('./shoot.js');
 
-const { movements } = require('./controls');
+const {movements} = require('./controls');
 const getRaycaster = require('./getRaycaster');
 
 
@@ -16,17 +16,21 @@ function guid() {
     return Math.floor((1 + Math.random()) * 0x10000)
       .toString(16)
       .substring(1);
-  }
-  return s4() + s4() + '-' + s4() + '-'+ s4() + '-'+ s4() + '-'+ s4()+s4()+s4();
-  // return `${s4() + s4()}-${s4()}-${s4()}-${
-  //   s4()}-${s4()}${s4()}${s4()}`;
+    }
+  return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+  s4() + '-' + s4() + s4() + s4();
+}
+
+const createMesh = () => {
+
+  const bullet = new THREE.Mesh(
+  new THREE.SphereGeometry(0.5, 8, 8),
+  new THREE.MeshBasicMaterial());
+  return bullet;
 }
 
 const getBullet = () => {
-  const bullet = new THREE.Mesh(
-    new THREE.SphereGeometry(1, 8, 8),
-    new THREE.MeshBasicMaterial(),
-  );
+  const bullet = createMesh();
 
   const scene = getScene();
 
@@ -34,27 +38,29 @@ const getBullet = () => {
   bullet.position.set(
     raycaster.ray.origin.x,
     raycaster.ray.origin.y,
-    raycaster.ray.origin.z,
+    raycaster.ray.origin.z
   );
 
   const player = pointLockers();
 
   bullet.velocity = new THREE.Vector3(
-    -Math.sin(player.rotation._y) * 20,
+    -Math.sin(player.rotation._y),
     0,
-    -Math.cos(player.rotation._y) * 20,
+    -Math.cos(player.rotation._y),
   );
 
   bullet.alive = true;
-  bullet.randomid = guid();
+    bullet.randomid = guid();
 
 
-  setTimeout(() => {
+  setTimeout(function() {
     bullet.alive = false;
     scene.remove(bullet);
   }, 1000);
-
+   console.log('mesh', bullet, bullet.mesh);
   return bullet;
-};
+}
 
-module.exports = getBullet;
+
+
+module.exports = {getBullet, createMesh};

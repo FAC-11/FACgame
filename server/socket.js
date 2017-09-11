@@ -4,6 +4,7 @@ const playerData = require('./playerData');
 const bulletData = require('./bulletData');
 
 module.exports = (app) => {
+
   const server = http.Server(app);
   const io = socketIo(server, {
     pingInterval: 10000,
@@ -13,8 +14,9 @@ module.exports = (app) => {
 
   server.listen(1080);
 
+  const nsp = io.of('/game');
 
-  io.on('connection', (socket) => {
+  nsp.on('connection', (socket) => {
     console.log('socket is connected successfully', socket.id);
 
     // socket.emit -send the player data to the server
@@ -51,17 +53,12 @@ module.exports = (app) => {
       });
     });
 
-    //     socket.emit('bullet is fired', bulletData.getId());
-    // // socket.emit('bullet is fired', bulletData.getId());
-    //     bulletData.set(id, getBulletDefaults());
-    //     socket.broadcast.emit('bullet is fired', {id});
 
-    // socket.emit('bullet is fired', bulletData.getId());
-    //
-    socket.on('bullet is fired', ({ randomid, velocity, position }) => {
-      //
-      socket.broadcast.emit('bullet is fired', { randomid, velocity, position });
-      console.log('server-socket', randomid, velocity, position);
+
+  socket.on('bullet is fired', ({randomid, velocity, position}) => {
+  
+    socket.broadcast.emit('bullet is fired', {randomid, velocity, position});
+
     });
 
     socket.on('bullet position', ({ randomid, velocity, position }) => {
@@ -98,11 +95,3 @@ const getPlayerDefaults = () => ({
   },
   health: 100,
 });
-
-// const getBulletDefaults = () => ({
-//   randomid: 'defd56d7-808e-79c0-7efd-dd2b2e2dc8d9',
-//   velocity: {
-//     x: 0.12250618072906018,
-//     y: 0,
-//     z: -0.9924677504499473 }
-//   });
