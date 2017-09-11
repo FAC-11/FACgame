@@ -9,42 +9,33 @@ const getLight = require('./getLight');
 const getFloor = require('./getFloor');
 const cubes = require('../cubes');
 const blocker = require('../blocker');
-
-// const OBJLoader = require('three-obj-loader');
-// OBJLoader(THREE);
-// const MTLLoader = require('three-mtl-loader');
-
-
-// var player = {
-//   height: 1.8,
-//   speed: 0.2,
-//   turnSpeed: Math.PI * 0.02
-// };
-
-const bullet = () => {
-  const bullet = new THREE.Mesh(
-    new THREE.SphereGeometry(5, 8, 8),
-    new THREE.MeshBasicMaterial(),
-  );
-  bullet.alive = true;
-  setTimeout(() => {
-    bullet.alive = false;
-    scene.remove(bullet);
-  }, 1000);
-  scene.add(bullet);
-};
+const getRaycaster = require('../getRaycaster');
 
 // create the scene
 
 const init = () => {
+// attempt to create a HUD but need to know how to render in the DOM.
+  const hud = document.createElement('div');
+  hud.innerHTML = '<p>Health: <span id="health"></span><br />Score: <span id="score">0</span></p>';
+  document.body.appendChild(hud);
+
+
   const timeStep = 1 / 60;
 
   // Cannon init
   const world = new CANNON.World();
-  world.gravity.set(0, -9.82, 0);
+  world.gravity.set(0, -20, 0);
   world.broadphase = new CANNON.NaiveBroadphase();
   world.solver.iterations = 10;
-  const shape = new CANNON.Box(new CANNON.Vec3(1, 1, 1));
+
+  // quaternians and performance
+  world.quatNormalizeSkip = 0;
+  world.quatNormalizeFast = false;
+
+  world.solver = new CANNON.SplitSolver(new CANNON.GSSolver());
+  // shape is shape of geometry/wireframe
+  const shape = new CANNON.Box(new CANNON.Vec3(10, 10, 10));
+  // body is it being effected by forces.
   const body = new CANNON.Body({
     mass: 1,
   });
@@ -52,15 +43,29 @@ const init = () => {
   body.angularVelocity.set(0, 50, 0);
   body.angularDamping = 0.5;
   body.position.set(0, 50, 0);
+
+
+  // Create a slippery material (friction coefficient = 0.0)
+  const physicsMaterial = new CANNON.Material('slipperyMaterial');
+  const physicsContactMaterial = new CANNON.ContactMaterial(
+    physicsMaterial,
+    physicsMaterial,
+    0.0, // friction coefficient
+    0.3, // restitution
+  );
+  // We must add the contact materials to the world
+  world.addContactMaterial(physicsContactMaterial);
+
+
   world.addBody(body);
+
+
   // const camera = new THREE.PerspectiveCamera(75, -50, 1, 1000);
   const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
   // let's create the scene
   const scene = new THREE.Scene();
   // and our camera
 
-  // camera.position.set(0, 0, -5);
-  // camera.lookAt(0, 500, 0); // direction camera is looking
   getScene.init(scene);
   const pointerLockControls = new PointerLockControls(camera);
   blocker(pointerLockControls);
@@ -69,29 +74,19 @@ const init = () => {
   pointerLocks.init(pointerLockControls);
 
   const raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, -1, 0), 0, 10);
+  getRaycaster.init(raycaster);
   // create cubes
   const obj1 = cubes.getObj1();
   const obj2 = cubes.getObj2();
   const obj3 = cubes.getObj3();
   const obj4 = cubes.getObj4();
   const obj5 = cubes.getObj5();
-  const obj6 = cubes.getObj6();
+  // create health pack
+  const health = cubes.getObj7();
 
-  scene.add(obj1, obj2, obj3, obj4, obj5, obj6);
 
+  scene.add(obj1, obj2, obj3, obj4, obj5, health);
 
-  // objects
-  // const loader = new MTLLoader();
-  // loader.load('images/Oak_Green_01.mtl', function(materials) {
-  //   materials.preload();
-  //   const objLoader = new THREE.OBJLoader();
-  //   objLoader.setMaterials(materials);
-  //
-  //   objLoader.load('images/Oak_Green_01.obj', function(tree) {
-  //     scene.add(tree)
-  //   })
-  //
-  // })
 
   // lighting
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -103,8 +98,10 @@ const init = () => {
   // let's get the floor
 
   const floor = getFloor();
-  scene.add(floor);
-  const objects = [floor];
+  world.add(floor.groundBody);
+  scene.add(floor.floor);
+
+  const objects = [floor.floor];
 
   const renderer = getRenderer();
   document.body.appendChild(renderer.domElement);
@@ -117,7 +114,7 @@ const init = () => {
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
   }
-  console.log(scene.children[1]);
+
   return {
     camera,
     scene,
@@ -127,6 +124,7 @@ const init = () => {
     pointerLockControls,
     world,
     timeStep,
+    health,
   };
 };
 

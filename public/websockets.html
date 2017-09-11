@@ -1,55 +1,51 @@
 <!DOCTYPE HTML>
 <html>
-   <head>
 
-      <script type="text/javascript">
-         function WebSocketTest()
-         {
-            if ("WebSocket" in window)
-            {
-               alert("WebSocket is supported by your Browser!");
+  <head>
 
-               // Let us open a web socket
-               var ws = new WebSocket("ws://localhost:9998/echo");
+    <script type="text/javascript">
+      function WebSocketTest() {
+        if ("WebSocket" in window) {
+          alert("WebSocket is supported by your Browser!");
 
-               ws.onopen = function()
-               {
-                  // Web Socket is connected, send data using send()
-                  ws.send("Message to send");
-                  alert("Message is sent...");
-               };
+          // Let us open a web socket
+          var ws = new WebSocket("ws://localhost:9998/echo");
 
-               ws.onmessage = function (evt)
-               {
-                  var received_msg = evt.data;
-                  alert("Message is received...");
-               };
+          ws.onopen = function() {
+            // Web Socket is connected, send data using send()
+            ws.send("Message to send");
+            alert("Message is sent...");
+          };
 
-               ws.onclose = function()
-               {
-                  // websocket is closed.
-                  alert("Connection is closed...");
-               };
+          ws.onmessage = function(evt) {
+            var received_msg = evt.data;
+            alert("Message is received...");
+          };
 
-               window.onbeforeunload = function(event) {
-                  socket.close();
-               };
-            }
+          ws.onclose = function() {
+            // websocket is closed.
+            alert("Connection is closed...");
+          };
 
-            else
-            {
-               // The browser doesn't support WebSocket
-               alert("WebSocket NOT supported by your Browser!");
-            }
-         }
-      </script>
+          window.onbeforeunload = function(event) {
+            socket.close();
+          };
+        } else {
+          // The browser doesn't support WebSocket
+          alert("WebSocket NOT supported by your Browser!");
+        }
+      }
 
-   </head>
-   <body>
+    </script>
 
-      <div id="sse">
-         <a href="javascript:WebSocketTest()">Run WebSocket</a>
-      </div>
+  </head>
 
-   </body>
+  <body>
+
+    <div id="sse">
+      <a href="javascript:WebSocketTest()">Run WebSocket</a>
+    </div>
+
+  </body>
+
 </html>

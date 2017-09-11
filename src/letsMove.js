@@ -1,14 +1,22 @@
 const THREE = require('three');
 const pointLockers = require('./pointLockers');
-
+const socket = require('./socket');
+const CANNON = require('cannon');
 // const shoot = require('./shoot.js');
+const otherBullets = require('./otherBullets');
+const getBullet = require('./getBullet');
 
-const {
-  movements,
-} = require('./controls');
+const { movements } = require('./controls');
 
 const bullets = [];
 const velocity = new THREE.Vector3();
+let lastHealthPickup = 0;
+let life = 30;
+
+
+function distance(x1, y1, x2, y2) {
+  return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+}
 
 module.exports = function (
   camera,
@@ -20,8 +28,37 @@ module.exports = function (
   pointerLockControls,
   world,
   timeStep,
+  health,
 ) {
+  const date = Date.now() - lastHealthPickup;
+
   world.step(timeStep);
+
+  // make health bar rotate
+  // health.rotation.x += 0.004;
+  health.rotation.y += 0.008;
+
+
+  if (!document.getElementById('health').textContent) {
+    document.getElementById('health').textContent = life;
+  }
+
+  // console.log('datenow', Date.now());
+
+
+  if (date > 10000) {
+    health.material.wireframe = false;
+  }
+
+  if (distance(pointLockers().position.x, pointLockers().position.z, health.position.x, health.position.z) < 15 && life != 100 && date > 10000) {
+    life = Math.min(life + 50, 100);
+    document.getElementById('health').textContent = life;
+    lastHealthPickup = Date.now();
+    health.material.wireframe = true;
+    // health.position.x = -300;
+  }
+
+
   scene.children[1].position.copy(world.bodies[0].position);
   scene.children[1].quaternion.copy(world.bodies[0].quaternion);
 
@@ -35,6 +72,7 @@ module.exports = function (
   velocity.z -= velocity.z * 10.0 * delta;
   velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
 
+
   for (let index = 0; index < bullets.length; index++) {
     if (bullets[index] === undefined) {
       continue;
@@ -47,46 +85,26 @@ module.exports = function (
   }
 
   if (movements.shooting) {
-    // shoot.bullet(scene);
-    const bullet = new THREE.Mesh(
-      new THREE.SphereGeometry(0.5, 8, 8),
-      new THREE.MeshBasicMaterial(),
-    );
-
-    // const shape = new CANNON.Sphere(new CANNON.Vec3(0.5));
-    // const body = new CANNON.Body({
-    //   mass: 1,
-    // });
-    // body.addShape(shape);
-    // body.angularVelocity.set(0, 50, 0);
-    // body.angularDamping = 0.5;
-    // body.position.set(
-    //   raycaster.ray.origin.x,
-    //   raycaster.ray.origin.y,
-    //   raycaster.ray.origin.z,
-    // );
-    // world.addBody(body);
-
-    bullet.position.set(
-      raycaster.ray.origin.x,
-      raycaster.ray.origin.y,
-      raycaster.ray.origin.z,
-    );
-    bullet.velocity = new THREE.Vector3(
-      -Math.sin(pointerLockControls.getObject().rotation._y),
-      0, -Math.cos(pointerLockControls.getObject().rotation._y),
-
-
-    );
-
-    bullet.alive = true;
-    setTimeout(() => {
-      bullet.alive = false;
-      scene.remove(bullet);
-    }, 1000);
+    const bullet = getBullet();
     bullets.push(bullet);
     scene.add(bullet);
+    movements.canShoot = 100;
   }
+
+  if (movements.canShoot > 0) movements.canShoot -= 1;
+
+  Object.keys(otherBullets.get()).forEach((id) => {
+    const bullet = otherBullets.get()[id];
+    if (bullet === undefined) {
+      return;
+    }
+    if (bullet.alive === false) {
+      delete otherBullets[id];
+      return;
+    }
+    bullet.position.add(bullet.velocity);
+  });
+
 
   if (movements.forward) { velocity.z -= 2000.0 * delta; }
 
