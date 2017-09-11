@@ -8,7 +8,9 @@ socket(app);
 app.get('', (req, res) => {
   res.redirect('/index.html');
 });
-
+app.get('/game', (req, res) => {
+  res.redirect('/game.html');
+})
 app.use(express.static('public'));
 
 app.listen(3000, () => {
