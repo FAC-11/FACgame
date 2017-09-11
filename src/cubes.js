@@ -112,19 +112,6 @@ const getObj5 = () => {
   return obj5;
 };
 
-const getObj6 = () => {
-  const obj6 = new THREE.Mesh(
-    new THREE.BoxBufferGeometry(10, 60, 10),
-    new THREE.MeshBasicMaterial({
-      color: 0xffff00,
-      wireframe: false,
-    }),
-  );
-
-  obj6.position.set(10, -5, -30);
-  return obj6;
-};
-
 const getObj7 = () => {
   const textureLoader = new THREE.TextureLoader();
   const crateTexture = textureLoader.load('images/crate/healthpack.png');
@@ -143,27 +130,11 @@ const getObj7 = () => {
 };
 
 
-
 module.exports = {
   getObj1,
   getObj2,
   getObj3,
   getObj4,
   getObj5,
-  getObj6,
-  getObj7
+  getObj7,
 };
-
-
-// objects
-// const loader = new MTLLoader();
-// loader.load('images/Oak_Green_01.mtl', function(materials) {
-//   materials.preload();
-//   const objLoader = new THREE.OBJLoader();
-//   objLoader.setMaterials(materials);
-//
-//   objLoader.load('images/Oak_Green_01.obj', function(tree) {
-//     scene.add(tree)
-//   })
-//
-// })

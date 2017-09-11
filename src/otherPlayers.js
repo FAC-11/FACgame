@@ -13,5 +13,5 @@ const addPlayer = (id, player) => {
 module.exports = {
   get,
   set,
-  addPlayer
+  addPlayer,
 };

@@ -1,7 +1,6 @@
 const THREE = require('three');
 
 const create = (options) => {
-
   options = options || {};
   const avatar = {};
 
@@ -36,24 +35,24 @@ const createCanvases = (avatar) => {
 const createPlayerObject = (avatar) => {
   new THREE.Object3D();
   const upperbody = avatar.upperbody = new THREE.Object3D();
-  new THREE.MeshBasicMaterial({color: new THREE.Color('black')});
+  new THREE.MeshBasicMaterial({ color: new THREE.Color('black') });
 
   const armMaterial =
-     new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/arm.png')});
+     new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/arm.png') });
   const bodyMaterial =
-     new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('images/suit.jpeg')});
+     new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/suit.jpeg') });
   const bottomMaterial =
-     new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/bottom.png')});
+     new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/bottom.png') });
   const handMaterial =
-     new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/hand.png')});
+     new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/hand.png') });
   const legMaterial =
-     new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/leg.png')});
+     new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/leg.png') });
   const shoeMaterial =
-     new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/shoe.png')});
+     new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/shoe.png') });
   const shoulderMaterial =
-     new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/shoulder.png')});
+     new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/shoulder.png') });
   const sideMaterial =
-     new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/side.png')});
+     new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/side.png') });
 
   const armMatFull = new THREE.MeshFaceMaterial([
     armMaterial,
@@ -61,7 +60,7 @@ const createPlayerObject = (avatar) => {
     shoulderMaterial,
     handMaterial,
     armMaterial,
-    armMaterial
+    armMaterial,
   ]);
   const bodyMatFull = new THREE.MeshFaceMaterial([
     bodyMaterial,
@@ -69,7 +68,7 @@ const createPlayerObject = (avatar) => {
     bottomMaterial,
     bottomMaterial,
     sideMaterial,
-    sideMaterial
+    sideMaterial,
   ]);
   const legMatFull = new THREE.MeshFaceMaterial([
     legMaterial,
@@ -77,7 +76,7 @@ const createPlayerObject = (avatar) => {
     shoeMaterial,
     shoeMaterial,
     legMaterial,
-    legMaterial
+    legMaterial,
   ]);
   // Left leg
   const leftleggeo = new THREE.BoxGeometry(4, 12, 4);
@@ -152,37 +151,33 @@ const createPlayerObject = (avatar) => {
 };
 
 const createHead = () => {
-  const geometry = new THREE.BoxGeometry( 4, 7, 7 );
+  const geometry = new THREE.BoxGeometry(4, 7, 7);
 
-  const plainMaterial = new THREE.MeshBasicMaterial( {color: 'lightgrey'} );
+  const plainMaterial = new THREE.MeshBasicMaterial({ color: 'lightgrey' });
 
   const materialArray = [
-    new THREE.MeshBasicMaterial( { color:'white', map: THREE.ImageUtils.loadTexture( 'images/trumpFace.png' ) }),
+    new THREE.MeshBasicMaterial({ color: 'white', map: THREE.ImageUtils.loadTexture('images/trumpFace.png') }),
     plainMaterial,
     plainMaterial,
     plainMaterial,
     plainMaterial,
-    plainMaterial
+    plainMaterial,
   ];
 
   const material = new THREE.MeshFaceMaterial(materialArray);
 
-  const head = new THREE.Mesh( geometry, material );
+  const head = new THREE.Mesh(geometry, material);
 
   return head;
 };
 
 const render = (avatar) => {
-  var time = Date.now() / 1000;
+  const time = Date.now() / 1000;
   if (avatar.walking && time < avatar.startedWalking + avatar.acceleration) {
     avatar.walkSpeed = (time - avatar.startedWalking) / avatar.acceleration;
   }
   if (!avatar.walking) {
-    if (time < avatar.stoppedWalking + avatar.acceleration)
-      avatar.walkSpeed = -1 / avatar.acceleration * (time - avatar.stoppedWalking) + 1;
-    else if (avatar.walkSpeed > 0.02)
-      avatar.walkSpeed *= 0.95;
-    else {
+    if (time < avatar.stoppedWalking + avatar.acceleration) { avatar.walkSpeed = -1 / avatar.acceleration * (time - avatar.stoppedWalking) + 1; } else if (avatar.walkSpeed > 0.02) { avatar.walkSpeed *= 0.95; } else {
       avatar.walkSpeed = 0;
     }
   }
@@ -197,10 +192,9 @@ const render = (avatar) => {
 };
 
 const startWalking = (avatar) => {
-
-  var now = Date.now() / 1000;
+  const now = Date.now() / 1000;
   avatar.walking = true;
-  if (avatar.stoppedWalking + avatar.acceleration > now){
+  if (avatar.stoppedWalking + avatar.acceleration > now) {
     avatar.startedWalking = now - (avatar.stoppedWalking + avatar.acceleration - now);
   } else {
     avatar.startedWalking = Date.now() / 1000;
@@ -208,9 +202,9 @@ const startWalking = (avatar) => {
 };
 
 const stopWalking = (avatar) => {
-  var now = Date.now() / 1000;
+  const now = Date.now() / 1000;
   avatar.walking = false;
-  if (avatar.startedWalking + avatar.acceleration > now){
+  if (avatar.startedWalking + avatar.acceleration > now) {
     avatar.stoppedWalking = now - (avatar.startedWalking + avatar.acceleration - now);
   } else {
     avatar.stoppedWalking = Date.now() / 1000;
@@ -221,5 +215,5 @@ module.exports = {
   create,
   startWalking,
   stopWalking,
-  render
+  render,
 };

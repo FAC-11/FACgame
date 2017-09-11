@@ -1,13 +1,12 @@
-let otherBullets = {};
+const otherBullets = {};
 
 const get = () => otherBullets;
 
 const addBullets = (randomid, bullet) => {
-  otherBullets[randomid] = otherBullets;
-
+  otherBullets[randomid] = bullet;
 };
 
-module.exports ={
+module.exports = {
   get,
-  addBullets
-}
+  addBullets,
+};

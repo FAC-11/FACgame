@@ -10,25 +10,13 @@ const getFloor = require('./getFloor');
 const cubes = require('../cubes');
 const blocker = require('../blocker');
 const getRaycaster = require('../getRaycaster');
-// const OBJLoader = require('three-obj-loader');
-// OBJLoader(THREE);
-// const MTLLoader = require('three-mtl-loader');
-
-
-// var player = {
-//   height: 1.8,
-//   speed: 0.2,
-//   turnSpeed: Math.PI * 0.02
-// };
-
 
 // create the scene
 
 const init = () => {
-
 // attempt to create a HUD but need to know how to render in the DOM.
-  const hud = document.createElement("div");
-  hud.innerHTML = '<p>Health: <span id="health"></span><br />Score: <span id="score">0</span></p>'
+  const hud = document.createElement('div');
+  hud.innerHTML = '<p>Health: <span id="health"></span><br />Score: <span id="score">0</span></p>';
   document.body.appendChild(hud);
 
 
@@ -57,21 +45,19 @@ const init = () => {
   body.position.set(0, 50, 0);
 
 
-
   // Create a slippery material (friction coefficient = 0.0)
-  var physicsMaterial = new CANNON.Material("slipperyMaterial");
-  var physicsContactMaterial = new CANNON.ContactMaterial(physicsMaterial,
-      physicsMaterial,
-      0.0, // friction coefficient
-      0.3  // restitution
-      );
+  const physicsMaterial = new CANNON.Material('slipperyMaterial');
+  const physicsContactMaterial = new CANNON.ContactMaterial(
+    physicsMaterial,
+    physicsMaterial,
+    0.0, // friction coefficient
+    0.3, // restitution
+  );
   // We must add the contact materials to the world
   world.addContactMaterial(physicsContactMaterial);
 
 
   world.addBody(body);
-
-
 
 
   // const camera = new THREE.PerspectiveCamera(75, -50, 1, 1000);
@@ -80,8 +66,6 @@ const init = () => {
   const scene = new THREE.Scene();
   // and our camera
 
-  // camera.position.set(0, 0, -5);
-  // camera.lookAt(0, 500, 0); // direction camera is looking
   getScene.init(scene);
   const pointerLockControls = new PointerLockControls(camera);
   blocker(pointerLockControls);
@@ -91,36 +75,18 @@ const init = () => {
 
   const raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, -1, 0), 0, 10);
   getRaycaster.init(raycaster);
-    // create cubes
+  // create cubes
   const obj1 = cubes.getObj1();
   const obj2 = cubes.getObj2();
   const obj3 = cubes.getObj3();
   const obj4 = cubes.getObj4();
   const obj5 = cubes.getObj5();
-  const obj6 = cubes.getObj6();
   // create health pack
   const health = cubes.getObj7();
 
 
+  scene.add(obj1, obj2, obj3, obj4, obj5, health);
 
-
-
-
-  scene.add(obj1, obj2, obj3, obj4, obj5, obj6, health);
-
-
-  // objects
-  // const loader = new MTLLoader();
-  // loader.load('images/Oak_Green_01.mtl', function(materials) {
-  //   materials.preload();
-  //   const objLoader = new THREE.OBJLoader();
-  //   objLoader.setMaterials(materials);
-  //
-  //   objLoader.load('images/Oak_Green_01.obj', function(tree) {
-  //     scene.add(tree)
-  //   })
-  //
-  // })
 
   // lighting
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -158,7 +124,7 @@ const init = () => {
     pointerLockControls,
     world,
     timeStep,
-    health
+    health,
   };
 };
 
