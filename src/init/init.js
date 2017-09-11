@@ -21,30 +21,33 @@ const blocker = require('../blocker');
 //   turnSpeed: Math.PI * 0.02
 // };
 
-const bullet = () => {
-  const bullet = new THREE.Mesh(
-    new THREE.SphereGeometry(5, 8, 8),
-    new THREE.MeshBasicMaterial(),
-  );
-  bullet.alive = true;
-  setTimeout(() => {
-    bullet.alive = false;
-    scene.remove(bullet);
-  }, 1000);
-  scene.add(bullet);
-};
 
 // create the scene
 
 const init = () => {
+
+// attempt to create a HUD but need to know how to render in the DOM.
+  const hud = document.createElement("div");
+  hud.innerHTML = '<p>Health: <span id="health"></span><br />Score: <span id="score">0</span></p>'
+  document.body.appendChild(hud);
+
+
   const timeStep = 1 / 60;
 
   // Cannon init
   const world = new CANNON.World();
-  world.gravity.set(0, -9.82, 0);
+  world.gravity.set(0, -20, 0);
   world.broadphase = new CANNON.NaiveBroadphase();
   world.solver.iterations = 10;
-  const shape = new CANNON.Box(new CANNON.Vec3(1, 1, 1));
+
+  // quaternians and performance
+  world.quatNormalizeSkip = 0;
+  world.quatNormalizeFast = false;
+
+  world.solver = new CANNON.SplitSolver(new CANNON.GSSolver());
+  // shape is shape of geometry/wireframe
+  const shape = new CANNON.Box(new CANNON.Vec3(10, 10, 10));
+  // body is it being effected by forces.
   const body = new CANNON.Body({
     mass: 1,
   });
@@ -52,7 +55,25 @@ const init = () => {
   body.angularVelocity.set(0, 50, 0);
   body.angularDamping = 0.5;
   body.position.set(0, 50, 0);
+
+
+
+  // Create a slippery material (friction coefficient = 0.0)
+  var physicsMaterial = new CANNON.Material("slipperyMaterial");
+  var physicsContactMaterial = new CANNON.ContactMaterial(physicsMaterial,
+      physicsMaterial,
+      0.0, // friction coefficient
+      0.3  // restitution
+      );
+  // We must add the contact materials to the world
+  world.addContactMaterial(physicsContactMaterial);
+
+
   world.addBody(body);
+
+
+
+
   // const camera = new THREE.PerspectiveCamera(75, -50, 1, 1000);
   const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
   // let's create the scene
@@ -76,8 +97,15 @@ const init = () => {
   const obj4 = cubes.getObj4();
   const obj5 = cubes.getObj5();
   const obj6 = cubes.getObj6();
+  // create health pack
+  const health = cubes.getObj7();
 
-  scene.add(obj1, obj2, obj3, obj4, obj5, obj6);
+
+
+
+
+
+  scene.add(obj1, obj2, obj3, obj4, obj5, obj6, health);
 
 
   // objects
@@ -103,8 +131,10 @@ const init = () => {
   // let's get the floor
 
   const floor = getFloor();
-  scene.add(floor);
-  const objects = [floor];
+  world.add(floor.groundBody);
+  scene.add(floor.floor);
+
+  const objects = [floor.floor];
 
   const renderer = getRenderer();
   document.body.appendChild(renderer.domElement);
@@ -117,7 +147,7 @@ const init = () => {
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
   }
-  console.log(scene.children[1]);
+
   return {
     camera,
     scene,
@@ -127,6 +157,7 @@ const init = () => {
     pointerLockControls,
     world,
     timeStep,
+    health
   };
 };
 
