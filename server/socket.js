@@ -1,12 +1,13 @@
 const socketIo = require('socket.io');
 const http = require('http');
 const playerData = require('./playerData');
+ const bulletData = require('./bulletData');
 
 module.exports = (app) => {
 
   const server = http.Server(app);
   const io = socketIo(server, {
-    pingInterval: 5000,
+    pingInterval: 10000,
     pingTimeout: 10000
   });
 
@@ -52,13 +53,39 @@ module.exports = (app) => {
       });
     });
 
+  //     socket.emit('bullet is fired', bulletData.getId());
+  // // socket.emit('bullet is fired', bulletData.getId());
+  //     bulletData.set(id, getBulletDefaults());
+  //     socket.broadcast.emit('bullet is fired', {id});
+
+  // socket.emit('bullet is fired', bulletData.getId());
+  //
+  socket.on('bullet is fired', ({randomid, velocity, position}) => {
+  //
+    socket.broadcast.emit('bullet is fired', {randomid, velocity, position});
+      console.log('server-socket', randomid, velocity, position);
+    });
+
+    socket.on('bullet position', ({randomid, velocity, position}) => {
+
+      if (!bulletData.getId(randomid)) {
+        bulletData.set(randomid, {velocity, position});
+      }
+      socket.broadcast.emit('other bullet position', {
+        randomid, velocity, position
+  });
+});
+
+
     socket.on('disconnect', () => {
       playerData.remove(id);
+    //  getScene().remove(avatar.mesh); // need to come back here and link the avatar.mesh with the right id
       socket.broadcast.emit('other player disconnected', {
         id
       });
       console.log('player has left the room');
     });
+
 
   });
 
@@ -77,3 +104,11 @@ const getPlayerDefaults = () => ({
   },
   health: 100
 });
+
+// const getBulletDefaults = () => ({
+//   randomid: 'defd56d7-808e-79c0-7efd-dd2b2e2dc8d9',
+//   velocity: {
+//     x: 0.12250618072906018,
+//     y: 0,
+//     z: -0.9924677504499473 }
+//   });

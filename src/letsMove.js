@@ -1,14 +1,14 @@
 const THREE = require('three');
 const pointLockers = require('./pointLockers');
+const socket = require('./socket');
 const CANNON = require('cannon');
 // const shoot = require('./shoot.js');
+const otherBullets = require('./otherBullets');
+const getBullet = require('./getBullet');
 
-const {
-  movements,
-} = require('./controls');
+const {movements,} = require('./controls');
 
-const bullets = [];
-const cannonBullets = [];
+let bullets = [];
 const velocity = new THREE.Vector3();
 var lastHealthPickup = 0;
 var life=30;
@@ -76,67 +76,37 @@ if (!document.getElementById("health").textContent) {
   velocity.z -= velocity.z * 10.0 * delta;
   velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
 
-  for (let index = 0; index < bullets.length; index++) {
-    if (bullets[index] === undefined) {
+
+    for (var index= 0; index < bullets.length ; index++) {
+      if (bullets[index] === undefined) {
+        continue;
+      }
+      if (bullets[index].alive == false) {
+      bullets.splice(index,1);
       continue;
+      }
+      bullets[index].position.add(bullets[index].velocity);
     }
-    if (bullets[index].alive == false) {
-      cannonBullets.splice(index, 1);
-      bullets.splice(index, 1);
-      world.remove(cannonBullets[index]);
-      continue;
-    }
-    // bullets[index].position.add(bullets[index].velocity);
-    bullets[index].position.copy(cannonBullets[index].position);
-    bullets[index].quaternion.copy(cannonBullets[index].quaternion);
-  }
 
-  if (movements.shooting) {
-    // shoot.bullet(scene);
-    const bullet = new THREE.Mesh(
-      new THREE.SphereGeometry(1.3, 8, 8),
-      new THREE.MeshBasicMaterial(),
-    );
+      if (movements.shooting){
+        const bullet = getBullet();
+        bullets.push(bullet);
+        scene.add(bullet);
 
-    const shape = new CANNON.Sphere(new CANNON.Vec3(1.3));
-    const body = new CANNON.Body({
-      mass: 5,
-    });
-    body.linearDamping = 0;
-    body.addShape(shape);
-    body.position.set(
-      raycaster.ray.origin.x,
-      raycaster.ray.origin.y,
-      raycaster.ray.origin.z,
-    );
-    world.addBody(body);
+      }
 
+    Object.keys(otherBullets.get()).forEach(function(id){
+      const bullet = otherBullets.get()[id];
+      if (bullet === undefined) {
+        return;
+      }
+      if (bullet.alive == false) {
+      delete otherBullets[id];
+      return;
+      }
+      bullet.position.add(bullet.velocity);
+    })
 
-    // bullet.position.copy(world.bodies[world.bodies.length - 1].position);
-    // bullet.quaternion.copy(world.bodies[world.bodies.length - 1].quaternion);
-    // console.log(cannonBullets[cannonBullets.length - 1]);
-
-
-    bullet.velocity = new CANNON.Vec3(
-      -Math.sin(pointerLockControls.getObject().rotation._y),
-      0,
-      -Math.cos(pointerLockControls.getObject().rotation._y),
-    );
-
-    console.log('thing', world.bodies[world.bodies.length - 1]);
-    bullet.alive = true;
-    setTimeout(() => {
-      bullet.alive = false;
-      scene.remove(bullet);
-    }, 3000);
-    cannonBullets.push(world.bodies[world.bodies.length - 1]);
-    bullets.push(bullet);
-    scene.add(bullet);
-    cannonBullets[cannonBullets.length - 1].velocity = bullet.velocity;
-    cannonBullets[cannonBullets.length - 1].velocity.x *= 150;
-    cannonBullets[cannonBullets.length - 1].velocity.y += 10;
-    cannonBullets[cannonBullets.length - 1].velocity.z *= 150;
-  }
 
   if (movements.forward) { velocity.z -= 2000.0 * delta; }
 
@@ -174,6 +144,7 @@ if (!document.getElementById("health").textContent) {
     pointLockers().position.y = 10;
     movements.canJump = true;
   }
+
 };
 
 // this is to stop lots of tiny movements from being sent to server once

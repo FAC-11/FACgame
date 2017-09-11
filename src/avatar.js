@@ -36,7 +36,7 @@ const createCanvases = (avatar) => {
 const createPlayerObject = (avatar) => {
   new THREE.Object3D();
   const upperbody = avatar.upperbody = new THREE.Object3D();
-  new THREE.MeshBasicMaterial({color: new THREE.Color('grey')});
+  new THREE.MeshBasicMaterial({color: new THREE.Color('black')});
 
   const armMaterial =
      new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('images/bodyTextures/defaultPerson/arm.png')});

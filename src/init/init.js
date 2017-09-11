@@ -9,7 +9,7 @@ const getLight = require('./getLight');
 const getFloor = require('./getFloor');
 const cubes = require('../cubes');
 const blocker = require('../blocker');
-
+const getRaycaster = require('../getRaycaster');
 // const OBJLoader = require('three-obj-loader');
 // OBJLoader(THREE);
 // const MTLLoader = require('three-mtl-loader');
@@ -90,7 +90,8 @@ const init = () => {
   pointerLocks.init(pointerLockControls);
 
   const raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, -1, 0), 0, 10);
-  // create cubes
+  getRaycaster.init(raycaster);
+    // create cubes
   const obj1 = cubes.getObj1();
   const obj2 = cubes.getObj2();
   const obj3 = cubes.getObj3();

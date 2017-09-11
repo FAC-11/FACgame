@@ -3,6 +3,9 @@ const letsMove = require('./letsMove');
 const blocker = require('./blocker');
 const otherPlayers = require('./otherPlayers');
 const moveOtherPlayer = require('./moveOtherPlayer');
+const getBullet = require('./getBullet');
+const {movements} = require('./controls');
+// const testobject = require('./testobject');
 
 const start = (options) => {
   const {
@@ -23,24 +26,32 @@ const start = (options) => {
     requestAnimationFrame(animate);
     if (!blocker.enabled) {
       const time = performance.now();
-      letsMove(
-        camera,
-        scene,
-        objects,
-        raycaster,
-        prevTime,
-        time,
-        pointerLockControls,
-        world,
-        timeStep,
-        health,
-      );
+      letsMove(camera,scene,objects, raycaster, prevTime, time, pointerLockControls,world,
+      timeStep,
+      health);
+
+      const player = pointLockers();
+    //  socket.emitState(getLocalState());
+      //to send the players positions and the bullets
+    //  const bullet = testobject.getObj6();
+    //  bullet.velocity = { x: -0.17509277691430628, y: 0, z: -0.9845519384331316 };
+      socket.emitPlayerPosition(player.position, player.rotation);
+
+      if (movements.shooting){
+        const bullet = getBullet();
+      socket.emitBulletPosition(bullet.randomid, bullet.velocity, bullet.position);
+    }
+      const players = otherPlayers.get();
+
+      Object.keys(players).forEach((id) => {
+        moveOtherPlayer(id, players[id]);
+      });
+
+
+
       prevTime = time;
     }
 
-    // mesh.rotation.x += 0.1;
-    // mesh.rotation.y += 0.1;
-    // controls(keyboard, camera, player);
     renderer.render(scene, camera);
   };
   animate();
