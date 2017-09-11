@@ -71,8 +71,8 @@ socket.on('disconnect', ({ id }) => {
   mesh = undefined;
   console.log('scene after',  getScene().children.length, getScene().children);
 
-
 });
+
 
 const lastPosition = { x: null, y: null, z: null };
 const lastRotation = { x: null, y: null, z: null };
