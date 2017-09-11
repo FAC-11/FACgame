@@ -38,6 +38,7 @@ module.exports = function (
   // health.rotation.x += 0.004;
   health.rotation.y += 0.008;
 
+
   if (!document.getElementById('health').textContent) {
     document.getElementById('health').textContent = life;
   }
@@ -55,9 +56,7 @@ module.exports = function (
     lastHealthPickup = Date.now();
     health.material.wireframe = true;
     // health.position.x = -300;
-    console.log('last health', lastHealthPickup);
   }
-  console.log('date', date);
 
 
   scene.children[1].position.copy(world.bodies[0].position);
@@ -89,7 +88,10 @@ module.exports = function (
     const bullet = getBullet();
     bullets.push(bullet);
     scene.add(bullet);
+    movements.canShoot = 100;
   }
+
+  if (movements.canShoot > 0) movements.canShoot -= 1;
 
   Object.keys(otherBullets.get()).forEach((id) => {
     const bullet = otherBullets.get()[id];
