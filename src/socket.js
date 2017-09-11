@@ -57,13 +57,21 @@ socket.on('other player position', ({ id, position, rotation }) => {
 });
 
 // send the disconnection
-socket.on('other player disconnected', ({ id }) => {
+socket.on('disconnect', ({ id }) => {
   console.log('other player disconnected');
   const players = otherPlayers.get();
 
   const avatar = players[id].avatar;
-  getScene().remove(avatar.mesh);
   delete players[id];
+
+  let mesh = avatar.mesh;
+  console.log('scene before', getScene().children.length, getScene().children);
+  getScene().remove(mesh);
+
+  mesh = undefined;
+  console.log('scene after',  getScene().children.length, getScene().children);
+
+
 });
 
 const lastPosition = { x: null, y: null, z: null };
