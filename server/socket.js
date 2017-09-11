@@ -63,7 +63,6 @@ module.exports = (app) => {
   socket.on('bullet is fired', ({randomid, velocity, position}) => {
   //
     socket.broadcast.emit('bullet is fired', {randomid, velocity, position});
-      console.log('server-socket', randomid, velocity, position);
     });
 
     socket.on('bullet position', ({randomid, velocity, position}) => {

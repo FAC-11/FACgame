@@ -3,7 +3,7 @@ let otherBullets = {};
 const get = () => otherBullets;
 
 const addBullets = (randomid, bullet) => {
-  otherBullets[randomid] = bullet;
+  otherBullets[randomid] = otherBullets;
 
 };
 
