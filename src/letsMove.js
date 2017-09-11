@@ -6,16 +6,16 @@ const CANNON = require('cannon');
 const otherBullets = require('./otherBullets');
 const getBullet = require('./getBullet');
 
-const {movements,} = require('./controls');
+const { movements } = require('./controls');
 
-let bullets = [];
+const bullets = [];
 const velocity = new THREE.Vector3();
-var lastHealthPickup = 0;
-var life=30;
+let lastHealthPickup = 0;
+let life = 30;
 
 
 function distance(x1, y1, x2, y2) {
-	return Math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
+  return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
 }
 
 module.exports = function (
@@ -28,33 +28,30 @@ module.exports = function (
   pointerLockControls,
   world,
   timeStep,
-  health
+  health,
 ) {
-
-const date = Date.now() - lastHealthPickup ;
+  const date = Date.now() - lastHealthPickup;
 
   world.step(timeStep);
 
-  //make health bar rotate
+  // make health bar rotate
   // health.rotation.x += 0.004;
-	health.rotation.y += 0.008;
+  health.rotation.y += 0.008;
 
-if (!document.getElementById("health").textContent) {
-  document.getElementById("health").textContent = life;
-} ;
+  if (!document.getElementById('health').textContent) {
+    document.getElementById('health').textContent = life;
+  }
 
-// console.log('datenow', Date.now());
-
-
+  // console.log('datenow', Date.now());
 
 
-  if (date > 10000 ) {
+  if (date > 10000) {
     health.material.wireframe = false;
   }
 
-  if (distance(pointLockers().position.x, pointLockers().position.z, health.position.x, health.position.z) < 15 && life != 100 && date > 10000 ) {
+  if (distance(pointLockers().position.x, pointLockers().position.z, health.position.x, health.position.z) < 15 && life != 100 && date > 10000) {
     life = Math.min(life + 50, 100);
-    document.getElementById("health").textContent = life ;
+    document.getElementById('health').textContent = life;
     lastHealthPickup = Date.now();
     health.material.wireframe = true;
     // health.position.x = -300;
@@ -77,35 +74,34 @@ if (!document.getElementById("health").textContent) {
   velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
 
 
-    for (var index= 0; index < bullets.length ; index++) {
-      if (bullets[index] === undefined) {
-        continue;
-      }
-      if (bullets[index].alive == false) {
-      bullets.splice(index,1);
+  for (let index = 0; index < bullets.length; index++) {
+    if (bullets[index] === undefined) {
       continue;
-      }
-      bullets[index].position.add(bullets[index].velocity);
     }
+    if (bullets[index].alive == false) {
+      bullets.splice(index, 1);
+      continue;
+    }
+    bullets[index].position.add(bullets[index].velocity);
+  }
 
-      if (movements.shooting){
-        const bullet = getBullet();
-        bullets.push(bullet);
-        scene.add(bullet);
+  if (movements.shooting) {
+    const bullet = getBullet();
+    bullets.push(bullet);
+    scene.add(bullet);
+  }
 
-      }
-
-    Object.keys(otherBullets.get()).forEach(function(id){
-      const bullet = otherBullets.get()[id];
-      if (bullet === undefined) {
-        return;
-      }
-      if (bullet.alive == false) {
+  Object.keys(otherBullets.get()).forEach((id) => {
+    const bullet = otherBullets.get()[id];
+    if (bullet === undefined) {
+      return;
+    }
+    if (bullet.alive === false) {
       delete otherBullets[id];
       return;
-      }
-      bullet.position.add(bullet.velocity);
-    })
+    }
+    bullet.position.add(bullet.velocity);
+  });
 
 
   if (movements.forward) { velocity.z -= 2000.0 * delta; }
@@ -144,7 +140,6 @@ if (!document.getElementById("health").textContent) {
     pointLockers().position.y = 10;
     movements.canJump = true;
   }
-
 };
 
 // this is to stop lots of tiny movements from being sent to server once

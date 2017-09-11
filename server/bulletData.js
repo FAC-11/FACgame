@@ -1,11 +1,7 @@
-let bulletData = {};
+const bulletData = {};
 
-const getId = (id) => {
-  return id ? bulletData[id] : bulletData;
-}
+const getId = id => (id ? bulletData[id] : bulletData);
 
-const set = (id, data) =>{
-  return bulletData[id] = data;
-}
+const set = (id, data) => bulletData[id] = data;
 
-module.exports = { getId, set};
+module.exports = { getId, set };
