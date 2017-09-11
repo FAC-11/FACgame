@@ -2,6 +2,7 @@ const THREE = require('three');
 const pointLockers = require('./pointLockers');
 const socket = require('./socket');
 // const shoot = require('./shoot.js');
+const otherBullets = require('./otherBullets');
 
 const {movements} = require('./controls');
 const velocity = new THREE.Vector3();
@@ -40,8 +41,18 @@ module.exports = function(camera,scene,objects, raycaster, prevTime, time, point
 
       }
 
-
-
+    Object.keys(otherBullets.get()).forEach(function(id){
+      const bullet = otherBullets.get()[id];
+      console.log('bullet-render', bullet);
+      if (bullet === undefined) {
+        return;
+      }
+      if (bullet.alive == false) {
+      delete otherBullets[id];
+      return;
+      }
+      bullet.position.add(bullet.velocity);
+    })
 
 
   if (movements.forward)

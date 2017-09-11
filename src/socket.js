@@ -85,19 +85,15 @@ const emitPlayerPosition = (position, rotation) => {
 
 socket.on('bullet is fired', ({randomid, velocity, position}) => {
   const bullet = getBullet();
-  Object.keys(otherBullets.get()).forEach((randomid) => {
-
-     getScene().add(bullet.mesh);
-  })
+  getScene().add(bullet);
 
 
 // if (!otherBullets[bullet.randomid]){
 
    otherBullets.addBullets(bullet.randomid, {randomid: bullet.randomid, velocity: bullet.velocity, position: bullet.position, mesh: bullet.mesh});
-      const mesh = getBullet().mesh;
+      // const mesh = getBullet().mesh;
       // we added the setTimeout function to deal with an error appearing in the client browser
       //"THREE.Object3D.add: object not an instance of THREE.Object3D." but it does not seem tohelp
-   setTimeout( () => { getScene().add(mesh); }, 10000);
 
    console.log(otherBullets);
    console.log('bullet', bullet);
@@ -107,11 +103,20 @@ socket.on('bullet is fired', ({randomid, velocity, position}) => {
 });
 
 socket.on('other bullet position', ({randomid, velocity, position}) => {
+  console.log('bullet position', {randomid, velocity, position});
   const bullet = otherBullets.get()[randomid];
   bullet.velocity = velocity;
   bullet.position = position;
   bullet.position.add(velocity);
+
+  console.log('bullet position', bullet);
+
 })
+
+//on this event we need ti add the bullets to the otherbullets module
+//if it does not exist we aadd it, if it exists we updated it
+//in our render function we need to render each other bullets same waywe render other bullets
+
 
 
 

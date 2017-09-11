@@ -94635,6 +94635,7 @@ var THREE = require('three');
 var pointLockers = require('./pointLockers');
 var socket = require('./socket');
 // const shoot = require('./shoot.js');
+var otherBullets = require('./otherBullets');
 
 var _require = require('./controls'),
     movements = _require.movements;
@@ -94671,6 +94672,19 @@ module.exports = function (camera, scene, objects, raycaster, prevTime, time, po
     bullets.push(bullet);
     scene.add(bullet);
   }
+
+  Object.keys(otherBullets.get()).forEach(function (id) {
+    var bullet = otherBullets.get()[id];
+    console.log('bullet-render', bullet);
+    if (bullet === undefined) {
+      return;
+    }
+    if (bullet.alive == false) {
+      delete otherBullets[id];
+      return;
+    }
+    bullet.position.add(bullet.velocity);
+  });
 
   if (movements.forward) velocity.z -= 2000.0 * delta;
 
@@ -94716,7 +94730,7 @@ var stopIfSlow = function stopIfSlow(velocity) {
   return Math.abs(velocity) < 0.1 ? 0 : velocity;
 };
 
-},{"./controls":53,"./getBullet":56,"./pointLockers":67,"./socket":68,"three":47}],64:[function(require,module,exports){
+},{"./controls":53,"./getBullet":56,"./otherBullets":65,"./pointLockers":67,"./socket":68,"three":47}],64:[function(require,module,exports){
 'use strict';
 
 var Avatar = require('./avatar');
@@ -94762,7 +94776,7 @@ var get = function get() {
 };
 
 var addBullets = function addBullets(randomid, bullet) {
-  otherBullets[randomid] = otherBullets;
+  otherBullets[randomid] = bullet;
 };
 
 module.exports = {
@@ -94914,20 +94928,14 @@ socket.on('bullet is fired', function (_ref4) {
       position = _ref4.position;
 
   var bullet = getBullet();
-  Object.keys(otherBullets.get()).forEach(function (randomid) {
-
-    getScene().add(bullet.mesh);
-  });
+  getScene().add(bullet);
 
   // if (!otherBullets[bullet.randomid]){
 
   otherBullets.addBullets(bullet.randomid, { randomid: bullet.randomid, velocity: bullet.velocity, position: bullet.position, mesh: bullet.mesh });
-  var mesh = getBullet().mesh;
+  // const mesh = getBullet().mesh;
   // we added the setTimeout function to deal with an error appearing in the client browser
   //"THREE.Object3D.add: object not an instance of THREE.Object3D." but it does not seem tohelp
-  setTimeout(function () {
-    getScene().add(mesh);
-  }, 10000);
 
   console.log(otherBullets);
   console.log('bullet', bullet);
@@ -94941,11 +94949,19 @@ socket.on('other bullet position', function (_ref5) {
       velocity = _ref5.velocity,
       position = _ref5.position;
 
+  console.log('bullet position', { randomid: randomid, velocity: velocity, position: position });
   var bullet = otherBullets.get()[randomid];
   bullet.velocity = velocity;
   bullet.position = position;
   bullet.position.add(velocity);
+
+  console.log('bullet position', bullet);
 });
+
+//on this event we need ti add the bullets to the otherbullets module
+//if it does not exist we aadd it, if it exists we updated it
+//in our render function we need to render each other bullets same waywe render other bullets
+
 
 var emitBulletPosition = function emitBulletPosition(randomid, velocity, position) {
   socket.emit('bullet is fired', { randomid: randomid, velocity: velocity, position: position });
