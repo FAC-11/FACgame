@@ -18,6 +18,8 @@ const start = (options) => {
     world,
     timeStep,
     health,
+    gun,
+    objload,
   } = options;
 
   let prevTime = performance.now();
@@ -30,6 +32,8 @@ const start = (options) => {
         camera, scene, objects, raycaster, prevTime, time, pointerLockControls, world,
         timeStep,
         health,
+        gun,
+        objload,
       );
 
       const player = pointLockers();

@@ -29,6 +29,7 @@ module.exports = function (
   world,
   timeStep,
   health,
+  gun,
 ) {
   const date = Date.now() - lastHealthPickup;
 
@@ -72,6 +73,19 @@ module.exports = function (
   velocity.z -= velocity.z * 10.0 * delta;
   velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
 
+  // Player Weapon
+  console.log(gun);
+  gun.position.set(
+    pointLockers().position.x - Math.sin((pointLockers().rotation._y) - 0.5) * 0.6,
+    pointLockers().position.y - 0.5,
+    pointLockers().position.z - Math.cos((pointLockers().rotation._y) - 0.5) * 0.6,
+  );
+
+  gun.rotation.set(
+    (pointLockers().rotation._x),
+    (pointLockers().rotation._y),
+    (pointLockers().rotation._z),
+  );
 
   for (let index = 0; index < bullets.length; index++) {
     if (bullets[index] === undefined) {
@@ -88,7 +102,7 @@ module.exports = function (
     const bullet = getBullet();
     bullets.push(bullet);
     scene.add(bullet);
-    movements.canShoot = 100;
+    movements.canShoot = 50;
   }
 
   if (movements.canShoot > 0) movements.canShoot -= 1;
