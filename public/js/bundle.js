@@ -109394,7 +109394,6 @@ socket.on('player data', function (playerData) {
   Object.keys(otherPlayers.get()).forEach(function (id) {
     var avatar = Avatar.create();
     getScene().add(avatar.mesh);
-    console.log('avatar', avatar);
 
     // avatar name will be the id of the other player;
     avatar.name = id;
@@ -109406,7 +109405,6 @@ socket.on('player data', function (playerData) {
         z = _playerData$id$positi.z;
 
     avatar.mesh.position.set(x, y, z);
-    console.log('otherplayers', otherPlayers);
   });
 });
 
@@ -109483,7 +109481,7 @@ socket.on('other bullet position', function (_ref5) {
       velocity = _ref5.velocity,
       position = _ref5.position;
 
-  console.log('bullet position', { randomid: randomid, velocity: velocity, position: position });
+
   var bullet = otherBullets.get()[randomid];
   bullet.velocity = velocity;
   bullet.position = position;
