@@ -67,8 +67,8 @@ socket.on('disconnect', ({ id }) => {
   let mesh = avatar.mesh;
   getScene().remove(mesh);
 
-
 });
+
 
 const lastPosition = { x: null, y: null, z: null };
 const lastRotation = { x: null, y: null, z: null };
@@ -103,7 +103,6 @@ socket.on('other bullet position', ({ randomid, velocity, position }) => {
   bullet.position = position;
   bullet.position.add(velocity);
 
-  console.log('bullet position', bullet);
 });
 
 const emitBulletPosition = (randomid, velocity, position) => {

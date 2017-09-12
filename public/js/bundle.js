@@ -109488,8 +109488,6 @@ socket.on('other bullet position', function (_ref5) {
   bullet.velocity = velocity;
   bullet.position = position;
   bullet.position.add(velocity);
-
-  console.log('bullet position', bullet);
 });
 
 var emitBulletPosition = function emitBulletPosition(randomid, velocity, position) {
