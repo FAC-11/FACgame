@@ -60,8 +60,8 @@ function goToEdge(where) {
 
               function selectleader(event){
                 var sn = document.getElementById("slideNumber");
-                console.log(sn);
-                   var image = document.getElementsByTagName("img")[sn];
-                   console.log("image", image);
+                var number = sn.innerHTML;
+                   var image = document.getElementsByTagName("img")[number];
+
                    return image.src;
                };
