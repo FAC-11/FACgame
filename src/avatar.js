@@ -1,4 +1,5 @@
 const THREE = require('three');
+const leader = require('../public/chooseleader');
 
 const create = (options) => {
   options = options || {};

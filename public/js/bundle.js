@@ -108325,6 +108325,83 @@ yeast.decode = decode;
 module.exports = yeast;
 
 },{}],107:[function(require,module,exports){
+"use strict";
+
+var interval = 3000;
+var switching = setInterval("toggleSlide(true)", interval);
+window.paused = false;
+
+function toggleInterval() {
+  var button = document.getElementById("pauseButton");
+  if (!window.paused) {
+    clearInterval(switching);
+    //button.value = "Resume";
+  } else {
+    switching = setInterval("toggleSlide(true)", interval);
+    // button.value = "Pause";
+  }
+  window.paused = !window.paused;
+}
+
+function toggleSlide(direction) {
+  var elements = document.getElementsByClassName("hideable");
+  var visibleID = getVisible(elements);
+  elements[visibleID].style.display = "none";
+  if (!direction) {
+    var makeVisible = prev(visibleID, elements.length);
+  } else {
+    var makeVisible = next(visibleID, elements.length);
+  }
+  elements[makeVisible].style.display = "block";
+  var sn = document.getElementById("slideNumber");
+  sn.innerHTML = makeVisible + 1;
+}
+
+function getVisible(elements) {
+  var visibleID = -1;
+  for (var i = 0; i < elements.length; i++) {
+    if (elements[i].style.display == "block") {
+      visibleID = i;
+    }
+  }
+  return visibleID;
+}
+
+function prev(num, arrayLength) {
+  if (num == 0) return arrayLength - 1;else return num - 1;
+}
+
+function next(num, arrayLength) {
+  if (num == arrayLength - 1) return 0;else return num + 1;
+}
+
+function goToEdge(where) {
+  var elements = document.getElementsByClassName("hideable");
+  var visibleID = getVisible(elements);
+  var sn = document.getElementById("slideNumber");
+  elements[visibleID].style.display = "none";
+  if (!where) {
+    elements[0].style.display = "block";
+    sn.innerHTML = 1;
+  } else {
+    elements[elements.length - 1].style.display = "block";
+    sn.innerHTML = elements.length;
+  }
+}
+
+function selectleader(event) {
+  var sn = document.getElementById("slideNumber");
+  var number = sn.innerHTML;
+  var image = document.getElementsByTagName("img")[number];
+
+  return image.src;
+};
+
+if (typeof module !== 'undefined') {
+  module.exports = selectleader;
+}
+
+},{}],108:[function(require,module,exports){
 'use strict';
 
 var letsMove = require('./letsMove');
@@ -108384,10 +108461,11 @@ module.exports = {
   start: start
 };
 
-},{"./blocker":109,"./controls":110,"./getBullet":113,"./letsMove":120,"./moveOtherPlayer":121,"./otherPlayers":123,"./pointLockers":124,"./socket":125}],108:[function(require,module,exports){
+},{"./blocker":110,"./controls":111,"./getBullet":114,"./letsMove":121,"./moveOtherPlayer":122,"./otherPlayers":124,"./pointLockers":125,"./socket":126}],109:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
+var leader = require('../public/chooseleader');
 
 var create = function create(options) {
   options = options || {};
@@ -108575,7 +108653,7 @@ module.exports = {
   render: render
 };
 
-},{"three":104}],109:[function(require,module,exports){
+},{"../public/chooseleader":107,"three":104}],110:[function(require,module,exports){
 'use strict';
 
 // sets up screen blocker (the darkened screen with instructions you see when you press esc)
@@ -108624,7 +108702,7 @@ module.exports = function (controls) {
 
 module.exports.enabled = true;
 
-},{}],110:[function(require,module,exports){
+},{}],111:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -108715,7 +108793,7 @@ module.exports = {
   movements: movements
 };
 
-},{"./init/init":119,"three":104}],111:[function(require,module,exports){
+},{"./init/init":120,"three":104}],112:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -108838,7 +108916,7 @@ module.exports = {
   getObj7: getObj7
 };
 
-},{"three":104,"three-mtl-loader":100,"three-obj-loader":102,"three-pointerlock":103}],112:[function(require,module,exports){
+},{"three":104,"three-mtl-loader":100,"three-obj-loader":102,"three-pointerlock":103}],113:[function(require,module,exports){
 'use strict';
 
 var init = require('./init/init');
@@ -108846,7 +108924,7 @@ var animate = require('./animate');
 
 animate.start(init());
 
-},{"./animate":107,"./init/init":119}],113:[function(require,module,exports){
+},{"./animate":108,"./init/init":120}],114:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -108895,7 +108973,7 @@ var getBullet = function getBullet() {
 
 module.exports = getBullet;
 
-},{"./controls":110,"./getRaycaster":114,"./getScene":115,"./pointLockers":124,"three":104}],114:[function(require,module,exports){
+},{"./controls":111,"./getRaycaster":115,"./getScene":116,"./pointLockers":125,"three":104}],115:[function(require,module,exports){
 "use strict";
 
 var _raycaster = void 0;
@@ -108908,7 +108986,7 @@ module.exports.init = function (raycaster) {
   _raycaster = raycaster;
 };
 
-},{}],115:[function(require,module,exports){
+},{}],116:[function(require,module,exports){
 "use strict";
 
 var _scene = void 0;
@@ -108921,7 +108999,7 @@ module.exports.init = function (scene) {
   _scene = scene;
 };
 
-},{}],116:[function(require,module,exports){
+},{}],117:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -108968,7 +109046,7 @@ var getFloor = function getFloor() {
 
 module.exports = getFloor;
 
-},{"cannon":8,"three":104}],117:[function(require,module,exports){
+},{"cannon":8,"three":104}],118:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -108985,7 +109063,7 @@ var getLight = function getLight() {
 
 module.exports = getLight;
 
-},{"three":104}],118:[function(require,module,exports){
+},{"three":104}],119:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -109001,7 +109079,7 @@ var getRenderer = function getRenderer() {
 
 module.exports = getRenderer;
 
-},{"three":104}],119:[function(require,module,exports){
+},{"three":104}],120:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -109125,7 +109203,7 @@ var init = function init() {
 
 module.exports = init;
 
-},{"../blocker":109,"../controls":110,"../cubes":111,"../getRaycaster":114,"../getScene":115,"../pointLockers":124,"./getFloor":116,"./getLight":117,"./getRenderer":118,"cannon":8,"three":104,"three-pointerlock":103}],120:[function(require,module,exports){
+},{"../blocker":110,"../controls":111,"../cubes":112,"../getRaycaster":115,"../getScene":116,"../pointLockers":125,"./getFloor":117,"./getLight":118,"./getRenderer":119,"cannon":8,"three":104,"three-pointerlock":103}],121:[function(require,module,exports){
 'use strict';
 
 var THREE = require('three');
@@ -109273,7 +109351,7 @@ var stopIfSlow = function stopIfSlow(velocity) {
   return Math.abs(velocity) < 0.1 ? 0 : velocity;
 };
 
-},{"./controls":110,"./getBullet":113,"./otherBullets":122,"./pointLockers":124,"./socket":125,"cannon":8,"three":104}],121:[function(require,module,exports){
+},{"./controls":111,"./getBullet":114,"./otherBullets":123,"./pointLockers":125,"./socket":126,"cannon":8,"three":104}],122:[function(require,module,exports){
 'use strict';
 
 var Avatar = require('./avatar');
@@ -109309,7 +109387,7 @@ module.exports = function (id, _ref) {
   Avatar.render(avatar);
 };
 
-},{"./avatar":108,"./otherPlayers":123}],122:[function(require,module,exports){
+},{"./avatar":109,"./otherPlayers":124}],123:[function(require,module,exports){
 "use strict";
 
 var otherBullets = {};
@@ -109327,7 +109405,7 @@ module.exports = {
   addBullets: addBullets
 };
 
-},{}],123:[function(require,module,exports){
+},{}],124:[function(require,module,exports){
 "use strict";
 
 // keys are socket ids and values are player data objects
@@ -109350,7 +109428,7 @@ module.exports = {
   addPlayer: addPlayer
 };
 
-},{}],124:[function(require,module,exports){
+},{}],125:[function(require,module,exports){
 "use strict";
 
 var _pointerLockControls = void 0;
@@ -109363,7 +109441,7 @@ module.exports.init = function (pointerLockControls) {
   _pointerLockControls = pointerLockControls;
 };
 
-},{}],125:[function(require,module,exports){
+},{}],126:[function(require,module,exports){
 'use strict';
 
 // handles socket communication with server for updating your player location
@@ -109501,4 +109579,4 @@ module.exports = {
   emitBulletPosition: emitBulletPosition
 };
 
-},{"./avatar":108,"./controls":110,"./getBullet":113,"./getScene":115,"./letsMove":120,"./otherBullets":122,"./otherPlayers":123,"socket.io-client":91}]},{},[112]);
+},{"./avatar":109,"./controls":111,"./getBullet":114,"./getScene":116,"./letsMove":121,"./otherBullets":123,"./otherPlayers":124,"socket.io-client":91}]},{},[113]);
