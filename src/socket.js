@@ -15,7 +15,6 @@ const socket = io('http://localhost:1080/game');
 
 
 socket.on('player data', (playerData) => {
-  // function on js that will delete the data of the player
 
   delete playerData[socket.id];
 
@@ -26,6 +25,7 @@ socket.on('player data', (playerData) => {
   Object.keys(otherPlayers.get()).forEach((id) => {
     const avatar = Avatar.create();
     getScene().add(avatar.mesh);
+    console.log('avatar', avatar);
 
     // avatar name will be the id of the other player;
     avatar.name = id;
@@ -65,11 +65,7 @@ socket.on('disconnect', ({ id }) => {
   delete players[id];
 
   let mesh = avatar.mesh;
-  console.log('scene before', getScene().children.length, getScene().children);
   getScene().remove(mesh);
-
-  mesh = undefined;
-  console.log('scene after',  getScene().children.length, getScene().children);
 
 
 });
@@ -95,20 +91,9 @@ socket.on('bullet is fired', ({ randomid, velocity, position }) => {
   getScene().add(bullet);
 
 
-  // if (!otherBullets[bullet.randomid]){
-
   otherBullets.addBullets(bullet.randomid, {
     randomid: bullet.randomid, velocity: bullet.velocity, position: bullet.position, mesh: bullet.mesh,
   });
-  // const mesh = getBullet().mesh;
-  // we added the setTimeout function to deal with an error appearing in the client browser
-  // "THREE.Object3D.add: object not an instance of THREE.Object3D." but it does not seem tohelp
-
-  console.log(otherBullets);
-  console.log('bullet', bullet);
-  console.log('bullet is fired', { randomid, velocity, position });
-  // bullet.position = position;
-  // bullet.rotation = rotation;
 });
 
 socket.on('other bullet position', ({ randomid, velocity, position }) => {
@@ -120,11 +105,6 @@ socket.on('other bullet position', ({ randomid, velocity, position }) => {
 
   console.log('bullet position', bullet);
 });
-
-// on this event we need ti add the bullets to the otherbullets module
-// if it does not exist we aadd it, if it exists we updated it
-// in our render function we need to render each other bullets same waywe render other bullets
-
 
 const emitBulletPosition = (randomid, velocity, position) => {
   socket.emit('bullet is fired', { randomid, velocity, position });
