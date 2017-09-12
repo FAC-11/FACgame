@@ -8,6 +8,9 @@ socket(app);
 app.get('', (req, res) => {
   res.redirect('/index.html');
 });
+app.get('/chooseleader', (req, res) => {
+  res.redirect('/chooseleader.html');
+})
 app.get('/game', (req, res) => {
   res.redirect('/game.html');
 })

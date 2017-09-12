@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link href="https://fonts.googleapis.com/css?family=Amatic+SC" rel="stylesheet">
+  <link href="main.css" type ="text/css" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>GD</title>
+</head>
+<body>
+<h2 class = "h2">Gunboat Diplomacy</h2>
+<h3>Choose a "Leader"</h3>
+
+
+<div style="text-align: center;">
+                <ul style="list-style-type:none;">
+                  <!--    <ul style="list-style-type:none; margin-left: 8em;"> -->
+                  <li id="1" class="hideable" style="display: none;"><img src="images/theresa-may.jpg" id ="theresa" style="width:280px;height:300px;"></li>
+                  <li id="2" class="hideable" style="display: none;"><img src="images/putin-face.png" id ="putin" style="width:280px;height:300px;"></li>
+                  <li id="3" class="hideable" style="display: none;"><img src="images/kim-yun-face.png" id="kim" style="width:280px;height:300px;"></li>
+                  <li id="4" class="hideable" style="display: none;"><img src="images/theresa-may.jpg" id="theresa" style="width:280px;height:300px;"></li>
+                  <li id="5" class="hideable" style="display: none;"><img src="images/kim-yun-face.png" id="kim" style="width:280px;height:300px;"></li>
+                  <li id="6" class="hideable" style="display: block;"><img src="images/trumpFace.png" id="trump" alt="" style="width:280px;height:300px;"></li>
+                </ul>
+                <form>
+                  <span id="slideNumber"></span>
+
+  <input type="button" value="Previous Leader" onclick="toggleSlide(false)">
+   <input type="button" value="Next Leader" onclick="toggleSlide(true)">
+     <input id="pauseSelect" onclick="selectleader(event)" type="button" value="Select">
+<a href="/game"><button type="button" name = "Join Room" class = "joinRoom">Next</button></a>
+</form>
+
+  </div>
+
+          <script src="./chooseleader.js" type = "text/javascript"></script>
+</body>
+</html>
