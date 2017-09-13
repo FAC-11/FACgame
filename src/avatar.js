@@ -1,5 +1,9 @@
 const THREE = require('three');
-// const leader = require('../public/chooseleader');
+
+const getFace = () => {
+  const face = window.localStorage.getItem('chosenleader');
+  return JSON.parse(face)['imagestring'];
+}
 
 const create = (options) => {
   options = options || {};
@@ -159,7 +163,7 @@ const createHead = () => {
   const plainMaterial = new THREE.MeshBasicMaterial({ color: 'lightgrey' });
 
   const materialArray = [
-    new THREE.MeshBasicMaterial({ color: 'white', map: THREE.ImageUtils.loadTexture('images/trumpFace.png') }),
+    new THREE.MeshBasicMaterial({ color: 'white', map: THREE.ImageUtils.loadTexture(getFace()) }),
     plainMaterial,
     plainMaterial,
     plainMaterial,

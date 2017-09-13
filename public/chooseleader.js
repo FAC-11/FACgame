@@ -72,18 +72,14 @@ selectedImage.addEventListener('click', function(event) {
   var  imagestring= (image.src).toString().replace('http://localhost:3000/', '');
     console.log('imagestring', imagestring, typeof imagestring);
 
-  var http = new XMLHttpRequest();
- //Probably need the escape method for values here, like you did
-http.open("POST", 'http://localhost:3000/chooseleader', true);
-//Send the proper header information along with the request
-http.setRequestHeader("Content-type", "text/html");
-// http.setRequestHeader("Content-length", imagestring.length);
-http.onreadystatechange = function(imagestring) {//Call a function when the state changes.
-  if(http.readyState == 4 && http.status == 200) {
-    alert(http.responseText);
-  }
-}
-http.send(imagestring);
+var data = { 'imagestring': imagestring };
+  window.localStorage.setItem('chosenleader', JSON.stringify(data));
+//   var http = new XMLHttpRequest();
+//  //Probably need the escape method for values here, like you did
+// http.open("POST", 'http://localhost:3000/chooseleader', true);
+// //Send the proper header information along with the request
+// http.setRequestHeader("Content-type", "application/json");
+// http.send(JSON.stringify(data));
 });
 
 

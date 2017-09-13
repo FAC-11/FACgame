@@ -108388,7 +108388,11 @@ module.exports = {
 'use strict';
 
 var THREE = require('three');
-// const leader = require('../public/chooseleader');
+
+var getFace = function getFace() {
+  var face = window.localStorage.getItem('chosenleader');
+  return JSON.parse(face)['imagestring'];
+};
 
 var create = function create(options) {
   options = options || {};
@@ -108516,7 +108520,7 @@ var createHead = function createHead() {
 
   var plainMaterial = new THREE.MeshBasicMaterial({ color: 'lightgrey' });
 
-  var materialArray = [new THREE.MeshBasicMaterial({ color: 'white', map: THREE.ImageUtils.loadTexture('images/trumpFace.png') }), plainMaterial, plainMaterial, plainMaterial, plainMaterial, plainMaterial];
+  var materialArray = [new THREE.MeshBasicMaterial({ color: 'white', map: THREE.ImageUtils.loadTexture(getFace()) }), plainMaterial, plainMaterial, plainMaterial, plainMaterial, plainMaterial];
 
   var material = new THREE.MeshFaceMaterial(materialArray);
 
