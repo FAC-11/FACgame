@@ -9,6 +9,7 @@ const getBullet = require('./getBullet');
 const { movements } = require('./controls');
 
 const bullets = [];
+let clock = {};
 const velocity = new THREE.Vector3();
 let lastHealthPickup = 0;
 let life = 30;
@@ -39,6 +40,9 @@ module.exports = function (
   // health.rotation.x += 0.004;
   health.rotation.y += 0.008;
 
+  clock = new THREE.Clock();
+  const guntime = Date.now() * 0.0005;
+  const gundelta = clock.getDelta();
 
   if (!document.getElementById('health').textContent) {
     document.getElementById('health').textContent = life;
@@ -83,13 +87,6 @@ module.exports = function (
       continue;
     }
     bullets[index].position.add(bullets[index].velocity);
-  }
-
-  if (movements.shooting) {
-    const bullet = getBullet();
-    bullets.push(bullet);
-    scene.add(bullet);
-    movements.canShoot = 50;
   }
 
   if (movements.canShoot > 0) movements.canShoot -= 1;
@@ -143,10 +140,17 @@ module.exports = function (
     pointLockers().position.y = 10;
     movements.canJump = true;
   }
+
+  if (movements.shooting) {
+    const bullet = getBullet(gun, guntime);
+    bullets.push(bullet);
+    scene.add(bullet);
+    movements.canShoot = 50;
+  }
   // Player Weapon
   gun.position.set(
     pointLockers().position.x - Math.sin((pointLockers().rotation._y) - 0.5) * 0.6,
-    pointLockers().position.y - 0.5,
+    pointLockers().position.y - 0.5 + Math.sin(guntime * 4 + (pointLockers().position.x + pointLockers().position.y) * 0.1) * 0.03,
     pointLockers().position.z - Math.cos((pointLockers().rotation._y) - 0.5) * 0.6,
   );
 
