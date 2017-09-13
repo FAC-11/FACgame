@@ -11,6 +11,7 @@
 </head>
 
 <body>
+
   <h2 class="h2">Gunboat Diplomacy</h2>
   <h3>Choose a "Leader"</h3>
 
@@ -25,17 +26,16 @@
       <li id="5" class="hideable" style="display: none;"><img src="images/napoleon.jpg" id="napoleon" style="width:280px;height:300px;"></li>
       <li id="6" class="hideable" style="display: block;"><img src="images/trumpFace.png" id="trump" style="width:280px;height:300px;"></li>
     </ul>
-    <!-- <form> -->
-      <span id="slideNumber"></span>
 
-      <input type="button" value="Previous Leader" onclick="toggleSlide(false)">
-      <input type="button" value="Next Leader" onclick="toggleSlide(true)">
+      <span id="slideNumber" class ="slideNumber"></span>
 
-      <input id="pauseSelect" type="submit" >
+      <input type="button" class= "joinRoom" value="Previous Leader" onclick="toggleSlide(false)">
+      <input type="button" class= "joinRoom" value="Next Leader" onclick="toggleSlide(true)">
+      <input id="pauseSelect" class= "joinRoom" type="submit" value = "Choose a Leader">
 
 
       <a href="/game"><button type="button" name = "Join Room" class = "joinRoom">Next</button></a>
-    <!-- </form> -->
+
 
   </div>
 

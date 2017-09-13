@@ -1,4 +1,4 @@
-var interval = 3000;
+var interval = 5000;
 var switching = setInterval("toggleSlide(true)", interval);
 window.paused = false;
 
@@ -67,7 +67,7 @@ var selectedImage = document.getElementById('pauseSelect');
 selectedImage.addEventListener('click', function(event) {
   var sn = document.getElementById("slideNumber");
   var number = sn.innerHTML;
-  var image = document.getElementsByTagName("img")[number];
+  var image = document.getElementsByTagName("img")[number-1];
 
   var  imagestring= (image.src).toString().replace('http://localhost:3000/', '');
     console.log('imagestring', imagestring, typeof imagestring);

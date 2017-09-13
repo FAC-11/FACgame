@@ -20,6 +20,9 @@ const start = (options) => {
     world,
     timeStep,
     health,
+    gun,
+    guntime,
+    // objload,
   } = options;
 
   let prevTime = performance.now();
@@ -32,13 +35,15 @@ const start = (options) => {
         camera, scene, objects, raycaster, prevTime, time, pointerLockControls, world,
         timeStep,
         health,
+        gun,
+        // objload,
       );
 
       const player = pointLockers();
       socket.emitPlayerPosition(player.position, player.rotation);
 
       if (movements.shooting) {
-        const bullet = getBullet();
+        const bullet = getBullet(gun, guntime);
         socket.emitBulletPosition(bullet.randomid, bullet.velocity, bullet.position);
       }
       const players = otherPlayers.get();
