@@ -33,7 +33,7 @@ socket.on('player data', (playerData) => {
     otherPlayers.get()[id].avatar = avatar;
     const { x, y, z } = playerData[id].position;
     avatar.mesh.position.set(x, y, z);
-  
+
   });
 });
 
