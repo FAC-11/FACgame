@@ -1,10 +1,10 @@
 const THREE = require('three');
-const leader = require('../public/chooseleader');
+// const leader = require('../public/chooseleader');
 
 const create = (options) => {
   options = options || {};
   const avatar = {};
-
+//  console.log('leader', leader, leader['imagestring']);
   avatar.sizeRatio = options.sizeRatio || 1;
   avatar.scale = options.scale || new THREE.Vector3(1, 1, 1);
   avatar.fallbackImage = options.fallbackImage || 'avatar.png';

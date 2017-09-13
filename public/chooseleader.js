@@ -62,14 +62,31 @@ function goToEdge(where) {
   }
 }
 
-function selectleader(event) {
+var selectedImage = document.getElementById('pauseSelect');
+
+selectedImage.addEventListener('click', function(event) {
   var sn = document.getElementById("slideNumber");
   var number = sn.innerHTML;
   var image = document.getElementsByTagName("img")[number];
 
-  return image.src;
-};
+  var  imagestring= (image.src).toString().replace('http://localhost:3000/', '');
+    console.log('imagestring', imagestring, typeof imagestring);
 
-if (typeof module !== 'undefined') {
-  module.exports = (selectleader);
+  var http = new XMLHttpRequest();
+ //Probably need the escape method for values here, like you did
+http.open("POST", 'http://localhost:3000/chooseleader', true);
+//Send the proper header information along with the request
+http.setRequestHeader("Content-type", "text/html");
+// http.setRequestHeader("Content-length", imagestring.length);
+http.onreadystatechange = function(imagestring) {//Call a function when the state changes.
+  if(http.readyState == 4 && http.status == 200) {
+    alert(http.responseText);
+  }
 }
+http.send(imagestring);
+});
+
+
+// if (typeof module !== 'undefined') {
+//   module.exports = { 'imagestring': imagestring};
+// }
