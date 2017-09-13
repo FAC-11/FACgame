@@ -5,6 +5,7 @@ const CANNON = require('cannon');
 // const shoot = require('./shoot.js');
 const otherBullets = require('./otherBullets');
 const getBullet = require('./getBullet');
+const raycaster = new THREE.Raycaster();
 
 const { movements } = require('./controls');
 
@@ -142,11 +143,23 @@ module.exports = function (
 
   if (movements.shooting) {
     const bullet = getBullet(gun, guntime);
+// tells us how many bullets fire per click
     if (bullets.length < 5) {
       bullets.push(bullet);
       scene.add(bullet);
       movements.canShoot = 0;
     }
+    var origin = new THREE.Vector3();
+    console.log('origin',origin);
+    origin.set(bullet.position.x,bullet.position.y,bullet.position.z);
+    var vector = new THREE.Vector3();
+    vector.set(
+    -Math.sin(pointLockers().rotation._y) * 20,
+    0,
+    -Math.cos(pointLockers().rotation._y) * 20,
+  );
+    raycaster.set(origin,vector,0,10);
+
   }
   // Player Weapon
   gun.position.set(
