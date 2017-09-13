@@ -86,10 +86,10 @@ const init = () => {
   // create gun objects
   const gun = cubes.getGun();
   console.log('init', gun);
-  const objload = cubes.objload();
+  // const objload = cubes.objload();
 
 
-  scene.add(obj1, obj2, obj3, obj4, obj5, health, gun, objload);
+  scene.add(obj1, obj2, obj3, obj4, obj5, health, gun);
 
 
   // lighting
@@ -130,7 +130,7 @@ const init = () => {
     timeStep,
     health,
     gun,
-    objload,
+    // objload,
   };
 };
 

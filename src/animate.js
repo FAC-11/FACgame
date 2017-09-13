@@ -19,7 +19,7 @@ const start = (options) => {
     timeStep,
     health,
     gun,
-    objload,
+    // objload,
   } = options;
 
   let prevTime = performance.now();
@@ -33,7 +33,7 @@ const start = (options) => {
         timeStep,
         health,
         gun,
-        objload,
+        // objload,
       );
 
       const player = pointLockers();

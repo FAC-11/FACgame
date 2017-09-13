@@ -39,9 +39,9 @@ const getBullet = () => {
   const player = pointLockers();
 
   bullet.velocity = new THREE.Vector3(
-    -Math.sin(player.rotation._y) * 20,
+    -Math.sin(player.rotation._y - 0.2) * 20,
     0,
-    -Math.cos(player.rotation._y) * 20,
+    -Math.cos(player.rotation._y - 0.2) * 20,
   );
 
   bullet.alive = true;

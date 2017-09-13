@@ -73,19 +73,6 @@ module.exports = function (
   velocity.z -= velocity.z * 10.0 * delta;
   velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
 
-  // Player Weapon
-  console.log(gun);
-  gun.position.set(
-    pointLockers().position.x - Math.sin((pointLockers().rotation._y) - 0.5) * 0.6,
-    pointLockers().position.y - 0.5,
-    pointLockers().position.z - Math.cos((pointLockers().rotation._y) - 0.5) * 0.6,
-  );
-
-  gun.rotation.set(
-    (pointLockers().rotation._x),
-    (pointLockers().rotation._y),
-    (pointLockers().rotation._z),
-  );
 
   for (let index = 0; index < bullets.length; index++) {
     if (bullets[index] === undefined) {
@@ -156,6 +143,18 @@ module.exports = function (
     pointLockers().position.y = 10;
     movements.canJump = true;
   }
+  // Player Weapon
+  gun.position.set(
+    pointLockers().position.x - Math.sin((pointLockers().rotation._y) - 0.5) * 0.6,
+    pointLockers().position.y - 0.5,
+    pointLockers().position.z - Math.cos((pointLockers().rotation._y) - 0.5) * 0.6,
+  );
+
+  gun.rotation.set(
+    (pointLockers().rotation._x),
+    (pointLockers().rotation._y),
+    (pointLockers().rotation._z),
+  );
 };
 
 // this is to stop lots of tiny movements from being sent to server once

@@ -2,7 +2,7 @@ const THREE = require('three');
 const PointerLockControls = require('three-pointerlock');
 const OBJLoader = require('three-obj-loader');
 
-OBJLoader(THREE);
+// OBJLoader(THREE);
 
 
 const getObj1 = () => {
@@ -142,28 +142,28 @@ const getGun = () => {
   gun.castShadow = false;
   return gun;
 };
-const objload = () => {
-// prepare loader and load the model
-  const oLoader = new THREE.OBJLoader();
-  oLoader.load('images/Tall_Rock_1_01.obj', (object, materials) => {
-    // var material = new THREE.MeshFaceMaterial(materials);
-    const material2 = new THREE.MeshStandardMaterial();
-    object.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-      // apply custom material
-        child.material = material2;
-        // enable casting shadows
-        child.castShadow = true;
-        child.receiveShadow = true;
-      }
-    });
-    object.position.x = 0;
-    object.position.y = 0;
-    object.position.z = 0;
-    object.scale.set(1, 1, 1);
-    return object;
-  });
-};
+// const objload = () => {
+// // prepare loader and load the model
+//   const oLoader = new THREE.OBJLoader();
+//   oLoader.load('images/Tall_Rock_1_01.obj', (object, materials) => {
+//     // var material = new THREE.MeshFaceMaterial(materials);
+//     const material2 = new THREE.MeshStandardMaterial();
+//     object.traverse((child) => {
+//       if (child instanceof THREE.Mesh) {
+//       // apply custom material
+//         child.material = material2;
+//         // enable casting shadows
+//         child.castShadow = true;
+//         child.receiveShadow = true;
+//       }
+//     });
+//     object.position.x = 0;
+//     object.position.y = 0;
+//     object.position.z = 0;
+//     object.scale.set(1, 1, 1);
+//     return object;
+//   });
+// };
 
 module.exports = {
   getObj1,
@@ -173,5 +173,5 @@ module.exports = {
   getObj5,
   getObj7,
   getGun,
-  objload,
+  // objload,
 };
