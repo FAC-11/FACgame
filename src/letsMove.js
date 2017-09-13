@@ -77,7 +77,6 @@ module.exports = function (
   velocity.z -= velocity.z * 10.0 * delta;
   velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
 
-
   for (let index = 0; index < bullets.length; index++) {
     if (bullets[index] === undefined) {
       continue;
@@ -86,7 +85,6 @@ module.exports = function (
       bullets.splice(index, 1);
       continue;
     }
-    
     bullets[index].position.add(bullets[index].velocity);
   }
 
@@ -144,9 +142,11 @@ module.exports = function (
 
   if (movements.shooting) {
     const bullet = getBullet(gun, guntime);
-    bullets.push(bullet);
-    scene.add(bullet);
-    movements.canShoot = 50;
+    if (bullets.length < 5) {
+      bullets.push(bullet);
+      scene.add(bullet);
+      movements.canShoot = 0;
+    }
   }
   // Player Weapon
   gun.position.set(

@@ -66,14 +66,15 @@ const init = () => {
   //     // movements.shooting = false;
   //   });
 
-//shoot from mouse
-  document.addEventListener("mousedown", function (event) {
-      if (movements.canShoot <= 0) {
-        movements.shooting = true;
-      }
-    });
+  // shoot from mouse
+  document.addEventListener('mousedown', (event) => {
+    if (movements.canShoot <= 0) {
+      movements.shooting = true;
+      event.stopPropagation();
+    }
+  });
 
-document.addEventListener("mouseup", function (event) {
+  document.addEventListener('mouseup', (event) => {
     movements.shooting = false;
   });
 
