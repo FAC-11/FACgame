@@ -5,9 +5,11 @@ const CANNON = require('cannon');
 // const shoot = require('./shoot.js');
 const otherBullets = require('./otherBullets');
 const getBullet = require('./getBullet');
-const raycaster = new THREE.Raycaster();
 
-const { movements } = require('./controls');
+
+const {
+  movements
+} = require('./controls');
 
 const bullets = [];
 let clock = {};
@@ -20,7 +22,7 @@ function distance(x1, y1, x2, y2) {
   return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
 }
 
-module.exports = function (
+module.exports = function(
   camera,
   scene,
   objects,
@@ -104,13 +106,21 @@ module.exports = function (
   });
 
 
-  if (movements.forward) { velocity.z -= 2000.0 * delta; }
+  if (movements.forward) {
+    velocity.z -= 2000.0 * delta;
+  }
 
-  if (movements.backward) { velocity.z += 1000.0 * delta; }
+  if (movements.backward) {
+    velocity.z += 1000.0 * delta;
+  }
 
-  if (movements.left) { velocity.x -= 1000.0 * delta; }
+  if (movements.left) {
+    velocity.x -= 1000.0 * delta;
+  }
 
-  if (movements.right) { velocity.x += 1000.0 * delta; }
+  if (movements.right) {
+    velocity.x += 1000.0 * delta;
+  }
 
   if (isOnObject === true) {
     velocity.y = Math.max(0, velocity.y);
@@ -143,22 +153,15 @@ module.exports = function (
 
   if (movements.shooting) {
     const bullet = getBullet(gun, guntime);
-// tells us how many bullets fire per click
-    if (bullets.length < 5) {
+    // tells us how many bullets fire per click
+    if (bullets.length < 2) {
       bullets.push(bullet);
       scene.add(bullet);
       movements.canShoot = 0;
     }
-    var origin = new THREE.Vector3();
-    console.log('origin',origin);
-    origin.set(bullet.position.x,bullet.position.y,bullet.position.z);
-    var vector = new THREE.Vector3();
-    vector.set(
-    -Math.sin(pointLockers().rotation._y) * 20,
-    0,
-    -Math.cos(pointLockers().rotation._y) * 20,
-  );
-    raycaster.set(origin,vector,0,10);
+
+    
+
 
   }
   // Player Weapon

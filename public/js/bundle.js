@@ -66644,6 +66644,23 @@ var getBullet = function getBullet(gun, guntime) {
   bullet.alive = true;
   bullet.randomid = guid();
 
+  var origin = new THREE.Vector3();
+  origin.set(bullet.position.x, bullet.position.y, bullet.position.z);
+  var vector = new THREE.Vector3();
+  vector.set(-Math.sin(pointLockers().rotation._y) * 20, 0, -Math.cos(pointLockers().rotation._y) * 20);
+
+  var bulletRay = new THREE.Raycaster(origin, vector, 0, 5);
+  // bulletRay.set(origin, vector);
+
+  var intersects = bulletRay.intersectObjects(scene.children);
+  console.log('hit', intersects);
+  console.log('bulletray', bulletRay);
+
+  for (var i = 0; i < intersects.length; i++) {
+
+    intersects[i].object.material.color.set(0xff0000);
+  }
+
   setTimeout(function () {
     bullet.alive = false;
     scene.remove(bullet);
@@ -66901,7 +66918,6 @@ var CANNON = require('cannon');
 // const shoot = require('./shoot.js');
 var otherBullets = require('./otherBullets');
 var getBullet = require('./getBullet');
-var raycaster = new THREE.Raycaster();
 
 var _require = require('./controls'),
     movements = _require.movements;
@@ -67033,17 +67049,11 @@ module.exports = function (camera, scene, objects, raycaster, prevTime, time, po
   if (movements.shooting) {
     var bullet = getBullet(gun, guntime);
     // tells us how many bullets fire per click
-    if (bullets.length < 5) {
+    if (bullets.length < 2) {
       bullets.push(bullet);
       scene.add(bullet);
       movements.canShoot = 0;
     }
-    var origin = new THREE.Vector3();
-    console.log('origin', origin);
-    origin.set(bullet.position.x, bullet.position.y, bullet.position.z);
-    var vector = new THREE.Vector3();
-    vector.set(-Math.sin(pointLockers().rotation._y) * 20, 0, -Math.cos(pointLockers().rotation._y) * 20);
-    raycaster.set(origin, vector, 0, 10);
   }
   // Player Weapon
   gun.position.set(pointLockers().position.x - Math.sin(pointLockers().rotation._y - 0.5) * 0.6, pointLockers().position.y - 0.5 + Math.sin(guntime * 4 + (pointLockers().position.x + pointLockers().position.y) * 0.1) * 0.03, pointLockers().position.z - Math.cos(pointLockers().rotation._y - 0.5) * 0.6);

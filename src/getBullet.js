@@ -44,6 +44,27 @@ const getBullet = (gun, guntime) => {
   bullet.alive = true;
   bullet.randomid = guid();
 
+  var origin = new THREE.Vector3();
+  origin.set(bullet.position.x, bullet.position.y, bullet.position.z);
+  var vector = new THREE.Vector3();
+  vector.set(-Math.sin(pointLockers().rotation._y) * 20,
+    0, -Math.cos(pointLockers().rotation._y) * 20,
+  );
+
+
+//attempt at raycasting bullets 
+  const bulletRay = new THREE.Raycaster(origin,vector,0,5);
+  // bulletRay.set(origin, vector);
+
+  var intersects = bulletRay.intersectObjects(scene.children);
+  console.log('hit', intersects);
+  console.log('bulletray', bulletRay);
+
+  for (var i = 0; i < intersects.length; i++) {
+
+    intersects[i].object.material.color.set(0xff0000);
+
+  }
 
   setTimeout(() => {
     bullet.alive = false;
