@@ -86,6 +86,7 @@ module.exports = function (
       bullets.splice(index, 1);
       continue;
     }
+    
     bullets[index].position.add(bullets[index].velocity);
   }
 
