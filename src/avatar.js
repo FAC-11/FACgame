@@ -150,6 +150,8 @@ const createPlayerObject = (avatar) => {
   return playerGroup;
 };
 
+
+
 const createHead = () => {
   const geometry = new THREE.BoxGeometry(4, 7, 7);
 

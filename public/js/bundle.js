@@ -322,7 +322,7 @@ module.exports={
   "_from": "github:schteppe/cannon.js",
   "_id": "cannon@0.6.2",
   "_inBundle": false,
-  "_integrity": "sha1-Kagop5tg2p2iVd2i5iTcefXXoQI=",
+  "_integrity": "sha1-9tqS45kXJB3UlWFmbIl81QdJXc4=",
   "_location": "/cannon",
   "_phantomChildren": {},
   "_requested": {
@@ -340,7 +340,7 @@ module.exports={
   ],
   "_resolved": "github:schteppe/cannon.js#569730f94a1d9da47967a24fad0323ef7d5b4119",
   "_spec": "cannon@github:schteppe/cannon.js",
-  "_where": "/home/polyccon/dev/FACgame",
+  "_where": "/Users/rebecacalvoquintero/Desktop/fac/game/FACgame",
   "author": {
     "name": "Stefan Hedman",
     "email": "schteppe@gmail.com",
@@ -109394,7 +109394,6 @@ socket.on('player data', function (playerData) {
   Object.keys(otherPlayers.get()).forEach(function (id) {
     var avatar = Avatar.create();
     getScene().add(avatar.mesh);
-    console.log('avatar', avatar);
 
     // avatar name will be the id of the other player;
     avatar.name = id;
@@ -109406,7 +109405,6 @@ socket.on('player data', function (playerData) {
         z = _playerData$id$positi.z;
 
     avatar.mesh.position.set(x, y, z);
-    console.log('otherplayers', otherPlayers);
   });
 });
 
@@ -109483,7 +109481,7 @@ socket.on('other bullet position', function (_ref5) {
       velocity = _ref5.velocity,
       position = _ref5.position;
 
-  console.log('bullet position', { randomid: randomid, velocity: velocity, position: position });
+
   var bullet = otherBullets.get()[randomid];
   bullet.velocity = velocity;
   bullet.position = position;
