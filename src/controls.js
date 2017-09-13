@@ -26,7 +26,7 @@ const init = () => {
           movements.canJump = false;
         }
         break;
-      case 70:
+      case 70: // F Shoot
         if (movements.canShoot <= 0) {
           movements.shooting = true;
         }
@@ -51,12 +51,22 @@ const init = () => {
       case 68: // d
         movements.right = false;
         break;
-      case 70:
+      case 70: // F shoot
         movements.shooting = false;
         break;
     }
   };
 
+
+  // document.addEventListener("onclick", function (event) {
+  //   console.log('click');
+  //     if (movements.canShoot <= 0) {
+  //       movements.shooting = true;
+  //     }
+  //     // movements.shooting = false;
+  //   });
+
+//shoot from mouse
   document.addEventListener("mousedown", function (event) {
       if (movements.canShoot <= 0) {
         movements.shooting = true;
@@ -66,6 +76,8 @@ const init = () => {
 document.addEventListener("mouseup", function (event) {
     movements.shooting = false;
   });
+
+
   // document.addEventListener( 'mousemove', onMouseMove, false );
   document.addEventListener('keydown', onKeyDown, false);
   document.addEventListener('keyup', onKeyUp, false);
