@@ -57,6 +57,15 @@ const init = () => {
     }
   };
 
+  document.addEventListener("mousedown", function (event) {
+      if (movements.canShoot <= 0) {
+        movements.shooting = true;
+      }
+    });
+
+document.addEventListener("mouseup", function (event) {
+    movements.shooting = false;
+  });
   // document.addEventListener( 'mousemove', onMouseMove, false );
   document.addEventListener('keydown', onKeyDown, false);
   document.addEventListener('keyup', onKeyUp, false);
