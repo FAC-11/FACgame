@@ -27,9 +27,9 @@ const getBullet = (gun, guntime) => {
   );
   const scene = getScene();
   bullet.position.set(
-    pointLockers().position.x - Math.sin((pointLockers().rotation._y) - 0.5) * 6,
+    pointLockers().position.x - Math.sin((pointLockers().rotation._y) - 0.5) * 6.2,
     (gun.position.y - 5) - 0.5 + Math.sin(guntime * 4 + (pointLockers().position.x + pointLockers().position.y) * 0.1) * 0.03,
-    pointLockers().position.z - Math.cos((pointLockers().rotation._y) - 0.5) * 6,
+    pointLockers().position.z - Math.cos((pointLockers().rotation._y) - 0.5) * 6.2,
   );
 
   const player = pointLockers();
