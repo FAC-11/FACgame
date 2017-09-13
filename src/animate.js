@@ -19,6 +19,7 @@ const start = (options) => {
     timeStep,
     health,
     gun,
+    guntime,
     // objload,
   } = options;
 
@@ -40,7 +41,7 @@ const start = (options) => {
       socket.emitPlayerPosition(player.position, player.rotation);
 
       if (movements.shooting) {
-        const bullet = getBullet();
+        const bullet = getBullet(gun, guntime);
         socket.emitBulletPosition(bullet.randomid, bullet.velocity, bullet.position);
       }
       const players = otherPlayers.get();
