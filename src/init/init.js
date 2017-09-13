@@ -61,7 +61,7 @@ const init = () => {
 
 
   // const camera = new THREE.PerspectiveCamera(75, -50, 1, 1000);
-  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
   // let's create the scene
   const scene = new THREE.Scene();
   // and our camera
@@ -83,9 +83,13 @@ const init = () => {
   const obj5 = cubes.getObj5();
   // create health pack
   const health = cubes.getObj7();
+  // create gun objects
+  const gun = cubes.getGun();
+  console.log('init', gun);
+  // const objload = cubes.objload();
 
 
-  scene.add(obj1, obj2, obj3, obj4, obj5, health);
+  scene.add(obj1, obj2, obj3, obj4, obj5, health, gun);
 
 
   // lighting
@@ -125,6 +129,8 @@ const init = () => {
     world,
     timeStep,
     health,
+    gun,
+    // objload,
   };
 };
 
