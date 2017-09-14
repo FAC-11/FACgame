@@ -4,7 +4,7 @@
   "description": "a lethal game!",
   "main": "index.js",
   "scripts": {
-    "start": "npm run build && node server/index.js",
+    "start": "npm run build; node server/index.js",
     "build": "browserify src/entry.js -o public/js/bundle.js -t [ babelify --presets [ es2015 ] ]",
     "watch-js": "watchify src/entry.js -o public/js/bundle.js -t [ babelify --presets [ es2015 ] ]"
   },
