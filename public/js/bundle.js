@@ -66093,10 +66093,15 @@ module.exports = {
 
 var THREE = require('three');
 
+var getFace = function getFace() {
+  var face = window.localStorage.getItem('chosenleader');
+  return JSON.parse(face)['imagestring'];
+};
+
 var create = function create(options) {
   options = options || {};
   var avatar = {};
-
+  //  console.log('leader', leader, leader['imagestring']);
   avatar.sizeRatio = options.sizeRatio || 1;
   avatar.scale = options.scale || new THREE.Vector3(1, 1, 1);
   avatar.fallbackImage = options.fallbackImage || 'avatar.png';
@@ -66219,7 +66224,7 @@ var createHead = function createHead() {
 
   var plainMaterial = new THREE.MeshBasicMaterial({ color: 'lightgrey' });
 
-  var materialArray = [new THREE.MeshBasicMaterial({ color: 'white', map: THREE.ImageUtils.loadTexture('images/trumpFace.png') }), plainMaterial, plainMaterial, plainMaterial, plainMaterial, plainMaterial];
+  var materialArray = [new THREE.MeshBasicMaterial({ color: 'white', map: THREE.ImageUtils.loadTexture(getFace()) }), plainMaterial, plainMaterial, plainMaterial, plainMaterial, plainMaterial];
 
   var material = new THREE.MeshFaceMaterial(materialArray);
 
@@ -66635,7 +66640,9 @@ function guid() {
 var getBullet = function getBullet(gun, guntime) {
   var bullet = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 8), new THREE.MeshBasicMaterial());
   var scene = getScene();
-  bullet.position.set(pointLockers().position.x - Math.sin(pointLockers().rotation._y - 0.5) * 6.2, gun.position.y - 5 - 0.5 + Math.sin(guntime * 4 + (pointLockers().position.x + pointLockers().position.y) * 0.1) * 0.03, pointLockers().position.z - Math.cos(pointLockers().rotation._y - 0.5) * 6.2);
+  if (gun) {
+    bullet.position.set(pointLockers().position.x - Math.sin(pointLockers().rotation._y - 0.5) * 6.2, gun.position.y - 5 - 0.5 + Math.sin(guntime * 4 + (pointLockers().position.x + pointLockers().position.y) * 0.1) * 0.03, pointLockers().position.z - Math.cos(pointLockers().rotation._y - 0.5) * 6.2);
+  }
 
   var player = pointLockers();
 
