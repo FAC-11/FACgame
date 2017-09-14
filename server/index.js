@@ -3,6 +3,7 @@ const socket = require('./socket');
 const bodyParser = require('body-parser');
 const app = express();
 // const router = express.Router();
+const port = process.env.PORT || 3000;
 
 socket(app);
 
@@ -28,11 +29,9 @@ app.get('/chooseleader', (req, res) => {
 app.get('/game', (req, res) => {
   res.redirect('/game.html');
 })
-// app.get('/game', (req, res) => {
-//
-// })
+
 app.use(express.static('public'));
 
-app.listen(3000, () => {
+app.listen(port, () => {
   console.log('Magic happens on port 3000!');
 });
