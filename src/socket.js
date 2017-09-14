@@ -11,7 +11,8 @@ const otherBullets = require('./otherBullets');
 // we connect the socket to the same port as the server-socket;
 
 // const socket = io('http://localhost:1080/game');
-const url = window.location.hostname + ':1080/game';
+const url = '/game';
+// const url = window.location.hostname + ':1080/game';
 console.log('url', url);
 const socket = io(url);
 

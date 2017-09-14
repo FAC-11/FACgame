@@ -32,6 +32,6 @@ app.get('/game', (req, res) => {
 
 app.use(express.static('public'));
 
-app.listen(port, () => {
-  console.log('Magic happens on port 3000!');
-});
+// app.listen(port, () => {
+//   console.log('Magic happens on port 3000!');
+// });

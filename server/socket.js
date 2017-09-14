@@ -11,7 +11,10 @@ module.exports = (app) => {
     pingTimeout: 10000,
   });
 
-  const port = process.env.PORT || 1080;
+  const port = process.env.PORT || 3000;
+
+  // io.set('transports', ['xhr-polling']);
+  // io.set('polling duration', 10);
 
   server.listen(port, (err)=> {
     if(!err) { console.log("Listening on port" + port); }
