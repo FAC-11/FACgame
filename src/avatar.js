@@ -5,9 +5,9 @@ const getFace = () => {
   return JSON.parse(face).imagestring;
 };
 
+const avatar = {};
 const create = (options) => {
   options = options || {};
-  const avatar = {};
   //  console.log('leader', leader, leader['imagestring']);
   avatar.sizeRatio = options.sizeRatio || 1;
   avatar.scale = options.scale || new THREE.Vector3(1, 1, 1);
@@ -222,4 +222,5 @@ module.exports = {
   startWalking,
   stopWalking,
   render,
+  avatar,
 };

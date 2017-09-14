@@ -5,6 +5,7 @@ const CANNON = require('cannon');
 // const shoot = require('./shoot.js');
 const otherBullets = require('./otherBullets');
 const getBullet = require('./getBullet');
+const avatar = require('./avatar');
 
 const rays = [];
 let bullet = {};
@@ -98,6 +99,7 @@ module.exports = function (
     }
     bullets[index].position.add(bullets[index].velocity);
     // console.log(rays[index]);
+    console.log(avatar);
     rays[index].ray.origin.set(
       bullets[index].position.x,
       bullets[index].position.y,
