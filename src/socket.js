@@ -14,7 +14,7 @@ const otherBullets = require('./otherBullets');
 const url = '/game';
 // const url = window.location.hostname + ':1080/game';
 console.log('url', url);
-const socket = io(url);
+const socket = io();
 
 socket.on('player data', (playerData) => {
 
