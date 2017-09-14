@@ -9,17 +9,14 @@ module.exports = (app) => {
   const io = socketIo(server, {
     pingInterval: 10000,
     pingTimeout: 10000,
+    path: '/game'
   });
 
   const port = process.env.PORT || 3000;
 
-  // io.set('transports', ['xhr-polling']);
-  // io.set('polling duration', 10);
-
   server.listen(port, (err)=> {
     if(!err) { console.log("Listening on port" + port); }
 });
-
   // const nsp = io.of('/game');
 
   io.on('connection', (socket) => {
