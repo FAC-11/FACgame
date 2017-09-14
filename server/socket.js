@@ -20,9 +20,9 @@ module.exports = (app) => {
     if(!err) { console.log("Listening on port" + port); }
 });
 
-  const nsp = io.of('/game');
+  // const nsp = io.of('/game');
 
-  nsp.on('connection', (socket) => {
+  io.on('connection', (socket) => {
     console.log('socket is connected successfully', socket.id);
 
     // socket.emit -send the player data to the server
