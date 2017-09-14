@@ -4,7 +4,8 @@
 
 Johny Cash gets angry everytime he watches TV: He can't stand watching all those politicians and do nothing about it.
 
-![](https://media.giphy.com/media/l0IyjW9mwj2Gl5kEo/giphy.gif) . 
+![](https://media.giphy.com/media/HWkZuvTJw95vi/giphy.gif) 
+
 
 Trump, Putin, Theresa May...he is FED UP!
 
