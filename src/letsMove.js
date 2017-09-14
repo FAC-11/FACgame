@@ -5,14 +5,21 @@ const CANNON = require('cannon');
 // const shoot = require('./shoot.js');
 const otherBullets = require('./otherBullets');
 const getBullet = require('./getBullet');
+const avatar = require('./avatar');
 
-const { movements } = require('./controls');
+const rays = [];
+let bullet = {};
+
+const {
+  movements,
+} = require('./controls');
 
 const bullets = [];
 let clock = {};
 const velocity = new THREE.Vector3();
 let lastHealthPickup = 0;
 let life = 30;
+const score = 0;
 
 
 function distance(x1, y1, x2, y2) {
@@ -43,6 +50,10 @@ module.exports = function (
   clock = new THREE.Clock();
   const guntime = Date.now() * 0.0005;
   const gundelta = clock.getDelta();
+
+  if (!document.getElementById('score').textContent) {
+    document.getElementById('score').textContent = score;
+  }
 
   if (!document.getElementById('health').textContent) {
     document.getElementById('health').textContent = life;
@@ -81,11 +92,26 @@ module.exports = function (
     if (bullets[index] === undefined) {
       continue;
     }
-    if (bullets[index].alive == false) {
+    if (bullets[index].alive === false) {
       bullets.splice(index, 1);
+      rays.splice(index, 1);
       continue;
     }
     bullets[index].position.add(bullets[index].velocity);
+    // console.log(rays[index]);
+    console.log(avatar);
+    rays[index].ray.origin.set(
+      bullets[index].position.x,
+      bullets[index].position.y,
+      bullets[index].position.z,
+    );
+    const intersects = rays[index].intersectObjects(scene.children, true);
+    for (let i = 0; i < intersects.length; i++) {
+      console.log(intersects[i]);
+      intersects[i].object.material.color.set(0xff0000);
+      bullets[index].alive = false;
+      scene.remove(bullets[index]);
+    }
   }
 
   if (movements.canShoot > 0) movements.canShoot -= 1;
@@ -103,13 +129,21 @@ module.exports = function (
   });
 
 
-  if (movements.forward) { velocity.z -= 2000.0 * delta; }
+  if (movements.forward) {
+    velocity.z -= 2000.0 * delta;
+  }
 
-  if (movements.backward) { velocity.z += 1000.0 * delta; }
+  if (movements.backward) {
+    velocity.z += 1000.0 * delta;
+  }
 
-  if (movements.left) { velocity.x -= 1000.0 * delta; }
+  if (movements.left) {
+    velocity.x -= 1000.0 * delta;
+  }
 
-  if (movements.right) { velocity.x += 1000.0 * delta; }
+  if (movements.right) {
+    velocity.x += 1000.0 * delta;
+  }
 
   if (isOnObject === true) {
     velocity.y = Math.max(0, velocity.y);
@@ -139,15 +173,32 @@ module.exports = function (
     pointLockers().position.y = 10;
     movements.canJump = true;
   }
-
   if (movements.shooting) {
-    const bullet = getBullet(gun, guntime);
-    if (bullets.length < 5) {
+    bullet = getBullet(gun, guntime);
+    // console.log(bullet);
+    const origin = new THREE.Vector3();
+    origin.set(bullet.position.x, bullet.position.y, bullet.position.z);
+    const vector = new THREE.Vector3();
+    vector.set(
+      -Math.sin(pointLockers().rotation._y),
+      0, -Math.cos(pointLockers().rotation._y),
+    );
+    // Bullet raycasting, last parameter is the range
+    const bulletRay = new THREE.Raycaster(origin, vector, 0, 30);
+    // bulletRay.set(origin, vector);
+    // const intersects = bulletRay.intersectObjects(scene.children, true);
+    rays.push(bulletRay);
+    // tells us how many bullets fire per click
+    if (bullets.length < 2) {
       bullets.push(bullet);
       scene.add(bullet);
       movements.canShoot = 0;
     }
+    // if (bullet.intersects.length > 0) {
+    //   document.getElementById('score').textContent = bullet.intersects.length;
+    // }
   }
+  // console.log(rays);
   // Player Weapon
   gun.position.set(
     pointLockers().position.x - Math.sin((pointLockers().rotation._y) - 0.5) * 0.6,
