@@ -1,9 +1,14 @@
 const THREE = require('three');
 
+const getFace = () => {
+  const face = window.localStorage.getItem('chosenleader');
+  return JSON.parse(face)['imagestring'];
+}
+
 const create = (options) => {
   options = options || {};
   const avatar = {};
-
+//  console.log('leader', leader, leader['imagestring']);
   avatar.sizeRatio = options.sizeRatio || 1;
   avatar.scale = options.scale || new THREE.Vector3(1, 1, 1);
   avatar.fallbackImage = options.fallbackImage || 'avatar.png';
@@ -158,7 +163,7 @@ const createHead = () => {
   const plainMaterial = new THREE.MeshBasicMaterial({ color: 'lightgrey' });
 
   const materialArray = [
-    new THREE.MeshBasicMaterial({ color: 'white', map: THREE.ImageUtils.loadTexture('images/trumpFace.png') }),
+    new THREE.MeshBasicMaterial({ color: 'white', map: THREE.ImageUtils.loadTexture(getFace()) }),
     plainMaterial,
     plainMaterial,
     plainMaterial,
