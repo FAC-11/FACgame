@@ -322,7 +322,7 @@ module.exports={
   "_from": "github:schteppe/cannon.js",
   "_id": "cannon@0.6.2",
   "_inBundle": false,
-  "_integrity": "sha1-Kagop5tg2p2iVd2i5iTcefXXoQI=",
+  "_integrity": "sha1-9tqS45kXJB3UlWFmbIl81QdJXc4=",
   "_location": "/cannon",
   "_phantomChildren": {},
   "_requested": {
@@ -340,7 +340,7 @@ module.exports={
   ],
   "_resolved": "github:schteppe/cannon.js#569730f94a1d9da47967a24fad0323ef7d5b4119",
   "_spec": "cannon@github:schteppe/cannon.js",
-  "_where": "/home/polyccon/dev/FACgame",
+  "_where": "/Users/rebecacalvoquintero/Desktop/fac/game/FACgame",
   "author": {
     "name": "Stefan Hedman",
     "email": "schteppe@gmail.com",
