@@ -42,7 +42,7 @@ socket.on('player data', (playerData) => {
 socket.on('new player', ({ id }) => {
   const avatar = Avatar.create();
   getScene().add(avatar.mesh);
-
+  
   avatar.name = id;
   // high y value to hide bug where extra avatar appears in starting spot
   // add player with id, position and avatar
