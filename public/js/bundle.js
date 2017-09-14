@@ -322,25 +322,24 @@ module.exports={
   "_from": "github:schteppe/cannon.js",
   "_id": "cannon@0.6.2",
   "_inBundle": false,
-  "_integrity": "sha1-dVQj8kh57Dmf0BdxjMzYTKob6JY=",
+  "_integrity": "sha1-j+YY5nKP5ymccA5KXMmet4GTxFY=",
   "_location": "/cannon",
   "_phantomChildren": {},
   "_requested": {
     "type": "git",
-    "raw": "cannon@github:schteppe/cannon.js",
-    "name": "cannon",
-    "escapedName": "cannon",
-    "rawSpec": "github:schteppe/cannon.js",
+    "raw": "schteppe/cannon.js",
+    "rawSpec": "schteppe/cannon.js",
     "saveSpec": "github:schteppe/cannon.js",
     "fetchSpec": null,
     "gitCommittish": "master"
   },
   "_requiredBy": [
-    "/"
+    "#DEV:/",
+    "#USER"
   ],
   "_resolved": "github:schteppe/cannon.js#569730f94a1d9da47967a24fad0323ef7d5b4119",
-  "_spec": "cannon@github:schteppe/cannon.js",
-  "_where": "/Users/Yahia/Documents/Github/Projects/FACgame",
+  "_spec": "schteppe/cannon.js",
+  "_where": "/home/rogeredbacon/FACgame",
   "author": {
     "name": "Stefan Hedman",
     "email": "schteppe@gmail.com",
@@ -66653,20 +66652,20 @@ var getBullet = function getBullet(gun, guntime) {
 
 
   // Bullet raycasting, last parameter is the range
-  var bulletRay = new THREE.Raycaster(origin, vector, 0, 100000);
+  var bulletRay = new THREE.Raycaster(origin, vector, 0, 10);
   // bulletRay.set(origin, vector);
   var intersects = bulletRay.intersectObjects(scene.children, true);
 
-  for (var i = 0; i < intersects.length; i++) {
-    intersects[i].object.material.color.set(0xff0000);
-  }
+  // for (let i = 0; i < intersects.length; i++) {
+  //   intersects[i].object.material.color.set(0xff0000);
+  // }
 
   setTimeout(function () {
     bullet.alive = false;
     scene.remove(bullet);
   }, 1000);
 
-  return { bullet: bullet, intersects: intersects };
+  return { bullet: bullet, bulletRay: bulletRay };
 };
 
 module.exports = getBullet;
@@ -67050,7 +67049,6 @@ module.exports = function (camera, scene, objects, raycaster, prevTime, time, po
     pointLockers().position.y = 10;
     movements.canJump = true;
   }
-
   if (movements.shooting) {
     var bullet = getBullet(gun, guntime);
     // tells us how many bullets fire per click
@@ -67061,6 +67059,9 @@ module.exports = function (camera, scene, objects, raycaster, prevTime, time, po
     }
     if (bullet.intersects.length > 0) {
       document.getElementById('score').textContent = bullet.intersects.length;
+    }
+    for (var i = 0; i < bullet.intersects.length; i++) {
+      bullet.intersects[i].object.material.color.set(0xff0000);
     }
   }
   // Player Weapon

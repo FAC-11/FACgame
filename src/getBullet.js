@@ -16,7 +16,7 @@ function guid() {
       .toString(16)
       .substring(1);
   }
-  return s4() + s4() + '-' + s4() + '-'+ s4() + '-'+ s4() + '-'+ s4()+s4()+s4();
+  return `${s4() + s4()}-${s4()}-${s4()}-${s4()}-${s4()}${s4()}${s4()}`;
   // return `${s4() + s4()}-${s4()}-${s4()}-${
   //   s4()}-${s4()}${s4()}${s4()}`;
 }
@@ -47,7 +47,8 @@ const getBullet = (gun, guntime) => {
   const origin = new THREE.Vector3();
   origin.set(bullet.position.x, bullet.position.y, bullet.position.z);
   const vector = new THREE.Vector3();
-  vector.set(-Math.sin(pointLockers().rotation._y),
+  vector.set(
+    -Math.sin(pointLockers().rotation._y),
     0, -Math.cos(pointLockers().rotation._y),
   );
   // vector.set(0,0,-1
@@ -55,21 +56,21 @@ const getBullet = (gun, guntime) => {
 
 
   // Bullet raycasting, last parameter is the range
-  const bulletRay = new THREE.Raycaster(origin, vector, 0, 100000);
+  const bulletRay = new THREE.Raycaster(origin, vector, 0, 10);
   // bulletRay.set(origin, vector);
-  const intersects = bulletRay.intersectObjects(scene.children,true);
+  const intersects = bulletRay.intersectObjects(scene.children, true);
 
 
-  for (var i = 0; i < intersects.length; i++) {
-    intersects[i].object.material.color.set(0xff0000);
-  }
+  // for (let i = 0; i < intersects.length; i++) {
+  //   intersects[i].object.material.color.set(0xff0000);
+  // }
 
   setTimeout(() => {
     bullet.alive = false;
     scene.remove(bullet);
   }, 1000);
 
-  return { bullet, intersects };
+  return { bullet, bulletRay };
 };
 
 module.exports = getBullet;

@@ -8,7 +8,7 @@ const getBullet = require('./getBullet');
 
 
 const {
-  movements
+  movements,
 } = require('./controls');
 
 const bullets = [];
@@ -16,14 +16,14 @@ let clock = {};
 const velocity = new THREE.Vector3();
 let lastHealthPickup = 0;
 let life = 30;
-let score = 0;
+const score = 0;
 
 
 function distance(x1, y1, x2, y2) {
   return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
 }
 
-module.exports = function(
+module.exports = function (
   camera,
   scene,
   objects,
@@ -155,7 +155,6 @@ module.exports = function(
     pointLockers().position.y = 10;
     movements.canJump = true;
   }
-
   if (movements.shooting) {
     const bullet = getBullet(gun, guntime);
     // tells us how many bullets fire per click
@@ -164,12 +163,12 @@ module.exports = function(
       scene.add(bullet.bullet);
       movements.canShoot = 0;
     }
-if (bullet.intersects.length > 0) {
-  document.getElementById('score').textContent = bullet.intersects.length;
-}
-
-
-
+    if (bullet.intersects.length > 0) {
+      document.getElementById('score').textContent = bullet.intersects.length;
+    }
+    for (let i = 0; i < bullet.intersects.length; i++) {
+      bullet.intersects[i].object.material.color.set(0xff0000);
+    }
   }
   // Player Weapon
   gun.position.set(
