@@ -9,14 +9,17 @@ module.exports = (app) => {
   const io = socketIo(server, {
     pingInterval: 10000,
     pingTimeout: 10000,
+    path: '/game'
   });
 
+  const port = process.env.PORT || 3000;
 
-  server.listen(1080);
+  server.listen(port, (err)=> {
+    if(!err) { console.log("Listening on port" + port); }
+});
+  // const nsp = io.of('/game');
 
-  const nsp = io.of('/game');
-
-  nsp.on('connection', (socket) => {
+  io.on('connection', (socket) => {
     console.log('socket is connected successfully', socket.id);
 
     // socket.emit -send the player data to the server
@@ -56,7 +59,7 @@ module.exports = (app) => {
 
 
   socket.on('bullet is fired', ({randomid, velocity, position}) => {
-  
+
     socket.broadcast.emit('bullet is fired', {randomid, velocity, position});
 
     });
