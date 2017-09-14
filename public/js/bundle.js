@@ -322,7 +322,7 @@ module.exports={
   "_from": "github:schteppe/cannon.js",
   "_id": "cannon@0.6.2",
   "_inBundle": false,
-  "_integrity": "sha1-9tqS45kXJB3UlWFmbIl81QdJXc4=",
+  "_integrity": "sha1-Kagop5tg2p2iVd2i5iTcefXXoQI=",
   "_location": "/cannon",
   "_phantomChildren": {},
   "_requested": {
@@ -340,7 +340,7 @@ module.exports={
   ],
   "_resolved": "github:schteppe/cannon.js#569730f94a1d9da47967a24fad0323ef7d5b4119",
   "_spec": "cannon@github:schteppe/cannon.js",
-  "_where": "/Users/rebecacalvoquintero/Desktop/fac/game/FACgame",
+  "_where": "/home/polyccon/dev/FACgame",
   "author": {
     "name": "Stefan Hedman",
     "email": "schteppe@gmail.com",
@@ -66093,10 +66093,15 @@ module.exports = {
 
 var THREE = require('three');
 
+var getFace = function getFace() {
+  var face = window.localStorage.getItem('chosenleader');
+  return JSON.parse(face)['imagestring'];
+};
+
 var create = function create(options) {
   options = options || {};
   var avatar = {};
-
+  //  console.log('leader', leader, leader['imagestring']);
   avatar.sizeRatio = options.sizeRatio || 1;
   avatar.scale = options.scale || new THREE.Vector3(1, 1, 1);
   avatar.fallbackImage = options.fallbackImage || 'avatar.png';
@@ -66219,7 +66224,7 @@ var createHead = function createHead() {
 
   var plainMaterial = new THREE.MeshBasicMaterial({ color: 'lightgrey' });
 
-  var materialArray = [new THREE.MeshBasicMaterial({ color: 'white', map: THREE.ImageUtils.loadTexture('images/trumpFace.png') }), plainMaterial, plainMaterial, plainMaterial, plainMaterial, plainMaterial];
+  var materialArray = [new THREE.MeshBasicMaterial({ color: 'white', map: THREE.ImageUtils.loadTexture(getFace()) }), plainMaterial, plainMaterial, plainMaterial, plainMaterial, plainMaterial];
 
   var material = new THREE.MeshFaceMaterial(materialArray);
 
