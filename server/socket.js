@@ -11,8 +11,11 @@ module.exports = (app) => {
     pingTimeout: 10000,
   });
 
+  const port = process.env.PORT || 1080;
 
-  server.listen(1080);
+  server.listen(port, (err)=> {
+    if(!err) { console.log("Listening on port" + port); }
+});
 
   const nsp = io.of('/game');
 
@@ -56,7 +59,7 @@ module.exports = (app) => {
 
 
   socket.on('bullet is fired', ({randomid, velocity, position}) => {
-  
+
     socket.broadcast.emit('bullet is fired', {randomid, velocity, position});
 
     });
