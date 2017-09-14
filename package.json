@@ -31,16 +31,16 @@
     "three": "^0.87.1",
     "three-mtl-loader": "^1.0.1",
     "three-obj-loader": "^1.1.2",
-    "three-pointerlock": "0.0.2"
-  },
-  "devDependencies": {
-    "babel-preset-es2015": "^6.24.1",
+    "three-pointerlock": "0.0.2",
     "babelify": "^7.3.0",
     "browserify": "^14.4.0",
+    "watchify": "^3.9.0",
+    "babel-preset-es2015": "^6.24.1"
+  },
+  "devDependencies": {
     "eslint": "^4.6.1",
     "eslint-config-airbnb-base": "^12.0.0",
     "eslint-plugin-import": "^2.7.0",
-    "nodemon": "^1.11.0",
-    "watchify": "^3.9.0"
+    "nodemon": "^1.11.0"
   }
 }
