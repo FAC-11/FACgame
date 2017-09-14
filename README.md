@@ -6,9 +6,9 @@ Johny Cash gets angry everytime he watches TV: He can't stand watching all those
 
 ![](https://media.giphy.com/media/l0IyjW9mwj2Gl5kEo/giphy.gif) . 
 
-![](https://media.giphy.com/media/lpWcidBgrIXcs/giphy.gif)
-
 Trump, Putin, Theresa May...he is FED UP!
+
+![](https://media.giphy.com/media/lpWcidBgrIXcs/giphy.gif)
 
 
 Also, he has lots of "time for babe" but his babe is not in the country anymore(she was Mexican and Trump deported her) so he is looking for a new videogame to relieve his stress.
