@@ -21,7 +21,7 @@ A multiplayer shooting game where Johny can play with Maria Teresa(his girlfrien
 
 After all, we were meant to satisfy the user needs...
 
-![] (https://media.giphy.com/media/jgsGcrYmUl7q0/giphy.gif)
+![](https://media.giphy.com/media/jgsGcrYmUl7q0/giphy.gif)
 
 ![](https://i.imgur.com/eBUra0Y.jpg)
 
