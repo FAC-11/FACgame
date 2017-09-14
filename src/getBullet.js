@@ -57,15 +57,11 @@ const getBullet = (gun, guntime) => {
   // Bullet raycasting, last parameter is the range
   const bulletRay = new THREE.Raycaster(origin, vector, 0, 100000);
   // bulletRay.set(origin, vector);
-console.log('scene kids', scene.children);
   const intersects = bulletRay.intersectObjects(scene.children,true);
-  console.log('hit', intersects);
-  console.log('bulletray', bulletRay);
+
 
   for (var i = 0; i < intersects.length; i++) {
-
     intersects[i].object.material.color.set(0xff0000);
-
   }
 
   setTimeout(() => {
@@ -73,7 +69,7 @@ console.log('scene kids', scene.children);
     scene.remove(bullet);
   }, 1000);
 
-  return bullet;
+  return { bullet, intersects };
 };
 
 module.exports = getBullet;

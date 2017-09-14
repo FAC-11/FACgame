@@ -16,6 +16,7 @@ let clock = {};
 const velocity = new THREE.Vector3();
 let lastHealthPickup = 0;
 let life = 30;
+let score = 0;
 
 
 function distance(x1, y1, x2, y2) {
@@ -46,6 +47,10 @@ module.exports = function(
   clock = new THREE.Clock();
   const guntime = Date.now() * 0.0005;
   const gundelta = clock.getDelta();
+
+  if (!document.getElementById('score').textContent) {
+    document.getElementById('score').textContent = score;
+  }
 
   if (!document.getElementById('health').textContent) {
     document.getElementById('health').textContent = life;
@@ -155,12 +160,14 @@ module.exports = function(
     const bullet = getBullet(gun, guntime);
     // tells us how many bullets fire per click
     if (bullets.length < 2) {
-      bullets.push(bullet);
-      scene.add(bullet);
+      bullets.push(bullet.bullet);
+      scene.add(bullet.bullet);
       movements.canShoot = 0;
     }
+if (bullet.intersects.length > 0) {
+  document.getElementById('score').textContent = bullet.intersects.length;
+}
 
-    
 
 
   }

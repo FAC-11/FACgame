@@ -66655,13 +66655,9 @@ var getBullet = function getBullet(gun, guntime) {
   // Bullet raycasting, last parameter is the range
   var bulletRay = new THREE.Raycaster(origin, vector, 0, 100000);
   // bulletRay.set(origin, vector);
-  console.log('scene kids', scene.children);
   var intersects = bulletRay.intersectObjects(scene.children, true);
-  console.log('hit', intersects);
-  console.log('bulletray', bulletRay);
 
   for (var i = 0; i < intersects.length; i++) {
-
     intersects[i].object.material.color.set(0xff0000);
   }
 
@@ -66670,7 +66666,7 @@ var getBullet = function getBullet(gun, guntime) {
     scene.remove(bullet);
   }, 1000);
 
-  return bullet;
+  return { bullet: bullet, intersects: intersects };
 };
 
 module.exports = getBullet;
@@ -66931,6 +66927,7 @@ var clock = {};
 var velocity = new THREE.Vector3();
 var lastHealthPickup = 0;
 var life = 30;
+var score = 0;
 
 function distance(x1, y1, x2, y2) {
   return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
@@ -66948,6 +66945,10 @@ module.exports = function (camera, scene, objects, raycaster, prevTime, time, po
   clock = new THREE.Clock();
   var guntime = Date.now() * 0.0005;
   var gundelta = clock.getDelta();
+
+  if (!document.getElementById('score').textContent) {
+    document.getElementById('score').textContent = score;
+  }
 
   if (!document.getElementById('health').textContent) {
     document.getElementById('health').textContent = life;
@@ -67054,9 +67055,12 @@ module.exports = function (camera, scene, objects, raycaster, prevTime, time, po
     var bullet = getBullet(gun, guntime);
     // tells us how many bullets fire per click
     if (bullets.length < 2) {
-      bullets.push(bullet);
-      scene.add(bullet);
+      bullets.push(bullet.bullet);
+      scene.add(bullet.bullet);
       movements.canShoot = 0;
+    }
+    if (bullet.intersects.length > 0) {
+      document.getElementById('score').textContent = bullet.intersects.length;
     }
   }
   // Player Weapon
