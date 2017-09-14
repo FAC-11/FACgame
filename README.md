@@ -17,17 +17,23 @@ Also, he has lots of "time for babe" but his babe is not in the country anymore(
 
 ## WHAT?
 
-A multiplayer shooting game where Johny can play with Maria Teresa(his girlfriend) and kill his worst enemies.
+A multiplayer shooting game where Johny can play with Maria Teresa(his girlfriend) and kill his worst enemies. 
+
+After all, we were meant to satisfy the user needs...
+
+![] https://media.giphy.com/media/jgsGcrYmUl7q0/giphy.gif
+
+![](https://i.imgur.com/eBUra0Y.jpg)
+
 
 ## HOW
 
 We still do not know how.
 
+
 But what we know is that there has been a before...
 
 ![](https://i.imgur.com/s9HBBlg.jpg))
-
-![](https://i.imgur.com/eBUra0Y.jpg)
 
 and an after....
 
