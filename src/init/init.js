@@ -10,6 +10,7 @@ const getFloor = require('./getFloor');
 const cubes = require('../cubes');
 const blocker = require('../blocker');
 const getRaycaster = require('../getRaycaster');
+const cubeMap = require('../cubeMap');
 
 // create the scene
 
@@ -118,6 +119,8 @@ const init = () => {
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
   }
+
+  cubeMap.cubeMap(scene);
 
   return {
     camera,

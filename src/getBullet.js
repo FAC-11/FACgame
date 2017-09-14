@@ -27,7 +27,7 @@ const getBullet = (gun, guntime) => {
     new THREE.MeshBasicMaterial(),
   );
   const scene = getScene();
-  if(gun){
+  if (gun) {
     bullet.position.set(
       pointLockers().position.x - Math.sin((pointLockers().rotation._y) - 0.5) * 6.2,
       (gun.position.y - 5) - 0.5 + Math.sin(guntime * 4 + (pointLockers().position.x + pointLockers().position.y) * 0.1) * 0.03,
@@ -47,21 +47,17 @@ const getBullet = (gun, guntime) => {
   bullet.alive = true;
   bullet.randomid = guid();
 
-  const origin = new THREE.Vector3();
-  origin.set(bullet.position.x, bullet.position.y, bullet.position.z);
-  const vector = new THREE.Vector3();
-  vector.set(
-    -Math.sin(pointLockers().rotation._y),
-    0, -Math.cos(pointLockers().rotation._y),
-  );
-  // vector.set(0,0,-1
+  // const origin = new THREE.Vector3();
+  // origin.set(bullet.position.x, bullet.position.y, bullet.position.z);
+  // const vector = new THREE.Vector3();
+  // vector.set(
+  //   -Math.sin(pointLockers().rotation._y),
+  //   0, -Math.cos(pointLockers().rotation._y),
   // );
-
-
-  // Bullet raycasting, last parameter is the range
-  const bulletRay = new THREE.Raycaster(origin, vector, 0, 10);
-  // bulletRay.set(origin, vector);
-  const intersects = bulletRay.intersectObjects(scene.children, true);
+  // // Bullet raycasting, last parameter is the range
+  // const bulletRay = new THREE.Raycaster(origin, vector, 0, 10);
+  // // bulletRay.set(origin, vector);
+  // const intersects = bulletRay.intersectObjects(scene.children, true);
 
 
   // for (let i = 0; i < intersects.length; i++) {
@@ -73,7 +69,7 @@ const getBullet = (gun, guntime) => {
     scene.remove(bullet);
   }, 1000);
 
-  return { bullet, bulletRay };
+  return bullet;
 };
 
 module.exports = getBullet;

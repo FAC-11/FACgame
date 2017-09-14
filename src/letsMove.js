@@ -6,6 +6,8 @@ const CANNON = require('cannon');
 const otherBullets = require('./otherBullets');
 const getBullet = require('./getBullet');
 
+const rays = [];
+let bullet = {};
 
 const {
   movements,
@@ -89,11 +91,25 @@ module.exports = function (
     if (bullets[index] === undefined) {
       continue;
     }
-    if (bullets[index].alive == false) {
+    if (bullets[index].alive === false) {
       bullets.splice(index, 1);
+      rays.splice(index, 1);
       continue;
     }
     bullets[index].position.add(bullets[index].velocity);
+    // console.log(rays[index]);
+    rays[index].ray.origin.set(
+      bullets[index].position.x,
+      bullets[index].position.y,
+      bullets[index].position.z,
+    );
+    const intersects = rays[index].intersectObjects(scene.children, true);
+    for (let i = 0; i < intersects.length; i++) {
+      intersects[i].object.material.color.set(0xff0000);
+      console.log(intersects[i]);
+      bullets[index].alive = false;
+      scene.remove(bullets[index]);
+    }
   }
 
   if (movements.canShoot > 0) movements.canShoot -= 1;
@@ -156,20 +172,31 @@ module.exports = function (
     movements.canJump = true;
   }
   if (movements.shooting) {
-    const bullet = getBullet(gun, guntime);
+    bullet = getBullet(gun, guntime);
+    // console.log(bullet);
+    const origin = new THREE.Vector3();
+    origin.set(bullet.position.x, bullet.position.y, bullet.position.z);
+    const vector = new THREE.Vector3();
+    vector.set(
+      -Math.sin(pointLockers().rotation._y),
+      0, -Math.cos(pointLockers().rotation._y),
+    );
+    // Bullet raycasting, last parameter is the range
+    const bulletRay = new THREE.Raycaster(origin, vector, 0, 30);
+    // bulletRay.set(origin, vector);
+    // const intersects = bulletRay.intersectObjects(scene.children, true);
+    rays.push(bulletRay);
     // tells us how many bullets fire per click
     if (bullets.length < 2) {
-      bullets.push(bullet.bullet);
-      scene.add(bullet.bullet);
+      bullets.push(bullet);
+      scene.add(bullet);
       movements.canShoot = 0;
     }
-    if (bullet.intersects.length > 0) {
-      document.getElementById('score').textContent = bullet.intersects.length;
-    }
-    for (let i = 0; i < bullet.intersects.length; i++) {
-      bullet.intersects[i].object.material.color.set(0xff0000);
-    }
+    // if (bullet.intersects.length > 0) {
+    //   document.getElementById('score').textContent = bullet.intersects.length;
+    // }
   }
+  // console.log(rays);
   // Player Weapon
   gun.position.set(
     pointLockers().position.x - Math.sin((pointLockers().rotation._y) - 0.5) * 0.6,
