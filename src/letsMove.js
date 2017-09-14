@@ -105,8 +105,8 @@ module.exports = function (
     );
     const intersects = rays[index].intersectObjects(scene.children, true);
     for (let i = 0; i < intersects.length; i++) {
-      intersects[i].object.material.color.set(0xff0000);
       console.log(intersects[i]);
+      intersects[i].object.material.color.set(0xff0000);
       bullets[index].alive = false;
       scene.remove(bullets[index]);
     }

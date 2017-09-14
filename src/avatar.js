@@ -2,19 +2,19 @@ const THREE = require('three');
 
 const getFace = () => {
   const face = window.localStorage.getItem('chosenleader');
-  return JSON.parse(face)['imagestring'];
-}
+  return JSON.parse(face).imagestring;
+};
 
 const create = (options) => {
   options = options || {};
   const avatar = {};
-//  console.log('leader', leader, leader['imagestring']);
+  //  console.log('leader', leader, leader['imagestring']);
   avatar.sizeRatio = options.sizeRatio || 1;
   avatar.scale = options.scale || new THREE.Vector3(1, 1, 1);
   avatar.fallbackImage = options.fallbackImage || 'avatar.png';
   createCanvases(avatar);
   avatar.mesh = createPlayerObject(avatar);
-  avatar.mesh.scale.set(avatar.sizeRatio, avatar.sizeRatio * 0.75, avatar.sizeRatio);
+  avatar.mesh.scale.set(avatar.sizeRatio, avatar.sizeRatio, avatar.sizeRatio);
 
   avatar.walkSpeed = 0.6;
   avatar.startedWalking = 0.0;
@@ -154,7 +154,6 @@ const createPlayerObject = (avatar) => {
 
   return playerGroup;
 };
-
 
 
 const createHead = () => {

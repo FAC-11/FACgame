@@ -66106,7 +66106,7 @@ var create = function create(options) {
   avatar.fallbackImage = options.fallbackImage || 'avatar.png';
   createCanvases(avatar);
   avatar.mesh = createPlayerObject(avatar);
-  avatar.mesh.scale.set(avatar.sizeRatio, avatar.sizeRatio * 0.75, avatar.sizeRatio);
+  avatar.mesh.scale.set(avatar.sizeRatio, avatar.sizeRatio, avatar.sizeRatio);
 
   avatar.walkSpeed = 0.6;
   avatar.startedWalking = 0.0;
@@ -67034,8 +67034,8 @@ module.exports = function (camera, scene, objects, raycaster, prevTime, time, po
     rays[index].ray.origin.set(bullets[index].position.x, bullets[index].position.y, bullets[index].position.z);
     var intersects = rays[index].intersectObjects(scene.children, true);
     for (var i = 0; i < intersects.length; i++) {
-      intersects[i].object.material.color.set(0xff0000);
       console.log(intersects[i]);
+      intersects[i].object.material.color.set(0xff0000);
       bullets[index].alive = false;
       scene.remove(bullets[index]);
     }
